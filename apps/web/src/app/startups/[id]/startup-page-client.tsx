@@ -372,7 +372,7 @@ export default function StartupPageClient({
       {banner ? (
         <div
           className="relative mb-8 overflow-hidden rounded-2xl bg-bg-subtle"
-          style={{ aspectRatio: "16/5" }}
+          style={{ aspectRatio: "16/4" }}
         >
           <Image
             src={banner}
@@ -698,7 +698,7 @@ function SocialLink({
   label: string;
   children: React.ReactNode;
 }) {
-  const url = href.startsWith("http") ? href : `https://${href}`;
+  const url = href.startsWith("http") || href.startsWith("mailto:") ? href : `https://${href}`;
   return (
     <a
       href={url}

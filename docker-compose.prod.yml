@@ -104,7 +104,6 @@ services:
       DATABASE_URL: postgresql://narval:${POSTGRES_PASSWORD}@postgres:5432/umami
       DATABASE_TYPE: postgresql
       APP_SECRET: ${UMAMI_APP_SECRET}
-      ADMIN_PASSWORD: ${UMAMI_ADMIN_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy
@@ -116,6 +115,25 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  umami-setup:
+    image: postgres:16-alpine
+    restart: on-failure
+    depends_on:
+      umami:
+        condition: service_healthy
+    entrypoint: [/bin/sh, -c]
+    command:
+      - |
+        until PGPASSWORD=${POSTGRES_PASSWORD} psql -h postgres -U narval -d umami -tc "SELECT 1 FROM \"user\" WHERE username='admin'" 2>/dev/null | grep -q 1; do
+          echo "waiting for umami admin user..."; sleep 3;
+        done
+        PGPASSWORD=${POSTGRES_PASSWORD} psql -h postgres -U narval -d umami -c "
+          INSERT INTO website (website_id, name, domain, user_id, created_at)
+          SELECT '804903ea-02f7-447b-9770-4219957a68ea', 'Narval', 'gonarval.com', user_id, now()
+          FROM \"user\" WHERE username = 'admin'
+          ON CONFLICT (website_id) DO NOTHING;
+        "
 
   server:
     image: ghcr.io/albertomolinafelipe/narval-server:latest
