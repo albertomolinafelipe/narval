@@ -135,6 +135,8 @@ services:
     image: ghcr.io/albertomolinafelipe/narval-web:latest
     restart: unless-stopped
     env_file: .env
+    environment:
+      PORT: "3000"
     depends_on:
       server:
         condition: service_started
