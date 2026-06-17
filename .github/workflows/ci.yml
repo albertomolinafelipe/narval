@@ -17,9 +17,6 @@ jobs:
           go-version-file: apps/server/go.mod
           cache-dependency-path: apps/server/go.sum
 
-      - name: Run Go tests
-        run: cd apps/server && go test -v -short ./...
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -28,6 +25,18 @@ jobs:
 
       - name: Install web dependencies
         run: cd apps/web && npm ci
+
+      - name: Bundle OpenAPI spec
+        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - name: Generate server code
+        run: cd apps/server && go generate ./...
+
+      - name: Run Go tests
+        run: cd apps/server && go test -v -short ./...
 
       - name: Run web tests
         run: cd apps/web && npm run test
