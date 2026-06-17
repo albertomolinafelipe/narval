@@ -1,8 +1,8 @@
 import Script from "next/script";
 
 export default function UmamiAnalytics() {
-  const websiteId = process.env.UMAMI_WEBSITE_ID;
-  const umamiUrl = process.env.UMAMI_URL;
+  const websiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+  const umamiUrl = process.env.NEXT_PUBLIC_UMAMI_URL;
 
   if (!websiteId || !umamiUrl) {
     return null;
