@@ -11,6 +11,7 @@ require (
 	github.com/oapi-codegen/oapi-codegen/v2 v2.5.1
 	github.com/oapi-codegen/runtime v1.1.2
 	github.com/redis/go-redis/v9 v9.18.0
+	github.com/resend/resend-go/v2 v2.28.0
 	github.com/stretchr/testify v1.11.1
 	github.com/supertokens/supertokens-golang v0.25.2
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0

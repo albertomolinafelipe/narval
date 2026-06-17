@@ -19,13 +19,9 @@ type Config struct {
 	MinioBucket              string
 	MinioUseSSL              bool
 	MinioPublicURL           string
-	// SMTP settings for email delivery
-	SMTPHost     string
-	SMTPPort     string
-	SMTPUsername string
-	SMTPPassword string
-	SMTPFrom     string
-	SMTPFromName string
+	ResendAPIKey             string
+	EmailFrom                string
+	EmailFromName            string
 	// CORSOrigins is a comma-separated list of allowed origins, e.g.
 	// "http://localhost:3000,https://app.example.com"
 	CORSOrigins []string
@@ -57,12 +53,9 @@ func Load() *Config {
 		MinioBucket:              getEnv("MINIO_BUCKET", "narval"),
 		MinioUseSSL:              getEnv("MINIO_USE_SSL", "false") == "true",
 		MinioPublicURL:           getEnv("MINIO_PUBLIC_URL", "http://localhost:9000"),
-		SMTPHost:                 getEnv("SMTP_HOST", "smtp.zoho.eu"),
-		SMTPPort:                 getEnv("SMTP_PORT", "587"),
-		SMTPUsername:             getEnv("SMTP_USERNAME", "contact@gonarval.com"),
-		SMTPPassword:             getEnv("SMTP_PASSWORD", ""),
-		SMTPFrom:                 getEnv("SMTP_FROM", "contact@gonarval.com"),
-		SMTPFromName:             getEnv("SMTP_FROM_NAME", "Narval"),
+		ResendAPIKey:             getEnv("RESEND_API_KEY", ""),
+		EmailFrom:                getEnv("EMAIL_FROM", "noreply@gonarval.com"),
+		EmailFromName:            getEnv("EMAIL_FROM_NAME", "Narval"),
 		CORSOrigins:              splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")),
 	}
 }

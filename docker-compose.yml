@@ -158,13 +158,9 @@ services:
       MINIO_USE_SSL: 'false'
       SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
       SUPERTOKENS_API_KEY: ''
-      # SMTP Configuration for Zoho Mail
-      SMTP_HOST: smtp.zoho.eu
-      SMTP_PORT: '587'
-      SMTP_USERNAME: contact@gonarval.com
-      SMTP_PASSWORD: ${SMTP_PASSWORD}
-      SMTP_FROM: contact@gonarval.com
-      SMTP_FROM_NAME: Narval
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: noreply@gonarval.com
+      EMAIL_FROM_NAME: Narval
     depends_on:
       postgres:
         condition: service_healthy
