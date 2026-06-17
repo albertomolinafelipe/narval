@@ -159,9 +159,9 @@ Production runs on a single Digital Ocean droplet at `gonarval.com`.
 ```
 Internet (443/80)
   └── Caddy (auto-HTTPS via Let's Encrypt)
-        ├── gonarval.com/*          → web:3000 (Next.js)
-        ├── gonarval.com/analytics* → umami:3000
-        └── storage.gonarval.com    → minio:9000
+        ├── gonarval.com           → web:3000 (Next.js)
+        ├── analytics.gonarval.com → umami:3000
+        └── storage.gonarval.com   → minio:9000
 
 Docker-internal only (no public ports):
   web → server:8080 (via /api/proxy/)
@@ -173,63 +173,67 @@ Docker-internal only (no public ports):
 
 The Go server is **never publicly exposed** — all browser traffic goes through the Next.js proxy at `/api/proxy/[...path]`. SuperTokens browser SDK is also routed through this proxy (`apiDomain = NEXT_PUBLIC_SITE_URL`, `apiBasePath = /api/proxy/auth`).
 
-**Automated CI/CD** (GitHub Actions — `.github/workflows/ci.yml`):
-1. `make test` on every push/PR
-2. Build + push Docker images to GHCR on push to `main`
-3. SSH to droplet → `docker compose -f docker-compose.prod.yml pull && up -d`
+**CI/CD pipeline** (`.github/workflows/ci.yml`):
+- Every push/PR → `test` job (Go unit tests + web Vitest)
+- Push to `main` → `build-server` + `build-web` jobs in parallel (generate code, build Docker images, push to GHCR)
+- After both builds → `deploy` job (SSH to droplet, pull images, `docker compose up -d`)
 
 No manual SSH needed for routine deploys — just push to `main`.
 
-**One-time droplet setup:**
-```bash
-# On a fresh Ubuntu 24.04 droplet as root:
-bash scripts/setup-droplet.sh
-
-# Then copy files to /opt/narval/:
-scp docker-compose.prod.yml Caddyfile root@<droplet-ip>:/opt/narval/
-scp .env.production.example root@<droplet-ip>:/opt/narval/.env
-# Edit /opt/narval/.env with real secrets
-
-# First deploy (subsequent deploys are automatic):
-ssh root@<droplet-ip> "cd /opt/narval && docker compose -f docker-compose.prod.yml up -d"
-```
-
-**Required DNS records** (gonarval.com):
-- `A gonarval.com → <droplet-ip>`
-- `A storage.gonarval.com → <droplet-ip>`
-
 **Required GitHub repo secrets:**
 - `DROPLET_IP` — droplet's public IP
-- `DEPLOY_SSH_KEY` — private key that matches a public key in droplet's `~/.ssh/authorized_keys`
+- `DEPLOY_SSH_KEY` — private key matching the public key in `/root/.ssh/authorized_keys` on the droplet
+- `NEXT_PUBLIC_MAPBOX_TOKEN` — Mapbox token (baked into web image at build time)
+
+**Required DNS records:**
+- `A gonarval.com → <droplet-ip>`
+- `A analytics.gonarval.com → <droplet-ip>`
+- `A storage.gonarval.com → <droplet-ip>`
+
+**One-time droplet setup (fresh Ubuntu 24.04):**
+```bash
+# Install Docker and create deploy directory
+apt-get update -qq && apt-get install -y curl
+curl -fsSL https://get.docker.com | sh
+mkdir -p /opt/narval
+
+# Copy files from repo root
+scp docker-compose.prod.yml Caddyfile root@<droplet-ip>:/opt/narval/
+
+# Write /opt/narval/.env with real secrets (never commit this file)
+# Required variables — generate passwords with: openssl rand -hex 32
+#   POSTGRES_PASSWORD, MINIO_ROOT_PASSWORD, UMAMI_APP_SECRET, UMAMI_ADMIN_PASSWORD
+#   SMTP_PASSWORD (Zoho app password for contact@gonarval.com)
+# See .env.production.example for the full variable list.
+
+# First deploy (subsequent deploys are automatic via CI)
+cd /opt/narval && docker compose -f docker-compose.prod.yml up -d
+```
+
+**Important `.env` notes:**
+- `MINIO_ACCESS_KEY` must NOT be `narval` — the server rejects it as insecure in production. Use `narval-app` or similar.
+- `MINIO_ACCESS_KEY` must match `MINIO_ROOT_USER` (MinIO uses root credentials as the access key in simple setups).
+- `SMTP_PASSWORD` is the only secret that must be set manually (Zoho app password).
 
 **Production make commands:**
 ```bash
-make deploy          # Just pushes — CI handles the rest
 make deploy-logs     # Tail prod logs via SSH (set DROPLET_IP=<ip>)
 make deploy-seed     # Seed production DB (builds binary, SSHes to droplet, runs in Docker network)
 ```
 
 **Umami setup (one-time after first deploy):**
-1. Visit `https://gonarval.com/analytics` → default login `admin/umami`
-2. Change password
-3. Add website `gonarval.com` → copy the Website ID
-4. Set `NEXT_PUBLIC_UMAMI_WEBSITE_ID=<id>` in `/opt/narval/.env`
-5. `docker compose -f docker-compose.prod.yml restart web`
+1. Visit `https://analytics.gonarval.com` → login with `admin` / the `UMAMI_ADMIN_PASSWORD` from `.env`
+2. Add website `gonarval.com` → copy the Website ID
+3. Set `UMAMI_WEBSITE_ID=<id>` in `/opt/narval/.env`
+4. `cd /opt/narval && docker compose -f docker-compose.prod.yml restart web`
 
-**Environment variables (production):**
-Copy `.env.production.example` to `/opt/narval/.env` on the droplet. Key variables:
-- `GITHUB_OWNER` — GitHub username/org for GHCR image pulls
-- `POSTGRES_PASSWORD`, `MINIO_ROOT_PASSWORD`, `UMAMI_APP_SECRET` — generate with `openssl rand -hex 32`
-- `SMTP_PASSWORD` — Zoho mail password for `contact@gonarval.com`
-- `NEXT_PUBLIC_UMAMI_WEBSITE_ID` — fill after first Umami login
-
-The server reads its config in `apps/server/internal/config/config.go`. Required in production:
+**Server config** (`apps/server/internal/config/config.go`) reads these env vars in production:
 - `DATABASE_URL`, `REDIS_ADDR`
-- `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`
-- `SUPERTOKENS_CONNECTION_URI`
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`
-- `CORS_ORIGINS` (comma-separated list of allowed origins)
-- `ENV=production`
+- `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_USE_SSL`, `MINIO_PUBLIC_URL`
+- `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_FROM_NAME`
+- `CORS_ORIGINS` (comma-separated, e.g. `https://gonarval.com`)
+- `ENV=production`, `PORT=8080`
 
 ---
 
