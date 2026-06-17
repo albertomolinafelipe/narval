@@ -1,0 +1,18 @@
+# Development files
+.env
+.env.example
+.air.toml
+coverage.out
+README.md
+
+# Test files
+integration/
+*_test.go
+*.test
+
+# Build artifacts
+*.out
+
+# Git
+.git
+.gitignore

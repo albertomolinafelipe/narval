@@ -1,0 +1,16 @@
+get:
+  operationId: checkStartupWebsite
+  summary: Check whether a website URL is already registered by a startup
+  parameters:
+    - name: url
+      in: query
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Website check result
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/WebsiteCheckResponse.yaml

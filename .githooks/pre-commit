@@ -1,0 +1,16 @@
+#!/bin/sh
+# Narval pre-commit hook - runs linting before commit
+
+echo "Running lint check..."
+
+if ! make lint-check; then
+    echo ""
+    echo "Lint check failed!"
+    echo ""
+    echo "Fix linting errors with: make lint"
+    echo "Or skip this check with: git commit --no-verify"
+    exit 1
+fi
+
+echo "Lint check passed"
+exit 0

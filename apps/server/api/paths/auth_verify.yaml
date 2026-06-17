@@ -1,0 +1,28 @@
+post:
+  operationId: verify
+  summary: Verify email code and complete account creation
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VerifyRequest.yaml
+  responses:
+    '201':
+      description: Account created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/UserProfile.yaml
+    '400':
+      description: Invalid or expired code
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Email already registered
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

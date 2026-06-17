@@ -1,0 +1,34 @@
+type: object
+required:
+  - password
+  - account_type
+properties:
+  account_type:
+    $ref: ./AccountType.yaml
+  password:
+    type: string
+    minLength: 8
+  # For account_type = "user":
+  email:
+    type: string
+    format: email
+    description: Required when account_type is "user"
+  nickname:
+    type: string
+    minLength: 2
+    maxLength: 50
+    description: Required when account_type is "user"
+  # For account_type = "startup" or "investor":
+  name:
+    type: string
+    minLength: 2
+    maxLength: 100
+    description: Required when account_type is "startup" or "investor"
+  website:
+    type: string
+    description: Required when account_type is "startup" or "investor"
+  email_prefix:
+    type: string
+    description: >-
+      Required when account_type is "startup" or "investor".
+      The local part of the email (before @). The domain is derived from the website.

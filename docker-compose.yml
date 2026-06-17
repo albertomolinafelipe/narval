@@ -1,0 +1,201 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: narval
+      POSTGRES_PASSWORD: narval
+      POSTGRES_DB: narval
+    ports:
+    - 5432:5432
+    volumes:
+    - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U narval
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+    - 6379:6379
+    volumes:
+    - redis_data:/data
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: narval
+      MINIO_ROOT_PASSWORD: narval_secret
+    ports:
+    - 9000:9000
+    - 9001:9001
+    volumes:
+    - minio_data:/data
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -f http://localhost:9000/minio/health/live || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-init:
+    image: minio/mc:latest
+    restart: on-failure
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: "/bin/sh -c \"\n  mc alias set local http://minio:9000 narval narval_secret\
+      \ &&\n  mc mb --ignore-existing local/narval &&\n  mc anonymous set public local/narval\n\
+      \"\n"
+
+  supertokens:
+    image: registry.supertokens.io/supertokens/supertokens-postgresql:9.2
+    restart: unless-stopped
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PORT: 5432
+      POSTGRESQL_DATABASE_NAME: supertokens
+      POSTGRESQL_USER: narval
+      POSTGRESQL_PASSWORD: narval
+    ports:
+    - 3567:3567
+    depends_on:
+      postgres:
+        condition: service_healthy
+      supertokens-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:3567/hello
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  supertokens-init:
+    image: postgres:16-alpine
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+    - /bin/sh
+    - -c
+    command:
+    - "\n        PGPASSWORD=narval psql -h postgres -U narval -d narval -tc \"SELECT\
+      \ 1 FROM pg_database WHERE datname = 'supertokens'\" | grep -q 1 ||         PGPASSWORD=narval\
+      \ psql -h postgres -U narval -d narval -c \"CREATE DATABASE supertokens\"\n\
+      \      "
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://narval:narval@postgres:5432/umami
+      DATABASE_TYPE: postgresql
+      APP_SECRET: replace-me-with-a-random-string
+    ports:
+    - 3001:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - curl -f http://localhost:3000/api/heartbeat || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  umami-init:
+    image: postgres:16-alpine
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+    - /bin/sh
+    - -c
+    command:
+    - "\n        PGPASSWORD=narval psql -h postgres -U narval -d narval -tc \"SELECT\
+      \ 1 FROM pg_database WHERE datname = 'umami'\" | grep -q 1 ||         PGPASSWORD=narval\
+      \ psql -h postgres -U narval -d narval -c \"CREATE DATABASE umami\"\n      \
+      \  "
+
+  server:
+    build:
+      context: ./apps/server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+    - 8080:8080
+    environment:
+      DATABASE_URL: postgresql://narval:narval@postgres:5432/narval?sslmode=disable
+      REDIS_ADDR: redis:6379
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: narval
+      MINIO_SECRET_KEY: narval_secret
+      MINIO_BUCKET: narval
+      MINIO_USE_SSL: 'false'
+      SUPERTOKENS_CONNECTION_URI: http://supertokens:3567
+      SUPERTOKENS_API_KEY: ''
+      # SMTP Configuration for Zoho Mail
+      SMTP_HOST: smtp.zoho.eu
+      SMTP_PORT: '587'
+      SMTP_USERNAME: contact@gonarval.com
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      SMTP_FROM: contact@gonarval.com
+      SMTP_FROM_NAME: Narval
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+    profiles:
+    - full
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_MAPBOX_TOKEN: ${NEXT_PUBLIC_MAPBOX_TOKEN:-}
+    restart: unless-stopped
+    ports:
+    - 3000:3000
+    environment:
+      INTERNAL_API_URL: http://server:8080/api/v1
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      UMAMI_URL: http://localhost:3001
+    depends_on:
+      server:
+        condition: service_started
+    profiles:
+    - full
+volumes:
+  postgres_data: null
+  redis_data: null
+  minio_data: null

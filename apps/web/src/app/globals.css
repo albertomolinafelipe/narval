@@ -1,0 +1,274 @@
+@import "tailwindcss";
+
+:root {
+  /* Surfaces */
+  --bg: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-raised: #ffffff;
+  --border: #cbd5e1;
+  --border-focus: #1e3a8a;
+
+  /* Text */
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+
+  /* Brand — navy blue */
+  --brand: #1e3a8a;
+  --brand-hover: #1e40af;
+  --brand-fg: #ffffff;
+  --brand-subtle: #dbeafe;
+  --brand-text: #1e40af;
+
+  /* Danger */
+  --danger: #ef4444;
+
+  /* WIP / coming-soon */
+  --wip-text: #ca8a04;
+
+  /* Shadows (light) */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.07), 0 1px 2px -1px rgb(0 0 0 / 0.07);
+  --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.dark {
+  /* Surfaces */
+  --bg: #0f172a;
+  --bg-subtle: #1e293b;
+  --bg-raised: #334155;
+  --border: #475569;
+  --border-focus: #3b82f6;
+
+  /* Text */
+  --text: #f8fafc;
+  --text-muted: #cbd5e1;
+  --text-subtle: #94a3b8;
+
+  /* Brand */
+  --brand: #3b82f6;
+  --brand-hover: #2563eb;
+  --brand-fg: #ffffff;
+  --brand-subtle: #1e293b;
+  --brand-text: #60a5fa;
+
+  /* Danger */
+  --danger: #f87171;
+
+  /* WIP / coming-soon */
+  --wip-text: #eab308;
+
+  /* Shadows (dark — lighter, less black) */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 12px 0 rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+}
+
+/*  Tailwind theme bridge  */
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-bg-raised: var(--bg-raised);
+  --color-border: var(--border);
+  --color-border-focus: var(--border-focus);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-subtle: var(--brand-subtle);
+  --color-brand-text: var(--brand-text);
+
+  --color-danger: var(--danger);
+
+  --color-wip-text: var(--wip-text);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+}
+
+/*  Animations  */
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: page-enter 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes boost-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 70%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent);
+  }
+}
+
+.boost-animate {
+  animation: boost-pulse 2s ease-out;
+}
+
+/*  Base  */
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/*  Reusable utilities  */
+
+/* Input / textarea base */
+.input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background-color: var(--bg-raised);
+  color: var(--text);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.input::placeholder {
+  color: var(--text-subtle);
+}
+.input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+/* Primary button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background-color: var(--brand);
+  color: var(--brand-fg);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    background-color 150ms,
+    transform 100ms;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: var(--brand-hover);
+}
+.btn-primary:active {
+  transform: scale(0.97);
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* WIP / not-yet-implemented indicator */
+/* Apply to any element that is not yet functional */
+.wip {
+  color: var(--wip-text) !important;
+  border-color: var(--wip-text) !important;
+  opacity: 1 !important;
+  cursor: default !important;
+  pointer-events: none;
+}
+
+/* Ghost / outline button */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background-color: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition:
+    background-color 150ms,
+    color 150ms;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background-color: var(--bg-subtle);
+  color: var(--text);
+}
+
+/* Animations */
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
+
+/* Range Input Styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-subtle);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brand);
+  cursor: pointer;
+  border: none;
+  transition: transform 0.15s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.1);
+}

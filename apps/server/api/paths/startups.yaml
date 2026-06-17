@@ -1,0 +1,48 @@
+get:
+  operationId: listStartups
+  summary: List all startup accounts (public)
+  responses:
+    '200':
+      description: List of startups
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../components/schemas/Startup.yaml
+post:
+  operationId: createStartup
+  summary: Create a new startup account
+  security:
+    - bearerAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateStartupRequest.yaml
+  responses:
+    '201':
+      description: Startup created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Startup.yaml
+    '400':
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Startup name already taken
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

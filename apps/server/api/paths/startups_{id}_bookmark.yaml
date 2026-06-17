@@ -1,0 +1,60 @@
+post:
+  operationId: favoriteStartup
+  summary: Favorite a startup for the authenticated user
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '201':
+      description: Startup favorited successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Startup already favorited (idempotent - can be treated as success)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+delete:
+  operationId: unfavoriteStartup
+  summary: Remove favorite from a startup for the authenticated user
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '204':
+      description: Favorite removed successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Favorite not found (idempotent - can be treated as success)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

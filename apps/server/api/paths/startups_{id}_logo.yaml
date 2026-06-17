@@ -1,0 +1,55 @@
+post:
+  operationId: uploadStartupLogo
+  summary: Upload a logo image for the startup
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - logo
+          properties:
+            logo:
+              type: string
+              format: binary
+  responses:
+    '200':
+      description: Logo uploaded
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Startup.yaml
+    '400':
+      description: Invalid file
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Forbidden – not the owner
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

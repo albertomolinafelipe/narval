@@ -1,0 +1,22 @@
+post:
+  operationId: login
+  summary: Login with username and password
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/LoginRequest.yaml
+  responses:
+    '200':
+      description: Tokens issued
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TokenResponse.yaml
+    '401':
+      description: Invalid credentials
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

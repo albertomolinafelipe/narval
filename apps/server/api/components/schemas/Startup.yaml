@@ -1,0 +1,100 @@
+type: object
+required:
+  - id
+  - name
+  - owner_id
+  - owner_email
+  - created_at
+properties:
+  id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  tagline:
+    type: string
+  description:
+    type: string
+  website:
+    type: string
+  logo_url:
+    type: string
+  stage:
+    type: string
+    description: idea | pre-seed | seed | series-a | series-b | growth | profitable
+  industry:
+    type: string
+    description: >-
+      AI/ML | FinTech | HealthTech | Climate Tech | EdTech | SaaS | Marketplace
+      | Developer Tools | Hardware | Consumer | Deep Tech | Logistics | Legal
+      Tech | HR Tech | Other
+  team_size:
+    type: integer
+  location:
+    type: string
+  founded_year:
+    type: integer
+  tech_stack:
+    type: string
+  banner_image:
+    type: string
+    description: URL of the banner image
+  product_links:
+    type: string
+    description: 'JSON object with product links: {"web":"...","ios":"...","android":"..."}'
+  linkedin:
+    type: string
+  twitter:
+    type: string
+  github:
+    type: string
+  instagram:
+    type: string
+  is_raising:
+    type: boolean
+  current_round:
+    type: string
+    description: pre-seed | seed | series-a | series-b | bridge
+  funding_ask:
+    type: string
+  funding_use:
+    type: string
+  is_hiring:
+    type: boolean
+  open_roles:
+    type: string
+    description: Comma-separated list of open roles
+  contact_general:
+    type: string
+  contact_funding:
+    type: string
+  contact_talent:
+    type: string
+  owner_id:
+    type: string
+  owner_email:
+    type: string
+  profile_setup:
+    type: boolean
+    description: Whether the startup profile has been fully set up (defaults to false)
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    type: string
+    format: date-time
+  is_favorited:
+    type: boolean
+    description: >-
+      Whether the current authenticated user has favorited this startup (only
+      present when authenticated)
+  boost_count:
+    type: integer
+    description: >-
+      Total number of active boosts for this startup (boosts expire after 7
+      days)
+  has_boosted:
+    type: boolean
+    description: >-
+      Whether the current authenticated user has an active boost for this
+      startup (only present when authenticated)

@@ -1,0 +1,24 @@
+type: object
+required:
+  - id
+  - auth_user_id
+  - email
+  - nickname
+  - account_type
+  - created_at
+properties:
+  id:
+    type: string
+    format: uuid
+  auth_user_id:
+    type: string
+    description: External authentication system user ID (e.g., SuperTokens user ID)
+  email:
+    type: string
+  nickname:
+    type: string
+  account_type:
+    $ref: ./AccountType.yaml
+  created_at:
+    type: string
+    format: date-time

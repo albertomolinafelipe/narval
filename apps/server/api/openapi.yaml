@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Narval API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Local
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+paths:
+  /health:
+    $ref: paths/health.yaml
+
+  /auth/login:
+    $ref: paths/auth_login.yaml
+  /auth/register:
+    $ref: paths/auth_register.yaml
+  /auth/verify:
+    $ref: paths/auth_verify.yaml
+  /auth/logout:
+    $ref: paths/auth_logout.yaml
+  /auth/refresh:
+    $ref: paths/auth_refresh.yaml
+  /auth/me:
+    $ref: paths/auth_me.yaml
+
+  /startups:
+    $ref: paths/startups.yaml
+  /startups/check-website:
+    $ref: paths/startups_check-website.yaml
+  /startups/{id}:
+    $ref: paths/startups_{id}.yaml
+  /startups/{id}/logo:
+    $ref: paths/startups_{id}_logo.yaml
+  /startups/{id}/banner:
+    $ref: paths/startups_{id}_banner.yaml
+  /startups/{id}/bookmark:
+    $ref: paths/startups_{id}_bookmark.yaml
+  /startups/{id}/boost:
+    $ref: paths/startups_{id}_boost.yaml
+

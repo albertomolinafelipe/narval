@@ -1,0 +1,14 @@
+post:
+  operationId: logout
+  summary: Logout (invalidate session)
+  security:
+    - bearerAuth: []
+  responses:
+    '204':
+      description: Logged out
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

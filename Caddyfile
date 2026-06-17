@@ -1,0 +1,12 @@
+gonarval.com {
+	handle /analytics* {
+		reverse_proxy umami:3000
+	}
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+storage.gonarval.com {
+	reverse_proxy minio:9000
+}

@@ -1,0 +1,27 @@
+post:
+  operationId: register
+  summary: Begin registration for all account types — sends a verification code
+  description: >-
+    Unified registration endpoint. For account_type="user", provide email and nickname.
+    For account_type="startup" or "investor", provide name, website, and email_prefix.
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/RegisterRequest.yaml
+  responses:
+    '202':
+      description: Verification code sent; proceed to /auth/verify
+    '400':
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Email or website already registered
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

@@ -1,0 +1,164 @@
+"use client";
+
+import { useRef, useState, useEffect } from "react";
+import { signOut } from "supertokens-web-js/recipe/session";
+import { useUser } from "@/lib/user";
+import Link from "next/link";
+import Image from "next/image";
+import { AlertCircle } from "lucide-react";
+import { useAuthModal } from "../auth/auth-modal-context";
+
+export default function UserMenu() {
+  const { user, authenticated, loading } = useUser();
+  const { openModal } = useAuthModal();
+  const [open, setOpen] = useState(false);
+  const [profileSetup, setProfileSetup] = useState<boolean | null>(null);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onPointerDown(e: PointerEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, []);
+
+  useEffect(() => {
+    async function checkProfileSetup() {
+      if (!open || !user || user.account_type !== "startup") return;
+      const pid = user.profile_id;
+      if (!pid) return;
+      try {
+        const res = await fetch(`/api/proxy/startups/${pid}`, {
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const profile = await res.json();
+        setProfileSetup(profile.profile_setup);
+        setProfileId(profile.id);
+      } catch {
+        // ignore
+      }
+    }
+    checkProfileSetup();
+  }, [open, user]);
+
+  if (loading) {
+    return <div className="h-9 w-9 animate-pulse rounded-full bg-bg-subtle" />;
+  }
+
+  if (!authenticated || !user) {
+    return (
+      <button
+        type="button"
+        onClick={openModal}
+        className="btn-primary text-sm px-4 py-1.5"
+      >
+        Sign in
+      </button>
+    );
+  }
+
+  const email = user.email;
+  const initial = email.charAt(0).toUpperCase();
+  const logoUrl = user.logo_url;
+  const accountType = user.account_type;
+  const hasProfile = accountType === "startup";
+  const showProfileWarning = hasProfile && profileSetup === false;
+
+  const profilePath = profileId ? `/startups/${profileId}` : "/profile";
+
+  return (
+    <div ref={ref} className="relative z-50">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-label="Open user menu"
+        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-bg-subtle transition hover:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      >
+        {logoUrl ? (
+          <Image
+            src={logoUrl}
+            alt="Profile"
+            width={36}
+            height={36}
+            className="h-full w-full object-cover"
+            unoptimized
+          />
+        ) : (
+          <span className="text-sm font-bold text-brand">{initial}</span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-border bg-bg-raised shadow-xl z-50">
+          <div className="border-b border-border px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-bg-subtle">
+                {logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="Profile"
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-sm font-bold text-brand">{initial}</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm font-medium text-text">{email}</p>
+                {accountType && (
+                  <p className="text-xs text-text-muted capitalize">
+                    {accountType} account
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {showProfileWarning && (
+            <div className="mx-2 mt-2 rounded-lg bg-warning/10 border border-warning/20 px-3 py-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-text">Profile not fully set up</p>
+                  <p className="text-xs text-text-muted mt-0.5">
+                    Complete your profile to appear in listings
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-2">
+            {hasProfile && (
+              <Link
+                href={profilePath}
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-text transition hover:bg-bg-subtle"
+              >
+                Your profile
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                window.location.href = "/startups";
+              }}
+              className="flex w-full items-center rounded-lg px-3 py-2 text-sm text-text transition hover:bg-bg-subtle"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

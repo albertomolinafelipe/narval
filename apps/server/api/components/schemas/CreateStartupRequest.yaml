@@ -1,0 +1,56 @@
+type: object
+required:
+  - name
+properties:
+  name:
+    type: string
+    minLength: 2
+    maxLength: 100
+  tagline:
+    type: string
+    maxLength: 160
+  description:
+    type: string
+    maxLength: 1000
+  website:
+    type: string
+  stage:
+    type: string
+  industry:
+    type: string
+  team_size:
+    type: integer
+  location:
+    type: string
+  founded_year:
+    type: integer
+  tech_stack:
+    type: string
+  product_links:
+    type: string
+  linkedin:
+    type: string
+  twitter:
+    type: string
+  github:
+    type: string
+  instagram:
+    type: string
+  is_raising:
+    type: boolean
+  current_round:
+    type: string
+  funding_ask:
+    type: string
+  funding_use:
+    type: string
+  is_hiring:
+    type: boolean
+  open_roles:
+    type: string
+  contact_general:
+    type: string
+  contact_funding:
+    type: string
+  contact_talent:
+    type: string

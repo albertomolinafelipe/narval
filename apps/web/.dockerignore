@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+
+# Environment files
+.env*.local
+
+# Development files
+README.md
+.eslintrc.json
+.prettierrc
+
+# Test files
+*.test.ts
+*.test.tsx
+__tests__/
+**/*.spec.ts
+**/*.spec.tsx
+
+# Git
+.git
+.gitignore
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*

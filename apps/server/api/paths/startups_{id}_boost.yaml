@@ -1,0 +1,33 @@
+post:
+  operationId: boostStartup
+  summary: Boost a startup (irreversible, expires after 7 days)
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '201':
+      description: Startup boosted successfully
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: User has already boosted this startup (active boost exists)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
