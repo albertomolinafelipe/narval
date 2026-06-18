@@ -10,8 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/google/uuid"
@@ -282,10 +280,6 @@ func main() {
 		_ = mc.SetBucketPolicy(ctx, minioBucket, policy)
 	}
 
-	_, filename, _, _ := runtime.Caller(0)
-	scriptDir := filepath.Dir(filename)
-	placeholderLogoPath := filepath.Join(scriptDir, "assets", "placeholder_logo.jpeg")
-
 	fmt.Printf("\nSeeding %d startups...\n", len(startups))
 	bar := progressbar.NewOptions(len(startups),
 		progressbar.OptionSetDescription("Startups"),
@@ -297,9 +291,9 @@ func main() {
 	)
 
 	for _, s := range startups {
-		logoURL := uploadImageFromURLOrPlaceholder(ctx, mc, minioBucket, minioPublicURL,
+		logoURL := uploadImageFromURL(ctx, mc, minioBucket, minioPublicURL,
 			fmt.Sprintf("logos/seed/%s-%s.jpeg", slugify(s.Name), uuid.NewString()[:8]),
-			s.LogoURL, placeholderLogoPath)
+			s.LogoURL)
 
 		bannerURL := ""
 		if s.BannerURL != "" {
@@ -361,11 +355,18 @@ func main() {
 	fmt.Println("\nSeed completed successfully!")
 }
 
+var httpClient = &http.Client{}
+
 func uploadImageFromURL(ctx context.Context, mc *minio.Client, bucket, publicURL, objectName, imageURL string) string {
 	if imageURL == "" {
 		return ""
 	}
-	resp, err := http.Get(imageURL)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, imageURL, nil)
+	if err != nil {
+		return ""
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	resp, err := httpClient.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return ""
 	}
@@ -383,27 +384,6 @@ func uploadImageFromURL(ctx context.Context, mc *minio.Client, bucket, publicURL
 		return ""
 	}
 	return fmt.Sprintf("%s/%s/%s", publicURL, bucket, objectName)
-}
-
-func uploadLocalFile(ctx context.Context, mc *minio.Client, bucket, publicURL, objectName, localPath string) string {
-	data, err := os.ReadFile(localPath)
-	if err != nil {
-		return ""
-	}
-	_, err = mc.PutObject(ctx, bucket, objectName, bytes.NewReader(data), int64(len(data)), minio.PutObjectOptions{ContentType: "image/jpeg"})
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%s/%s/%s", publicURL, bucket, objectName)
-}
-
-func uploadImageFromURLOrPlaceholder(ctx context.Context, mc *minio.Client, bucket, publicURL, objectName, imageURL, placeholderPath string) string {
-	if imageURL != "" {
-		if url := uploadImageFromURL(ctx, mc, bucket, publicURL, objectName, imageURL); url != "" {
-			return url
-		}
-	}
-	return uploadLocalFile(ctx, mc, bucket, publicURL, objectName, placeholderPath)
 }
 
 func social(prefix, handle string) string {
