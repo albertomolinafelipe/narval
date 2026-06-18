@@ -401,9 +401,9 @@ export default function StartupPageClient({
       )}
 
       {/*  Header: logo + name + actions  */}
-      <div className="mb-6 flex items-start gap-5">
+      <div className="mb-6 flex items-start gap-5 max-md:flex-wrap max-md:gap-3">
         <Avatar entity={startup} size={18} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
           <h1 className="text-2xl font-bold text-text">{startup.name}</h1>
           {startup.tagline && (
             <p className="mt-0.5 text-sm text-text-muted">{startup.tagline}</p>
@@ -428,7 +428,7 @@ export default function StartupPageClient({
             )}
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1 pt-1">
+        <div className="flex shrink-0 items-center gap-1 pt-1 max-md:ml-auto max-md:pt-0">
           <IconButton
             label={
               startup.is_favorited
