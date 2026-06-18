@@ -2,7 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, User, TrendingUp } from "lucide-react";
+import { ChevronLeft, User } from "lucide-react";
+import { GiUnicorn } from "react-icons/gi";
 import RegisterCompanyForm from "./register-company-form";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
@@ -36,7 +37,7 @@ function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
         data-umami-event="register-account-type"
         data-umami-event-type="startup"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-text"><TrendingUp size={15} /> Startup</span>
+        <span className="flex items-center gap-2 text-sm font-medium text-text"><GiUnicorn size={15} /> Startup</span>
         <span className="text-xs text-text-muted">
           Create a startup profile and get discovered.
         </span>
