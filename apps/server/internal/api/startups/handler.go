@@ -1,6 +1,7 @@
 package startups
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -166,6 +167,7 @@ type startupRequest struct {
 	ContactFunding *string `json:"contact_funding"`
 	ContactTalent  *string `json:"contact_talent"`
 	ProfileSetup   *bool   `json:"profile_setup"`
+	Founders       *string `json:"founders"` // JSON array
 }
 
 // validateStartupRequest checks enum values; returns an error message or "".
@@ -413,6 +415,54 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
+// UploadFounderPhoto uploads a founder photo and returns the public URL.
+// The client is responsible for storing the URL inside the founders JSON field.
+func (h *Handler) UploadFounderPhoto(c *gin.Context) {
+	startupID := c.Param("id")
+	ownerID := middleware.GetDBUserID(c)
+
+	var st models.Startup
+	if err := h.DB.First(&st, "id = ?", startupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
+		return
+	}
+
+	if st.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "not the owner of this startup"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("photo")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "photo file is required"})
+		return
+	}
+	defer file.Close() //nolint:errcheck
+
+	if header.Size > maxLogoSize {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "photo exceeds 5 MiB limit"})
+		return
+	}
+
+	ct := header.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "image/") {
+		ct = "image/jpeg"
+	}
+
+	objectName := fmt.Sprintf("founders/%s/%d-%s", startupID, time.Now().UnixMilli(), header.Filename)
+	photoURL, err := h.Storage.UploadLogo(c.Request.Context(), objectName, file, header.Size, ct)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "STORAGE_ERROR", "message": "failed to upload photo"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": photoURL})
+}
+
 //  Response helpers
 
 // startupResponse converts a Startup model to the API response.
@@ -453,6 +503,16 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"created_at":      s.CreatedAt,
 		"updated_at":      s.UpdatedAt,
 	}
+
+	// Parse founders JSON into array so clients receive structured data.
+	var founders []interface{}
+	if s.Founders != "" {
+		_ = json.Unmarshal([]byte(s.Founders), &founders)
+	}
+	if founders == nil {
+		founders = []interface{}{}
+	}
+	response["founders"] = founders
 
 	// Add boost count (always visible)
 	boostCount := h.getStartupBoostCount(s.ID)
@@ -559,6 +619,9 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	}
 	if req.ProfileSetup != nil {
 		s.ProfileSetup = *req.ProfileSetup
+	}
+	if req.Founders != nil {
+		s.Founders = *req.Founders
 	}
 }
 

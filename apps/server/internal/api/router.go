@@ -98,11 +98,13 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 
 	v1 := r.Group("/api/v1")
 
-	RegisterHandlersWithOptions(v1, &server{
+	srv := &server{
 		auth:     auth.NewHandler(cfg, db, rdb),
 		health:   &health.Handler{},
 		startups: startups.NewHandler(db, store),
-	}, GinServerOptions{
+	}
+
+	RegisterHandlersWithOptions(v1, srv, GinServerOptions{
 		Middlewares: []MiddlewareFunc{
 			// Apply optional auth to all routes first (extracts user if token present).
 			func(c *gin.Context) {
@@ -116,6 +118,9 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 			},
 		},
 	})
+
+	// Founder photo upload (not in OpenAPI spec — returns {url} for client to store in founders JSON)
+	v1.POST("/startups/:id/founder-photo", authMiddleware, srv.startups.UploadFounderPhoto)
 
 	// TODO: Test endpoint for SuperTokens - need to query SuperTokens DB for codes
 	// SuperTokens stores codes in its own database, not in RegistrationDraft

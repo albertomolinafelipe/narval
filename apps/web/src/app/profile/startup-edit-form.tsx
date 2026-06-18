@@ -74,6 +74,25 @@ export function StartupEditForm({ startup, onSaved }: StartupEditFormProps) {
   const [logoCropSrc, setLogoCropSrc] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  // Founders state
+  type FounderLocal = {
+    name: string;
+    linkedin: string;
+    photo_url: string;
+    photoFile?: File;
+    photoPreview?: string;
+    cropSrc?: string;
+  };
+  const [founders, setFounders] = useState<FounderLocal[]>(() =>
+    (startup.founders ?? []).map((f) => ({
+      name: f.name ?? "",
+      linkedin: f.linkedin ?? "",
+      photo_url: f.photo_url ?? "",
+    }))
+  );
+  const [founderCropIndex, setFounderCropIndex] = useState<number | null>(null);
+  const founderInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   // Banner state
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(
@@ -305,6 +324,22 @@ export function StartupEditForm({ startup, onSaved }: StartupEditFormProps) {
         contact_funding: data.contact_funding || undefined,
         contact_talent: data.contact_talent || undefined,
         profile_setup: true, // Mark profile as complete
+        founders: JSON.stringify(
+          await Promise.all(
+            founders.map(async (f) => {
+              let photoUrl = f.photo_url;
+              if (f.photoFile) {
+                const url = await uploadImage(
+                  f.photoFile,
+                  `${apiBase}/startups/${startup.id}/founder-photo`,
+                  "photo",
+                );
+                photoUrl = url;
+              }
+              return { name: f.name, linkedin: f.linkedin, photo_url: photoUrl };
+            })
+          )
+        ),
       };
 
       // Update startup profile
@@ -953,6 +988,130 @@ export function StartupEditForm({ startup, onSaved }: StartupEditFormProps) {
                   {errors.contact_general.message}
                 </p>
               )}
+            </div>
+          </FormSection>
+
+          {/* Section 7: Founders */}
+          <FormSection title="Founders" hint="Add the people behind the startup">
+            <div className="flex flex-col gap-4">
+              {founders.map((founder, i) => (
+                <div key={i} className="flex items-start gap-3 rounded-xl border border-border bg-bg-raised p-4">
+                  {/* Photo */}
+                  <div className="shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => founderInputRefs.current[i]?.click()}
+                      className="relative h-16 w-16 overflow-hidden rounded-lg border border-border bg-bg-subtle transition hover:opacity-80"
+                    >
+                      {(founder.photoPreview || founder.photo_url) ? (
+                        <img
+                          src={founder.photoPreview ?? founder.photo_url}
+                          alt={founder.name || "Founder"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-full w-full items-center justify-center text-xs text-text-muted">Photo</span>
+                      )}
+                    </button>
+                    <input
+                      ref={(el) => { founderInputRefs.current[i] = el; }}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const preview = URL.createObjectURL(file);
+                        setFounders((prev) =>
+                          prev.map((f, idx) =>
+                            idx === i ? { ...f, photoFile: file, photoPreview: preview, cropSrc: preview } : f
+                          )
+                        );
+                        setFounderCropIndex(i);
+                      }}
+                    />
+                  </div>
+
+                  {/* Fields */}
+                  <div className="flex flex-1 flex-col gap-2">
+                    <input
+                      type="text"
+                      value={founder.name}
+                      onChange={(e) =>
+                        setFounders((prev) =>
+                          prev.map((f, idx) => idx === i ? { ...f, name: e.target.value } : f)
+                        )
+                      }
+                      placeholder="Full name"
+                      className="input"
+                    />
+                    <div className="flex overflow-hidden rounded-lg border border-border bg-bg-raised focus-within:border-border-focus">
+                      <span className="flex shrink-0 items-center border-r border-border bg-bg-subtle px-3 text-sm text-text-subtle">linkedin.com/in/</span>
+                      <input
+                        type="text"
+                        value={founder.linkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//i, "")}
+                        onChange={(e) =>
+                          setFounders((prev) =>
+                            prev.map((f, idx) =>
+                              idx === i ? { ...f, linkedin: e.target.value ? `https://linkedin.com/in/${e.target.value}` : "" } : f
+                            )
+                          )
+                        }
+                        placeholder="username"
+                        className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-text outline-none placeholder:text-text-subtle"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Remove */}
+                  <button
+                    type="button"
+                    onClick={() => setFounders((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="ml-1 mt-0.5 rounded-lg p-1.5 text-text-muted transition hover:bg-bg-subtle hover:text-danger"
+                    aria-label="Remove founder"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M2 2l10 10M12 2L2 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+
+              {/* Crop modal for founder photo */}
+              {founderCropIndex !== null && founders[founderCropIndex]?.cropSrc && (
+                <ImageCropperModal
+                  imageSrc={founders[founderCropIndex].cropSrc!}
+                  onComplete={(blob) => {
+                    const idx = founderCropIndex;
+                    const file = new File([blob], "founder-photo.jpg", { type: "image/jpeg" });
+                    const preview = URL.createObjectURL(blob);
+                    setFounders((prev) =>
+                      prev.map((f, i) => i === idx ? { ...f, photoFile: file, photoPreview: preview, cropSrc: undefined } : f)
+                    );
+                    setFounderCropIndex(null);
+                  }}
+                  onCancel={() => {
+                    setFounders((prev) =>
+                      prev.map((f, i) => i === founderCropIndex ? { ...f, cropSrc: undefined } : f)
+                    );
+                    setFounderCropIndex(null);
+                  }}
+                  aspect={1}
+                  cropShape="rect"
+                  title="Crop Founder Photo"
+                />
+              )}
+
+              <button
+                type="button"
+                onClick={() => setFounders((prev) => [...prev, { name: "", linkedin: "", photo_url: "" }])}
+                className="mt-1 flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-text-muted transition hover:border-brand hover:text-brand"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <path d="M7 2v10M2 7h10" />
+                </svg>
+                Add founder
+              </button>
             </div>
           </FormSection>
         </form>

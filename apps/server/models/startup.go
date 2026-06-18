@@ -23,6 +23,7 @@ type Startup struct {
 	TechStack    string `json:"tech_stack"`
 	BannerImage  string `json:"banner_image"`  // URL of the banner image
 	ProductLinks string `json:"product_links"` // JSON: {"web":"...","ios":"...","android":"..."}
+	Founders     string `json:"founders"`      // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
 
 	// Socials — explicit columns
 	Linkedin  string `json:"linkedin"`
