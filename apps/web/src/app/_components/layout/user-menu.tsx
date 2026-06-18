@@ -5,7 +5,7 @@ import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import Link from "next/link";
 import Image from "next/image";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, User } from "lucide-react";
 import { useAuthModal } from "../auth/auth-modal-context";
 
 export default function UserMenu() {
@@ -55,9 +55,11 @@ export default function UserMenu() {
       <button
         type="button"
         onClick={openModal}
-        className="btn-primary text-sm px-4 py-1.5"
+        className="btn-primary text-sm px-4 py-1.5 max-md:px-2"
+        aria-label="Sign in"
       >
-        Sign in
+        <span className="md:hidden"><User size={18} /></span>
+        <span className="max-md:hidden">Sign in</span>
       </button>
     );
   }

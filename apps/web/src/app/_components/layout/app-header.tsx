@@ -24,8 +24,6 @@ interface AppHeaderProps {
 const baseTabs: Tab[] = [
   { label: "Startups", href: "/startups", wip: false },
   { label: "Investors", href: "/investors", wip: false },
-  { label: "Awards", href: "/wip", wip: true },
-  { label: "Events", href: "/wip", wip: true },
 ];
 
 export default function AppHeader({ customTab }: AppHeaderProps = {}) {
@@ -115,7 +113,9 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
 
       {/* Right: theme + user */}
       <div className="flex items-center gap-3">
-        <ThemeToggle />
+        <div className="max-md:hidden">
+          <ThemeToggle />
+        </div>
         <UserMenu />
       </div>
     </header>

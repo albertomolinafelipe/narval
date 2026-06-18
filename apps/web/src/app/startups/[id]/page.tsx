@@ -20,7 +20,7 @@ export default async function StartupDetailPage({ params }: Props) {
     <div className="flex h-screen flex-col bg-bg">
       <AppHeader customTab={{ label: startup.name }} />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <StartupPageClient startup={startup} />
       </main>
     </div>

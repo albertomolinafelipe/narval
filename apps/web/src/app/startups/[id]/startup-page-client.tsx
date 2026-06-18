@@ -4,10 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/user";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Star,
   Share2,
+  Check,
   MapPin,
   Users,
   Calendar,
@@ -69,6 +70,14 @@ export default function StartupPageClient({
   const boostMutation = useBoostMutation();
 
   const isOwner = user?.email === startup.owner_email;
+  const [copied, setCopied] = useState(false);
+
+  function handleShare() {
+    const url = `${window.location.origin}/startups/${startup.id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   // Track page view (only in full page mode)
   useEffect(() => {
@@ -194,8 +203,8 @@ export default function StartupPageClient({
               showCount={true}
               size="large"
             />
-            <IconButton label="Share (coming soon)" wip>
-              <Share2 size={16} />
+            <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
+              {copied ? <Check size={16} /> : <Share2 size={16} />}
             </IconButton>
             {onClose && (
               <>
@@ -371,7 +380,7 @@ export default function StartupPageClient({
       {/*  Banner  */}
       {banner ? (
         <div
-          className="relative mb-8 overflow-hidden rounded-2xl bg-bg-subtle"
+          className="relative mb-8 overflow-hidden rounded-2xl bg-bg-subtle max-md:-mx-6 max-md:rounded-none"
           style={{ aspectRatio: "16/4" }}
         >
           <Image
@@ -383,7 +392,7 @@ export default function StartupPageClient({
         </div>
       ) : (
         <div
-          className="mb-8 h-36 rounded-2xl"
+          className="mb-8 h-36 rounded-2xl max-md:-mx-6 max-md:rounded-none"
           style={{
             background:
               "linear-gradient(135deg, var(--color-brand-subtle) 0%, var(--color-bg-raised) 100%)",
@@ -442,8 +451,8 @@ export default function StartupPageClient({
             showCount={true}
             size="large"
           />
-          <IconButton label="Share (coming soon)" wip>
-            <Share2 size={16} />
+          <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
+            {copied ? <Check size={16} /> : <Share2 size={16} />}
           </IconButton>
           {isOwner && (
             <Link
@@ -456,10 +465,8 @@ export default function StartupPageClient({
         </div>
       </div>
 
-      {/*  Two-column body  */}
-      <div className="flex gap-8 items-start">
-        {/*  LEFT: main content  */}
-        <div className="min-w-0 flex-1 flex flex-col gap-8">
+      {/*  Body  */}
+      <div className="flex flex-col gap-8">
           {/* About */}
           {startup.description && (
             <Section title="About">
@@ -506,16 +513,6 @@ export default function StartupPageClient({
               </div>
             </Section>
           )}
-
-          {/* Team — WIP */}
-          <Section title="Team" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </Section>
-
-          {/* Funding rounds — WIP */}
-          <Section title="Funding rounds" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </Section>
 
           {/* Tech stack */}
           {techTags.length > 0 && (
@@ -606,34 +603,6 @@ export default function StartupPageClient({
             </Section>
           )}
 
-          {/* Similar startups — WIP */}
-          <Section title="Similar startups" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </Section>
-        </div>
-
-        {/*  RIGHT: sidebar  */}
-        <div className="w-72 shrink-0 flex flex-col gap-5 sticky top-6">
-          {/* Key metrics — WIP */}
-          <SideCard title="Key metrics" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </SideCard>
-
-          {/* Investors — WIP */}
-          <SideCard title="Investors" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </SideCard>
-
-          {/* Open roles — WIP */}
-          <SideCard title="Open roles" wip>
-            <p className="text-xs text-text-muted">Coming soon</p>
-          </SideCard>
-
-          {/* Connect CTA — WIP */}
-          <div className="wip rounded-xl border border-border p-4 text-center">
-            <p className="text-sm font-medium text-text">Coming soon</p>
-          </div>
-        </div>
       </div>
     </div>
   );
@@ -655,27 +624,6 @@ function Section({
       <SectionHeading>{title}</SectionHeading>
       {children}
     </section>
-  );
-}
-
-function SideCard({
-  title,
-  wip,
-  children,
-}: {
-  title: string;
-  wip?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`rounded-xl border border-border bg-bg p-4${wip ? " wip" : ""}`}
-    >
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-subtle">
-        {title}
-      </h3>
-      {children}
-    </div>
   );
 }
 

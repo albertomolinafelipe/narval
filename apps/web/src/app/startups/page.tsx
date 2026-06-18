@@ -15,9 +15,9 @@ export default async function StartupsPage({
   const favoritedOnly = params.favorited === "true";
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-screen flex-col overflow-hidden">
       <AppHeader />
-      <div className="flex-1 overflow-hidden px-6 py-4">
+      <div className="flex-1 overflow-hidden px-6 py-4 max-md:px-3">
         <StartupsClient showFavoritedOnly={favoritedOnly} />
       </div>
     </div>

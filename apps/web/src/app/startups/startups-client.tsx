@@ -26,6 +26,7 @@ type View = "list" | "map";
 export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const router = useRouter();
   const requireAuth = useAuthGuard();
+  const isMobile = useMediaQuery("(max-width: 767px)");
   const [selected, setSelected] = useState<Startup | null>(null);
   const [selectedLocation, setSelectedLocation] =
     useState<LocationGroup | null>(null);
@@ -88,13 +89,14 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   }, [selected]);
 
   function handleStartupClick(startup: Startup) {
-    // If clicking on already selected startup, navigate to full page
+    if (isMobile) {
+      router.push(`/startups/${startup.id}`);
+      return;
+    }
     if (selected?.id === startup.id) {
       router.push(`/startups/${startup.id}`);
     } else {
-      // Otherwise, open the detail panel
       setSelected(startup);
-      // Don't clear selectedLocation - keep it for breadcrumb navigation
     }
   }
 
@@ -226,15 +228,19 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
             {/* Left: list */}
             <div
               className="flex flex-col transition-[width,margin] duration-300 ease-in-out"
-              style={{
-                width: selected ? "66.666%" : "50%",
-                marginLeft: selected ? "0%" : "25%",
-              }}
+              style={
+                isMobile
+                  ? { width: "100%", marginLeft: "0" }
+                  : {
+                      width: selected ? "66.666%" : "50%",
+                      marginLeft: selected ? "0%" : "25%",
+                    }
+              }
             >
               {/* List */}
               <ul
                 role="list"
-                className="flex flex-col overflow-y-auto rounded-xl border border-border"
+                className="flex flex-col overflow-y-auto rounded-xl border border-border max-md:flex-1 max-md:min-h-0"
               >
                 {filtered.length === 0 ? (
                   <li className="px-4 py-6 text-center text-sm text-text-muted">
@@ -290,12 +296,12 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
               </ul>
             </div>
 
-            {/* Right: detail panel */}
+            {/* Right: detail panel — hidden on mobile */}
             <div
               className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
               style={{
-                width: selected ? "33.333%" : "0%",
-                opacity: selected ? 1 : 0,
+                width: isMobile ? "0%" : selected ? "33.333%" : "0%",
+                opacity: isMobile ? 0 : selected ? 1 : 0,
               }}
             >
               <div
@@ -570,5 +576,14 @@ function LocationStartupsList({
   );
 }
 
-// ── Icons ─────────────────────────────────────────────────────────────────────
-// Using lucide-react — see imports at top of file.
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    setMatches(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [query]);
+  return matches;
+}
