@@ -236,12 +236,14 @@ export default function StartupPageClient({
           </div>
 
           {/* About */}
-          {startup.description && (
+          {(startup.description || startup.website || startup.contact_general || startup.linkedin || startup.twitter || startup.github || startup.instagram) && (
             <Section title="About">
-              <p className="text-sm leading-relaxed text-text-muted">
-                {startup.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
+              {startup.description && (
+                <p className="text-sm leading-relaxed text-text-muted">
+                  {startup.description}
+                </p>
+              )}
+              <div className={`flex flex-wrap gap-3 ${startup.description ? "mt-4" : ""}`}>
                 {startup.website && (
                   <SocialLink
                     href={startup.website}
@@ -510,12 +512,14 @@ export default function StartupPageClient({
           )}
 
           {/* About */}
-          {startup.description && (
+          {(startup.description || startup.website || startup.contact_general || startup.linkedin || startup.twitter || startup.github || startup.instagram) && (
             <Section title="About">
-              <p className="text-sm leading-relaxed text-text-muted">
-                {startup.description}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
+              {startup.description && (
+                <p className="text-sm leading-relaxed text-text-muted">
+                  {startup.description}
+                </p>
+              )}
+              <div className={`flex flex-wrap gap-3 ${startup.description ? "mt-4" : ""}`}>
                 {startup.website && (
                   <SocialLink
                     href={startup.website}

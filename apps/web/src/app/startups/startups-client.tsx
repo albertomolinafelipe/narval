@@ -338,7 +338,10 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                             <span className="truncate">{s.name}</span>
                             {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
                           </p>
-                          <p className="truncate text-xs text-text-muted">{s.owner_email}</p>
+                          {s.verified
+                            ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>
+                            : s.contact_general && <p className="truncate text-xs text-text-muted">{s.contact_general}</p>
+                          }
                           {!expanded && (s.tagline || s.description) && (
                             <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
                               {s.tagline ?? s.description}
