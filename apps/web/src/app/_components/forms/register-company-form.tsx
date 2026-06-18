@@ -101,8 +101,13 @@ function VerifiedStep1({
     try {
       const res = await fetch(`${apiBase}/startups/check-website?url=${encodeURIComponent(url)}`);
       if (!res.ok) { setWebsiteStatus("idle"); return; }
-      const body = (await res.json()) as { available: boolean };
-      setWebsiteStatus(body.available ? "ok" : "taken");
+      const body = (await res.json()) as { available: boolean; reason?: string };
+      if (!body.available && body.reason === "subdomain") {
+        setWebsiteError("Use your root domain (e.g. example.com, not app.example.com).");
+        setWebsiteStatus("taken");
+      } else {
+        setWebsiteStatus(body.available ? "ok" : "taken");
+      }
     } catch {
       setWebsiteStatus("idle");
     }
@@ -372,6 +377,7 @@ export default function RegisterCompanyForm({
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => ({}))) as { message?: string; code?: string };
+        if (body.code === "SUBDOMAIN_NOT_ALLOWED") throw new Error("Please use your root domain (e.g. example.com, not app.example.com).");
         if (body.code === "PUBLIC_DOMAIN") throw new Error("That's a personal email provider. Use your company domain.");
         if (res.status === 409) throw new Error(body.message ?? "Domain or email already registered.");
         throw new Error(body.message ?? "Failed to submit. Please try again.");

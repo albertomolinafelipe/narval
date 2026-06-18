@@ -82,6 +82,14 @@ func validateWebsite(raw string) error {
 // CheckStartupWebsite validates a website and returns the normalized form.
 func (h *Handler) CheckStartupWebsite(c *gin.Context) {
 	urlParam := common.NormalizeWebsite(c.Query("url"))
+	if urlParam == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "url required"})
+		return
+	}
+	if !common.IsRootDomain(urlParam) {
+		c.JSON(http.StatusOK, gin.H{"available": false, "reason": "subdomain"})
+		return
+	}
 	var count int64
 	h.DB.Model(&models.Startup{}).Where("website = ?", urlParam).Count(&count)
 	c.JSON(http.StatusOK, gin.H{"available": count == 0})

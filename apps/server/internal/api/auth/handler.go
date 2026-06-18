@@ -14,6 +14,7 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"gorm.io/gorm"
 
+	"github.com/narval/server/internal/api/common"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
@@ -28,22 +29,18 @@ func isValidEmail(email string) bool {
 }
 
 func extractDomain(websiteURL string) string {
-	// Add scheme if missing
 	if !strings.Contains(websiteURL, "://") {
 		websiteURL = "https://" + websiteURL
 	}
-
 	parsed, err := url.Parse(websiteURL)
 	if err != nil {
 		return ""
 	}
-
 	host := parsed.Hostname()
-	// Remove www. prefix
 	host = strings.TrimPrefix(host, "www.")
-
 	return host
 }
+
 
 type Handler struct {
 	cfg    *config.Config
@@ -110,6 +107,11 @@ func (h *Handler) Register(c *gin.Context) {
 			}
 
 			normalizedDomain := strings.ToLower(strings.TrimPrefix(domain, "www."))
+
+			if !common.IsRootDomain(normalizedDomain) {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "SUBDOMAIN_NOT_ALLOWED", "message": "please use your root domain (e.g. example.com, not app.example.com)"})
+				return
+			}
 
 			if isPublicEmailDomain(normalizedDomain) {
 				c.JSON(http.StatusBadRequest, gin.H{"code": "PUBLIC_DOMAIN", "message": "use your company domain, not a personal email provider"})
