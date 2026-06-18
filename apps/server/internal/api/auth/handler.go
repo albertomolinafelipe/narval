@@ -101,6 +101,15 @@ func (h *Handler) Register(c *gin.Context) {
 			return
 		}
 
+		// Check domain uniqueness (normalized, same as CheckStartupWebsite)
+		normalizedDomain := strings.ToLower(strings.TrimPrefix(domain, "www."))
+		var domainCount int64
+		h.db.Model(&models.Startup{}).Where("website = ?", normalizedDomain).Count(&domainCount)
+		if domainCount > 0 {
+			c.JSON(http.StatusConflict, gin.H{"code": "DOMAIN_TAKEN", "message": "a startup with this domain is already registered"})
+			return
+		}
+
 		// Construct full email
 		email = *req.EmailPrefix + "@" + domain
 		nickname = *req.Name
@@ -135,6 +144,10 @@ func (h *Handler) Register(c *gin.Context) {
 		AccountType:      models.AccountType(req.AccountType),
 		PreAuthSessionID: codeResp.OK.PreAuthSessionID,
 		DeviceID:         codeResp.OK.DeviceID,
+	}
+	if req.AccountType == "startup" {
+		draft.Name = *req.Name
+		draft.Website = strings.ToLower(strings.TrimPrefix(extractDomain(*req.Website), "www."))
 	}
 
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})

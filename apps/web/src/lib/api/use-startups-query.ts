@@ -28,18 +28,16 @@ export const startupsKeys = {
  * Query hook for fetching startups list with optional filters.
  * Uses SuperTokens session cookies for authentication automatically.
  */
-export function useStartupsQuery(options: { favorited?: boolean } = {}) {
+export function useStartupsQuery(options: { favorited?: boolean; sort?: "recent" | "trending" } = {}) {
   const { authenticated, loading } = useUser();
 
   return useQuery({
-    queryKey: startupsKeys.list({ favorited: options.favorited }),
+    queryKey: startupsKeys.list({ favorited: options.favorited, sort: options.sort }),
     queryFn: () =>
       fetchStartups({
         favorited: options.favorited,
-        // No need to pass accessToken - SuperTokens uses cookies
+        sort: options.sort,
       }),
-    // Wait for session to load before fetching
-    // Also require auth for favorited filter
     enabled: !loading && (!options.favorited || authenticated),
   });
 }

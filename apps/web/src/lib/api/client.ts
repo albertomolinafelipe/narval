@@ -53,6 +53,7 @@ type Startup = components["schemas"]["Startup"];
 export interface FetchStartupsOptions {
   favorited?: boolean;
   accessToken?: string;
+  sort?: "recent" | "trending";
 }
 
 export interface FetchStartupOptions {
@@ -67,11 +68,14 @@ export interface FetchStartupOptions {
 export async function fetchStartups(
   options: FetchStartupsOptions = {},
 ): Promise<Startup[]> {
-  const { favorited, accessToken } = options;
+  const { favorited, accessToken, sort } = options;
 
   const url = new URL("/api/proxy/startups", window.location.origin);
   if (favorited) {
     url.searchParams.set("favorited", "true");
+  }
+  if (sort && sort !== "recent") {
+    url.searchParams.set("sort", sort);
   }
 
   const headers: HeadersInit = {};

@@ -107,8 +107,23 @@ func (h *Handler) ListStartups(c *gin.Context) {
 	favoritedParam := c.Query("favorited")
 	filterFavorited := favoritedParam == "true"
 
+	sortParam := c.Query("sort") // "recent" (default) or "trending"
+
 	var startupList []models.Startup
-	query := h.DB.Order("created_at desc")
+	var query *gorm.DB
+	if sortParam == "trending" {
+		query = h.DB.
+			Select("startups.*, COALESCE(b.active_boosts, 0) AS active_boosts").
+			Joins(`LEFT JOIN (
+				SELECT startup_id, COUNT(*) AS active_boosts
+				FROM startup_boosts
+				WHERE expires_at > ?
+				GROUP BY startup_id
+			) b ON b.startup_id = startups.id`, time.Now()).
+			Order("active_boosts DESC, startups.created_at DESC")
+	} else {
+		query = h.DB.Order("created_at desc")
+	}
 
 	// Get current user ID if authenticated
 	userID := middleware.GetUserID(c)

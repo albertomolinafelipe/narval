@@ -3,7 +3,8 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2 } from "lucide-react";
+import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe } from "lucide-react";
+import { SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
@@ -23,6 +24,11 @@ interface Props {
 
 type View = "list" | "map";
 
+function parseProductLinks(raw?: string): { web?: string; ios?: string; android?: string } {
+  if (!raw) return {};
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
 export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const router = useRouter();
   const requireAuth = useAuthGuard();
@@ -34,6 +40,8 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     "all" | "location" | null
   >(null);
   const [view, setView] = useState<View>("list");
+  const [sort, setSort] = useState<"recent" | "trending">("recent");
+  const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showFavorites, setShowFavorites] = useState(showFavoritedOnly);
   const [highlight, setHighlight] = useState(false);
@@ -45,6 +53,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     error,
   } = useStartupsQuery({
     favorited: showFavorites,
+    sort,
   });
 
   // Extract unique locations for geocoding
@@ -200,6 +209,52 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     </div>
   );
 
+  const sortToggle = (
+    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setSort("recent")}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+          sort === "recent"
+            ? "bg-bg-subtle text-text shadow-sm"
+            : "text-text-muted hover:text-text"
+        }`}
+      >
+        <Clock size={13} />
+        Recent
+      </button>
+      <button
+        type="button"
+        onClick={() => setSort("trending")}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+          sort === "trending"
+            ? "bg-bg-subtle text-text shadow-sm"
+            : "text-text-muted hover:text-text"
+        }`}
+      >
+        <TrendingUp size={13} />
+        Trending
+      </button>
+    </div>
+  );
+
+  const expandToggle = (
+    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm max-md:hidden">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+          expanded
+            ? "bg-bg-subtle text-text shadow-sm"
+            : "text-text-muted hover:text-text"
+        }`}
+      >
+        <LayoutList size={13} />
+        Details
+      </button>
+    </div>
+  );
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {view === "list" ? (
@@ -208,6 +263,8 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
           <div className="flex items-center gap-2 pb-3">
             {toggle}
             {favoritesToggle}
+            {sortToggle}
+            {expandToggle}
             <div className="relative w-56">
               <Search
                 size={13}
@@ -242,6 +299,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                 role="list"
                 className="flex flex-col overflow-y-auto rounded-xl border border-border max-md:flex-1 max-md:min-h-0"
               >
+
                 {filtered.length === 0 ? (
                   <li className="px-4 py-6 text-center text-sm text-text-muted">
                     {showFavorites && startups.length === 0
@@ -265,7 +323,6 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                           selected?.id === s.id ? "bg-bg-subtle" : ""
                         }`}
                       >
-                        {/* Boost counter on the left (non-clickable) */}
                         <div className="shrink-0">
                           <BoostCounter
                             count={s.boost_count ?? 0}
@@ -273,22 +330,50 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                             clickable={false}
                           />
                         </div>
-
-                        {/* Avatar and content */}
                         <Avatar entity={s} size={12} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-text">
-                            {s.name}
-                          </p>
-                          <p className="truncate text-xs text-text-muted">
-                            {s.owner_email}
-                          </p>
-                          {(s.tagline || s.description) && (
+
+                        {/* Name + email — fixed width when expanded so columns align */}
+                        <div className={`min-w-0 ${expanded ? "w-44 shrink-0" : "flex-1"}`}>
+                          <p className="truncate text-sm font-medium text-text">{s.name}</p>
+                          <p className="truncate text-xs text-text-muted">{s.owner_email}</p>
+                          {!expanded && (s.tagline || s.description) && (
                             <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
                               {s.tagline ?? s.description}
                             </p>
                           )}
                         </div>
+
+                        {/* Metadata columns — only when expanded */}
+                        {expanded && (
+                          <>
+                            <span className="w-14 shrink-0 text-xs tabular-nums text-text-muted">
+                              {s.founded_year ?? "—"}
+                            </span>
+                            <span className="w-16 shrink-0 text-xs text-text-muted">
+                              {s.team_size ? `${s.team_size} ppl` : "—"}
+                            </span>
+                            <span className="w-24 shrink-0 truncate text-xs capitalize text-text-muted">
+                              {s.stage ?? "—"}
+                            </span>
+                            <span className="w-32 shrink-0 truncate text-xs text-text-muted">
+                              {s.industry ?? "—"}
+                            </span>
+                          </>
+                        )}
+
+                        {/* Platform icons — only in detailed view */}
+                        {expanded && (() => {
+                          const links = parseProductLinks(s.product_links ?? undefined);
+                          const hasAny = links.web || links.ios || links.android;
+                          if (!hasAny) return null;
+                          return (
+                            <div className="flex shrink-0 items-center gap-2 text-text-subtle">
+                              {links.web && <Globe size={15} />}
+                              {links.ios && <SiAppstore size={15} />}
+                              {links.android && <SiGoogleplay size={15} />}
+                            </div>
+                          );
+                        })()}
                       </button>
                     </li>
                   ))

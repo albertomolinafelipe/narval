@@ -1,7 +1,7 @@
 import Link from "next/link";
 import AppHeader from "@/app/_components/layout/app-header";
 import NarvalLogo from "@/app/_components/layout/narval-logo";
-import { TrackedHomeButtons } from "@/app/tracked-home-buttons";
+import { HomeHero } from "@/app/home-hero";
 
 export default function HomePage() {
   return (
@@ -14,14 +14,30 @@ export default function HomePage() {
             "linear-gradient(135deg, var(--color-brand-subtle) 0%, var(--color-bg-raised) 60%, var(--color-bg-subtle) 100%)",
         }}
       >
-        {/* Decorative blobs */}
+        {/* Animated decorative blobs */}
         <div
-          className="pointer-events-none absolute -left-24 -top-24 h-96 w-96 rounded-full opacity-30"
-          style={{ background: "var(--color-brand)", filter: "blur(100px)" }}
+          className="pointer-events-none absolute -left-48 -top-48 h-[700px] w-[700px] rounded-full opacity-40"
+          style={{
+            background: "var(--color-brand)",
+            filter: "blur(130px)",
+            animation: "blob-drift-1 10s ease-in-out infinite",
+          }}
         />
         <div
-          className="pointer-events-none absolute -bottom-24 right-12 h-72 w-72 rounded-full opacity-20"
-          style={{ background: "var(--color-brand)", filter: "blur(80px)" }}
+          className="pointer-events-none absolute -bottom-48 right-0 h-[600px] w-[600px] rounded-full opacity-30"
+          style={{
+            background: "var(--color-brand)",
+            filter: "blur(110px)",
+            animation: "blob-drift-2 13s ease-in-out infinite",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute bottom-1/3 left-1/2 h-[400px] w-[400px] -translate-x-1/2 rounded-full opacity-20"
+          style={{
+            background: "var(--color-brand)",
+            filter: "blur(90px)",
+            animation: "blob-drift-3 16s ease-in-out infinite",
+          }}
         />
 
         {/* Header sits on top of the banner */}
@@ -29,15 +45,11 @@ export default function HomePage() {
 
         {/* Hero content — centered in remaining space */}
         <main className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <NarvalLogo className="mb-6 h-48 w-48 rounded-lg" />
-          <h1 className="text-5xl font-bold tracking-tight text-text">
+          <NarvalLogo className="mb-8 h-80 w-80 rounded-2xl max-md:h-56 max-md:w-56" />
+          <h1 className="text-8xl font-bold tracking-tight text-text max-md:text-6xl">
             Narval
           </h1>
-          <p className="mt-4 max-w-md text-lg text-text-muted">
-            Discover startups. Connect with investors. Build what matters.
-          </p>
-
-          <TrackedHomeButtons />
+          <HomeHero />
         </main>
 
         {/* Footer */}
