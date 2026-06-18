@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe } from "lucide-react";
+import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -334,7 +334,10 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
 
                         {/* Name + email — fixed width when expanded so columns align */}
                         <div className={`min-w-0 ${expanded ? "w-44 shrink-0" : "flex-1"}`}>
-                          <p className="truncate text-sm font-medium text-text">{s.name}</p>
+                          <p className="flex items-center gap-1 text-sm font-medium text-text">
+                            <span className="truncate">{s.name}</span>
+                            {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
+                          </p>
                           <p className="truncate text-xs text-text-muted">{s.owner_email}</p>
                           {!expanded && (s.tagline || s.description) && (
                             <p className="mt-1 line-clamp-2 text-xs text-text-subtle">

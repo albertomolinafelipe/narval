@@ -16,6 +16,7 @@ import {
   Globe,
   X,
   Maximize2,
+  BadgeCheck,
 } from "lucide-react";
 import {
   SiLinkedin,
@@ -404,7 +405,10 @@ export default function StartupPageClient({
       <div className="mb-6 flex items-start gap-5 max-md:flex-wrap max-md:gap-3">
         <Avatar entity={startup} size={18} />
         <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
-          <h1 className="text-2xl font-bold text-text">{startup.name}</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-text">
+            {startup.name}
+            {startup.verified && <BadgeCheck size={20} className="shrink-0 text-brand" />}
+          </h1>
           {startup.tagline && (
             <p className="mt-0.5 text-sm text-text-muted">{startup.tagline}</p>
           )}

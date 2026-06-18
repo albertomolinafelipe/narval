@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, User, TrendingUp } from "lucide-react";
 import RegisterCompanyForm from "./register-company-form";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
@@ -24,7 +24,7 @@ function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
         data-umami-event="register-account-type"
         data-umami-event-type="user"
       >
-        <span className="text-sm font-medium text-text">👤 User</span>
+        <span className="flex items-center gap-2 text-sm font-medium text-text"><User size={15} /> User</span>
         <span className="text-xs text-text-muted">
           Browse and discover startups on the platform.
         </span>
@@ -36,7 +36,7 @@ function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
         data-umami-event="register-account-type"
         data-umami-event-type="startup"
       >
-        <span className="text-sm font-medium text-text">🦄 Startup</span>
+        <span className="flex items-center gap-2 text-sm font-medium text-text"><TrendingUp size={15} /> Startup</span>
         <span className="text-xs text-text-muted">
           Create a startup profile and get discovered.
         </span>
