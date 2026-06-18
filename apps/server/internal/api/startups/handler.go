@@ -529,6 +529,8 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 	}
 	response["founders"] = founders
 
+	response["verified"] = s.Verified
+
 	// Add boost count (always visible)
 	boostCount := h.getStartupBoostCount(s.ID)
 	response["boost_count"] = boostCount

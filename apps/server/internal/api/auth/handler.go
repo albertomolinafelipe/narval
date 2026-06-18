@@ -65,11 +65,12 @@ func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
 func (h *Handler) Register(c *gin.Context) {
 	var req struct {
 		AccountType string  `json:"account_type" binding:"required,oneof=user startup"`
-		Email       string  `json:"email"`        // For user registration
-		Nickname    string  `json:"nickname"`     // For user registration
-		Name        *string `json:"name"`         // For startup
-		Website     *string `json:"website"`      // For startup
-		EmailPrefix *string `json:"email_prefix"` // For startup
+		Email       string  `json:"email"`         // user + startup open path
+		Nickname    string  `json:"nickname"`      // user path
+		Name        *string `json:"name"`          // startup (both paths)
+		Website     *string `json:"website"`       // startup verified path
+		EmailPrefix *string `json:"email_prefix"`  // startup verified path
+		Verified    bool    `json:"verified"`      // true = domain path, false = open path
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
@@ -88,31 +89,49 @@ func (h *Handler) Register(c *gin.Context) {
 		email = req.Email
 		nickname = req.Nickname
 	} else {
-		// Startup registration: name + website + email_prefix required
-		if req.Name == nil || req.Website == nil || req.EmailPrefix == nil {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "name, website, and email_prefix required for startup registration"})
+		// Startup: name always required
+		if req.Name == nil || *req.Name == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "name is required for startup registration"})
 			return
 		}
-
-		// Extract domain from website
-		domain := extractDomain(*req.Website)
-		if domain == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "invalid website URL"})
-			return
-		}
-
-		// Check domain uniqueness (normalized, same as CheckStartupWebsite)
-		normalizedDomain := strings.ToLower(strings.TrimPrefix(domain, "www."))
-		var domainCount int64
-		h.db.Model(&models.Startup{}).Where("website = ?", normalizedDomain).Count(&domainCount)
-		if domainCount > 0 {
-			c.JSON(http.StatusConflict, gin.H{"code": "DOMAIN_TAKEN", "message": "a startup with this domain is already registered"})
-			return
-		}
-
-		// Construct full email
-		email = *req.EmailPrefix + "@" + domain
 		nickname = *req.Name
+
+		if req.Verified {
+			// Verified path: domain + work email required
+			if req.Website == nil || req.EmailPrefix == nil {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "website and email_prefix required for verified registration"})
+				return
+			}
+
+			domain := extractDomain(*req.Website)
+			if domain == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "invalid website URL"})
+				return
+			}
+
+			normalizedDomain := strings.ToLower(strings.TrimPrefix(domain, "www."))
+
+			if isPublicEmailDomain(normalizedDomain) {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "PUBLIC_DOMAIN", "message": "use your company domain, not a personal email provider"})
+				return
+			}
+
+			var domainCount int64
+			h.db.Model(&models.Startup{}).Where("website = ?", normalizedDomain).Count(&domainCount)
+			if domainCount > 0 {
+				c.JSON(http.StatusConflict, gin.H{"code": "DOMAIN_TAKEN", "message": "a startup with this domain is already registered"})
+				return
+			}
+
+			email = *req.EmailPrefix + "@" + domain
+		} else {
+			// Open path: any email accepted
+			if req.Email == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email is required"})
+				return
+			}
+			email = req.Email
+		}
 	}
 
 	// Validate email format
@@ -147,7 +166,10 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 	if req.AccountType == "startup" {
 		draft.Name = *req.Name
-		draft.Website = strings.ToLower(strings.TrimPrefix(extractDomain(*req.Website), "www."))
+		draft.Verified = req.Verified
+		if req.Verified && req.Website != nil {
+			draft.Website = strings.ToLower(strings.TrimPrefix(extractDomain(*req.Website), "www."))
+		}
 	}
 
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
@@ -256,6 +278,7 @@ func (h *Handler) Verify(c *gin.Context) {
 			startup := models.Startup{
 				Name:       draft.Name,
 				Website:    draft.Website,
+				Verified:   draft.Verified,
 				OwnerID:    user.ID,
 				OwnerEmail: user.Email,
 			}
