@@ -344,9 +344,9 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
             </div>
           </div>
 
-          {/* Map view with detail panel */}
-          <div className="flex w-full flex-1 gap-4 overflow-hidden">
-            {/* Left: map takes available space */}
+          {/* Map view */}
+          <div className={`flex flex-1 overflow-hidden ${isMobile ? "flex-col" : "w-full gap-4"}`}>
+            {/* Map */}
             <div className="flex-1 overflow-hidden">
               <div className="relative h-full w-full">
                 <StartupsMap
@@ -355,60 +355,74 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                   selected={selected}
                   onSelect={(s) => {
                     handleStartupClick(s);
-                    // Set context based on current view
-                    if (selectedLocation) {
-                      setPreviousContext("location");
-                    } else {
-                      setPreviousContext("all");
+                    if (!isMobile) {
+                      if (selectedLocation) setPreviousContext("location");
+                      else setPreviousContext("all");
                     }
                   }}
-                  onLocationSelect={handleLocationSelect}
+                  onLocationSelect={(group) => {
+                    handleLocationSelect(group);
+                  }}
                 />
               </div>
             </div>
 
-            {/* Right: detail panel - always visible in map view */}
-            <div
-              className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
-              style={{
-                width: "33.333%",
-                opacity: 1,
-              }}
-            >
-              <div
-                className={`flex h-full flex-col overflow-y-auto rounded-xl border bg-bg transition-all duration-300 ${
-                  highlight
-                    ? "border-brand shadow-lg shadow-brand/20"
-                    : "border-border"
-                }`}
-              >
-                {selected ? (
-                  <StartupPageClient
-                    key={selected.id}
-                    startup={selected}
-                    compact={true}
-                    onClose={handleCloseStartupDetail}
-                  />
-                ) : selectedLocation ? (
+            {/* Mobile: scrollable list below map | Desktop: detail panel */}
+            {isMobile ? (
+              <div className="flex-1 min-h-0 overflow-hidden border-t border-border">
+                {selectedLocation ? (
                   <LocationStartupsList
                     locationGroup={selectedLocation}
-                    onStartupClick={(s) => {
-                      handleStartupClick(s);
-                      setPreviousContext("location");
-                    }}
+                    onStartupClick={handleStartupClick}
                     onClose={handleCloseLocationList}
                   />
                 ) : (
                   <AllStartupsList
                     startups={filtered}
-                    onStartupClick={(s) => {
-                      handleStartupClick(s);
-                      setPreviousContext("all");
-                    }}
+                    onStartupClick={handleStartupClick}
                   />
                 )}
               </div>
-            </div>
+            ) : (
+              <div
+                className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
+                style={{ width: "33.333%", opacity: 1 }}
+              >
+                <div
+                  className={`flex h-full flex-col overflow-y-auto rounded-xl border bg-bg transition-all duration-300 ${
+                    highlight
+                      ? "border-brand shadow-lg shadow-brand/20"
+                      : "border-border"
+                  }`}
+                >
+                  {selected ? (
+                    <StartupPageClient
+                      key={selected.id}
+                      startup={selected}
+                      compact={true}
+                      onClose={handleCloseStartupDetail}
+                    />
+                  ) : selectedLocation ? (
+                    <LocationStartupsList
+                      locationGroup={selectedLocation}
+                      onStartupClick={(s) => {
+                        handleStartupClick(s);
+                        setPreviousContext("location");
+                      }}
+                      onClose={handleCloseLocationList}
+                    />
+                  ) : (
+                    <AllStartupsList
+                      startups={filtered}
+                      onStartupClick={(s) => {
+                        handleStartupClick(s);
+                        setPreviousContext("all");
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}
