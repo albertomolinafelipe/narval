@@ -98,3 +98,7 @@ properties:
     description: >-
       Whether the current authenticated user has an active boost for this
       startup (only present when authenticated)
+  founders:
+    type: array
+    items:
+      $ref: ./Founder.yaml
