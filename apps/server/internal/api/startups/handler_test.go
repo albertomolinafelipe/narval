@@ -79,10 +79,13 @@ func TestListStartups_Empty(t *testing.T) {
 	assert.Empty(t, body)
 }
 
-// startupResp mirrors the JSON shape the handler returns (banner_images as []string).
+// startupResp mirrors the JSON shape the handler returns.
+// Founders is json.RawMessage because the handler returns it as a parsed array,
+// while models.Startup stores it as a raw JSON string.
 type startupResp struct {
 	models.Startup
-	BannerImages []string `json:"banner_images"`
+	BannerImages []string        `json:"banner_images"`
+	Founders     json.RawMessage `json:"founders"`
 }
 
 func TestCreateStartup_Success(t *testing.T) {
