@@ -88,6 +88,10 @@ properties:
     description: >-
       Whether the current authenticated user has favorited this startup (only
       present when authenticated)
+  verified:
+    type: boolean
+    description: >-
+      Whether the startup registered via the domain+work-email path
   boost_count:
     type: integer
     description: >-

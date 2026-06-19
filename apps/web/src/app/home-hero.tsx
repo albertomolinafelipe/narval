@@ -46,6 +46,7 @@ export function HomeHero() {
         <Link
           href="/investors"
           className="btn-ghost px-10 py-4 text-lg text-text"
+          style={{ borderColor: "var(--color-text-muted)" }}
         >
           Meet Investors
         </Link>

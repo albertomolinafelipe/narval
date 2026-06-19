@@ -28,7 +28,7 @@ export default function UserMenu() {
 
   useEffect(() => {
     async function checkProfileSetup() {
-      if (!open || !user || user.account_type !== "startup") return;
+      if (!user || user.account_type !== "startup") return;
       const pid = user.profile_id;
       if (!pid) return;
       try {
@@ -44,7 +44,7 @@ export default function UserMenu() {
       }
     }
     checkProfileSetup();
-  }, [open, user]);
+  }, [user]);
 
   if (loading) {
     return <div className="h-9 w-9 animate-pulse rounded-full bg-bg-subtle" />;
@@ -79,7 +79,7 @@ export default function UserMenu() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open user menu"
-        className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-border bg-bg-subtle transition hover:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className={`flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border bg-bg-subtle transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand ${showProfileWarning ? "border-[var(--color-wip-text)] hover:border-[var(--color-wip-text)]" : "border-border hover:border-brand"}`}
       >
         {logoUrl ? (
           <Image
@@ -125,9 +125,9 @@ export default function UserMenu() {
           </div>
 
           {showProfileWarning && (
-            <div className="mx-2 mt-2 rounded-lg bg-warning/10 border border-warning/20 px-3 py-2">
+            <div className="mx-2 mt-2 rounded-lg bg-[var(--color-wip-text)]/10 border border-[var(--color-wip-text)]/40 px-3 py-2">
               <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
+                <AlertCircle className="h-4 w-4 text-[var(--color-wip-text)] flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-text">Profile not fully set up</p>
                   <p className="text-xs text-text-muted mt-0.5">

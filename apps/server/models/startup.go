@@ -49,6 +49,7 @@ type Startup struct {
 	OwnerID      string    `gorm:"not null;index"                 json:"owner_id"`
 	OwnerEmail   string    `gorm:"not null"                       json:"owner_email"`
 	ProfileSetup bool      `gorm:"default:false"                  json:"profile_setup"`
+	Verified     bool      `gorm:"default:false"                  json:"verified"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }

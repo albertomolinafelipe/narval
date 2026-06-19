@@ -344,6 +344,7 @@ func main() {
 			OwnerID:        "seed",
 			OwnerEmail:     s.ContactEmail,
 			ProfileSetup:   true,
+			Verified:       true,
 		}
 
 		if err := db.Where(models.Startup{Name: startup.Name}).FirstOrCreate(&startup).Error; err != nil {
