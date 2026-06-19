@@ -24,6 +24,7 @@ interface AppHeaderProps {
 const baseTabs: Tab[] = [
   { label: "Startups", href: "/startups", wip: false },
   { label: "Investors", href: "/investors", wip: false },
+  { label: "Awards", href: "/awards", wip: false },
 ];
 
 export default function AppHeader({ customTab }: AppHeaderProps = {}) {
