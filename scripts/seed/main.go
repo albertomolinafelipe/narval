@@ -8,9 +8,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
@@ -350,6 +352,18 @@ func main() {
 		if err := db.Where(models.Startup{Name: startup.Name}).FirstOrCreate(&startup).Error; err != nil {
 			log.Printf("failed to upsert %q: %v", startup.Name, err)
 		}
+
+		// Seed random fake boosts (0–15) for local visualization
+		boostCount := rand.Intn(16)
+		for i := 0; i < boostCount; i++ {
+			boost := models.StartupBoost{
+				UserID:    fmt.Sprintf("seed-user-%d", i+1),
+				StartupID: startup.ID,
+				ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+			}
+			db.Where(models.StartupBoost{UserID: boost.UserID, StartupID: boost.StartupID}).FirstOrCreate(&boost)
+		}
+
 		bar.Add(1)
 	}
 	fmt.Println()
