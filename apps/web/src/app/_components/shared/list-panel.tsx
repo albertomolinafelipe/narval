@@ -16,15 +16,19 @@ interface AvatarEntity {
 export function Avatar({
   entity,
   size,
+  circle = false,
 }: {
   entity: AvatarEntity;
   size: number;
+  circle?: boolean;
 }) {
   const px = size * 4; // size is in Tailwind units (1 unit = 4px)
   return (
     <div
       style={{ width: px, height: px, minWidth: px }}
-      className="flex items-center justify-center overflow-hidden rounded-lg bg-brand-subtle"
+      className={`flex items-center justify-center overflow-hidden bg-brand-subtle ${
+        circle ? "rounded-full" : "rounded-lg"
+      }`}
     >
       {entity.logo_url ? (
         <Image
