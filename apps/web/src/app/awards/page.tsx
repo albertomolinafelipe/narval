@@ -3,8 +3,8 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useSpring, animated } from "@react-spring/web";
 import { Rocket } from "lucide-react";
-import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import AppHeader from "@/app/_components/layout/app-header";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
@@ -31,10 +31,11 @@ const ALL_SECTORS = [
   "Other",
 ];
 
-const LOGO_H = 64;
-const CROWN_H = 44;
-const GAP = 8;
-const LOGO_PADDING_BOTTOM = 12;
+// Tallest podium bar takes this fraction of the podium area, leaving
+// headroom above every bar for the content card (crown, name, boosts).
+const MAX_BAR_FRAC = 0.55;
+// Floor for shorter bars, as a fraction of the tallest bar.
+const MIN_BAR_FRAC = 0.4;
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -57,39 +58,62 @@ function computeCompetitionRank(startups: Startup[]): Map<string, number> {
   return ranks;
 }
 
-function LogoGroup({ startups, size = 16 }: { startups: Startup[]; size?: number }) {
-  const [showOverflow, setShowOverflow] = useState(false);
-  const visible = startups.slice(0, 3);
-  const overflow = startups.slice(3);
-  const px = size * 4;
+function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number }) {
+  const [open, setOpen] = useState(false);
 
-  return (
-    <div className="flex flex-wrap items-end justify-center gap-1.5 pb-3">
-      {visible.map((s) => (
-        <Link key={s.id} href={`/startups/${s.id}`}>
-          <Avatar entity={s} size={size} />
-        </Link>
-      ))}
-      {overflow.length > 0 && (
-        <div className="relative">
-          <button
-            onClick={() => setShowOverflow((v) => !v)}
-            className="flex items-center justify-center rounded-lg border border-border bg-bg-subtle text-text-muted transition-colors hover:text-text"
-            style={{ width: px, height: px }}
+  // 1-2 entrants: avatar with the company name under it. Fixed-width units so
+  // spacing is equal; long names truncate with an ellipsis.
+  if (startups.length <= 2) {
+    return (
+      <div className="flex items-start justify-center gap-1.5">
+        {startups.map((s) => (
+          <Link
+            key={s.id}
+            href={`/startups/${s.id}`}
+            className="flex w-16 flex-col items-center gap-1"
           >
-            <HiOutlineDotsHorizontal size={20} />
-          </button>
-          {showOverflow && (
-            <div className="absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 rounded border border-border bg-bg p-2 shadow-lg">
-              {[...visible, ...overflow].map((s) => (
-                <Link key={s.id} href={`/startups/${s.id}`}>
-                  <p className="whitespace-nowrap py-0.5 text-xs text-text hover:underline">
-                    {s.name}
-                  </p>
-                </Link>
-              ))}
+            <Avatar entity={s} size={size} />
+            <span className="max-w-full truncate text-xs font-medium text-text hover:underline">
+              {s.name}
+            </span>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+
+  // 3+ tied: overlapped avatar stack + a button that reveals every name.
+  const overlap = Math.round(size * 4 * 0.4);
+  return (
+    <div className="relative flex flex-col items-center">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-border bg-bg-subtle py-1 pl-1 pr-2.5 transition-colors hover:border-text-muted"
+      >
+        <div className="flex">
+          {startups.slice(0, 3).map((s, i) => (
+            <div
+              key={s.id}
+              className="rounded-full ring-2 ring-bg"
+              style={{ marginLeft: i === 0 ? 0 : -overlap }}
+            >
+              <Avatar entity={s} size={size} circle />
             </div>
-          )}
+          ))}
+        </div>
+        <span className="text-xs font-medium text-text-muted">
+          {startups.length} tied
+        </span>
+      </button>
+      {open && (
+        <div className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-md border border-border bg-bg p-2 shadow-lg">
+          {startups.map((s) => (
+            <Link key={s.id} href={`/startups/${s.id}`}>
+              <p className="whitespace-nowrap py-0.5 text-xs text-text hover:underline">
+                {s.name}
+              </p>
+            </Link>
+          ))}
         </div>
       )}
     </div>
@@ -98,44 +122,74 @@ function LogoGroup({ startups, size = 16 }: { startups: Startup[]; size?: number
 
 const POSITION_LABEL: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
 
-function PodiumBarContent({
+function AnimatedBar({
+  height,
+  isFirst,
+}: {
+  height: number;
+  isFirst: boolean;
+}) {
+  const styles = useSpring({
+    from: { height: 0 },
+    to: { height },
+    config: { tension: 180, friction: 24 },
+  });
+
+  return (
+    <animated.div
+      style={styles}
+      className={`relative w-full overflow-hidden rounded-t-xl shadow-sm ${
+        isFirst ? "bg-brand/65" : "bg-brand/40"
+      }`}
+    >
+      {isFirst && (
+        <Rocket
+          className="absolute left-1/2 top-1/2 h-1/2 w-auto -translate-x-1/2 -translate-y-1/2 -rotate-45 text-brand-fg opacity-10"
+        />
+      )}
+    </animated.div>
+  );
+}
+
+function PodiumColumn({
   position,
   boosts,
-  isFirst,
+  barH,
   startups,
+  isFirst,
+  isMobile,
 }: {
   position: 1 | 2 | 3;
   boosts: number;
-  isFirst: boolean;
+  barH: number;
   startups: Startup[];
+  isFirst: boolean;
+  isMobile: boolean;
 }) {
   return (
-    <div className="relative flex h-full w-full flex-col items-center justify-center gap-1 overflow-hidden px-2">
-      {isFirst && (
-        <Rocket
-          size={180}
-          className="absolute text-brand-fg opacity-15"
-          style={{ transform: "rotate(-45deg)" }}
-        />
-      )}
-      <span className="relative text-3xl font-black tracking-tight text-text">
-        {POSITION_LABEL[position]}
-      </span>
-      <div className="relative flex flex-col items-center gap-0.5">
-        {startups.map((s) => (
-          <span key={s.id} className="truncate text-xs font-medium text-text">
-            {s.name}
-          </span>
-        ))}
+    <div className="flex flex-1 flex-col items-center justify-end">
+      {/* Content card — sits above the bar */}
+      <div className="flex flex-col items-center gap-1.5 pb-2">
+        {isFirst && <span className="text-3xl leading-none">👑</span>}
+        <span className="text-sm font-bold tracking-tight text-text">
+          {POSITION_LABEL[position]}
+        </span>
+        {startups.length > 0 && (
+          <PodiumEntrants startups={startups} size={isMobile ? 9 : 12} />
+        )}
+        <span className="text-xs text-text-muted">{boosts} boosts</span>
       </div>
-      <span className="relative text-xs text-text-muted">{boosts} boosts</span>
+      <AnimatedBar height={barH} isFirst={isFirst} />
     </div>
   );
 }
 
 export default function AwardsPage() {
   const [selectedSector, setSelectedSector] = useState("All");
-  const { data: allStartups = [], isLoading } = useStartupsQuery({ sort: "trending" });
+  const { data: allStartups = [], isLoading } = useStartupsQuery({
+    sort: "trending",
+    refetchOnMount: "always",
+  });
 
   const podiumContainerRef = useRef<HTMLDivElement>(null);
   const [podiumH, setPodiumH] = useState(0);
@@ -205,8 +259,8 @@ export default function AwardsPage() {
   const secondBoosts = podiumPositions.second[0]?.boost_count ?? 0;
   const thirdBoosts = podiumPositions.third[0]?.boost_count ?? 0;
 
-  const firstBarH = Math.max(0, podiumH - CROWN_H - GAP - LOGO_H - LOGO_PADDING_BOTTOM - GAP - 24);
-  const minBarH = Math.round(firstBarH * 0.33);
+  const firstBarH = Math.round(podiumH * MAX_BAR_FRAC);
+  const minBarH = Math.round(firstBarH * MIN_BAR_FRAC);
   const secondBarH = firstBoosts > 0 ? Math.max(minBarH, Math.round((secondBoosts / firstBoosts) * firstBarH)) : minBarH;
   const thirdBarH = firstBoosts > 0 ? Math.max(minBarH, Math.round((thirdBoosts / firstBoosts) * firstBarH)) : minBarH;
 
@@ -236,50 +290,37 @@ export default function AwardsPage() {
             </div>
 
             {/* Podium container */}
-            <div ref={podiumContainerRef} className="flex flex-1 items-end gap-3 px-6 pb-6">
+            <div ref={podiumContainerRef} className="flex min-h-0 flex-1 items-end gap-3 px-6 pb-6">
               {isLoading ? (
                 <p className="text-sm text-text-muted">Loading...</p>
               ) : podiumPositions.first.length === 0 ? (
                 <p className="text-sm text-text-muted">No boosts yet</p>
               ) : (
                 <>
-                  {/* 2nd place */}
-                  <div className="flex flex-1 flex-col items-center">
-                    {podiumPositions.second.length > 0 && (
-                      <LogoGroup startups={podiumPositions.second} size={isMobile ? 10 : 16} />
-                    )}
-                    <div
-                      className="w-full overflow-hidden rounded-t"
-                      style={{ height: secondBarH, background: "linear-gradient(to top, var(--color-brand-subtle), color-mix(in srgb, var(--color-brand) 45%, transparent))" }}
-                    >
-                      <PodiumBarContent position={2} boosts={secondBoosts} isFirst={false} startups={podiumPositions.second} />
-                    </div>
-                  </div>
-
-                  {/* 1st place */}
-                  <div className="flex flex-1 flex-col items-center">
-                    <span className="text-4xl">👑</span>
-                    <LogoGroup startups={podiumPositions.first} size={isMobile ? 10 : 16} />
-                    <div
-                      className="w-full overflow-hidden rounded-t"
-                      style={{ height: firstBarH, background: "linear-gradient(to top, var(--color-brand-subtle), color-mix(in srgb, var(--color-brand) 45%, transparent))" }}
-                    >
-                      <PodiumBarContent position={1} boosts={firstBoosts} isFirst={true} startups={podiumPositions.first} />
-                    </div>
-                  </div>
-
-                  {/* 3rd place */}
-                  <div className="flex flex-1 flex-col items-center">
-                    {podiumPositions.third.length > 0 && (
-                      <LogoGroup startups={podiumPositions.third} size={isMobile ? 10 : 16} />
-                    )}
-                    <div
-                      className="w-full overflow-hidden rounded-t"
-                      style={{ height: thirdBarH, background: "linear-gradient(to top, var(--color-brand-subtle), color-mix(in srgb, var(--color-brand) 45%, transparent))" }}
-                    >
-                      <PodiumBarContent position={3} boosts={thirdBoosts} isFirst={false} startups={podiumPositions.third} />
-                    </div>
-                  </div>
+                  <PodiumColumn
+                    position={2}
+                    boosts={secondBoosts}
+                    barH={secondBarH}
+                    startups={podiumPositions.second}
+                    isFirst={false}
+                    isMobile={isMobile}
+                  />
+                  <PodiumColumn
+                    position={1}
+                    boosts={firstBoosts}
+                    barH={firstBarH}
+                    startups={podiumPositions.first}
+                    isFirst={true}
+                    isMobile={isMobile}
+                  />
+                  <PodiumColumn
+                    position={3}
+                    boosts={thirdBoosts}
+                    barH={thirdBarH}
+                    startups={podiumPositions.third}
+                    isFirst={false}
+                    isMobile={isMobile}
+                  />
                 </>
               )}
             </div>
@@ -316,7 +357,10 @@ export default function AwardsPage() {
                           />
                         </div>
                       </div>
-                      <span className="shrink-0 text-xs text-text-muted">{boosts}</span>
+                      <span className="flex shrink-0 items-center gap-1 text-xs text-text-muted">
+                        <Rocket size={12} />
+                        {boosts}
+                      </span>
                     </li>
                   );
                 })}

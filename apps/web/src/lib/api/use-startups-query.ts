@@ -28,7 +28,16 @@ export const startupsKeys = {
  * Query hook for fetching startups list with optional filters.
  * Uses SuperTokens session cookies for authentication automatically.
  */
-export function useStartupsQuery(options: { favorited?: boolean; sort?: "recent" | "trending" } = {}) {
+export function useStartupsQuery(
+  options: {
+    favorited?: boolean;
+    sort?: "recent" | "trending";
+    // Refetch every time the component mounts (e.g. on navigating back to the
+    // page) so the list reflects changes made elsewhere. Overrides the global
+    // refetchOnMount: false default.
+    refetchOnMount?: boolean | "always";
+  } = {},
+) {
   const { authenticated, loading } = useUser();
 
   return useQuery({
@@ -39,6 +48,7 @@ export function useStartupsQuery(options: { favorited?: boolean; sort?: "recent"
         sort: options.sort,
       }),
     enabled: !loading && (!options.favorited || authenticated),
+    refetchOnMount: options.refetchOnMount,
   });
 }
 

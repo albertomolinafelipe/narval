@@ -31,7 +31,6 @@ import { useAuthGuard } from "@/lib/use-auth-guard";
 import {
   useStartupQuery,
   useFavoriteMutation,
-  useBoostMutation,
 } from "@/lib/api/use-startups-query";
 import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
 import { BoostButton } from "@/app/_components/shared/boost-button";
@@ -68,7 +67,6 @@ export default function StartupPageClient({
 
   // Mutations
   const favoriteMutation = useFavoriteMutation();
-  const boostMutation = useBoostMutation();
 
   const isOwner = user?.email === startup.owner_email;
   const [copied, setCopied] = useState(false);
@@ -105,16 +103,6 @@ export default function StartupPageClient({
     } catch (error) {
       console.error("Failed to toggle favorite:", error);
       // You could add toast notification here
-    }
-  }
-
-  async function handleBoost() {
-    if (!requireAuth()) return;
-
-    try {
-      await boostMutation.mutateAsync(startup.id);
-    } catch (error) {
-      console.error("Failed to boost:", error);
     }
   }
 
@@ -196,14 +184,7 @@ export default function StartupPageClient({
                 fill={startup.is_favorited ? "currentColor" : "none"}
               />
             </IconButton>
-            <BoostButton
-              boosted={startup.has_boosted ?? false}
-              count={startup.boost_count ?? 0}
-              isPending={boostMutation.isPending}
-              onClick={handleBoost}
-              showCount={true}
-              size="large"
-            />
+            <BoostButton startup={startup} showCount={true} size="large" />
             <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
               {copied ? <Check size={16} /> : <Share2 size={16} />}
             </IconButton>
@@ -449,14 +430,7 @@ export default function StartupPageClient({
               fill={startup.is_favorited ? "currentColor" : "none"}
             />
           </IconButton>
-          <BoostButton
-            boosted={startup.has_boosted ?? false}
-            count={startup.boost_count ?? 0}
-            isPending={boostMutation.isPending}
-            onClick={handleBoost}
-            showCount={true}
-            size="large"
-          />
+          <BoostButton startup={startup} showCount={true} size="large" />
           <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
             {copied ? <Check size={16} /> : <Share2 size={16} />}
           </IconButton>

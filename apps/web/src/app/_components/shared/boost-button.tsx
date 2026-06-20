@@ -1,39 +1,25 @@
 "use client";
 
-import { useState, useRef } from "react";
 import { Rocket } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useBoostAction } from "./use-boost-action";
+import { components } from "@/lib/api/generated";
+
+type Startup = components["schemas"]["Startup"];
 
 interface BoostButtonProps {
-  boosted: boolean;
-  count: number;
-  isPending?: boolean;
-  onClick: () => void;
+  startup: Pick<Startup, "id" | "has_boosted" | "boost_count">;
   showCount?: boolean;
   size?: "default" | "large";
 }
 
 export function BoostButton({
-  boosted,
-  count,
-  isPending = false,
-  onClick,
+  startup,
   showCount = false,
   size = "default",
 }: BoostButtonProps) {
-  const [isAnimating, setIsAnimating] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const handleClick = () => {
-    // Don't allow clicking when already boosted or pending
-    if (boosted || isPending) return;
-
-    // Trigger animation
-    setIsAnimating(true);
-    setTimeout(() => setIsAnimating(false), 2000); // Match CSS duration
-
-    onClick();
-  };
+  const { boosted, count, isPending, isAnimating, boost } =
+    useBoostAction(startup);
 
   const tooltipContent = boosted
     ? "You've boosted this startup"
@@ -50,9 +36,8 @@ export function BoostButton({
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <button
-            ref={buttonRef}
             type="button"
-            onClick={handleClick}
+            onClick={boost}
             disabled={isPending}
             className={`flex items-center justify-center rounded-lg transition ${buttonClasses} ${
               boosted
