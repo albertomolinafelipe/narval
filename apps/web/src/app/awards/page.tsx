@@ -61,7 +61,8 @@ function computeCompetitionRank(startups: Startup[]): Map<string, number> {
 function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number }) {
   const [open, setOpen] = useState(false);
 
-  // 1-2 entrants: avatar with the company name directly underneath.
+  // 1-2 entrants: avatar with the company name under it. Fixed-width units so
+  // spacing is equal; long names truncate with an ellipsis.
   if (startups.length <= 2) {
     return (
       <div className="flex items-start justify-center gap-1.5">
@@ -69,7 +70,7 @@ function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number 
           <Link
             key={s.id}
             href={`/startups/${s.id}`}
-            className="flex max-w-[4.5rem] flex-col items-center gap-1"
+            className="flex w-16 flex-col items-center gap-1"
           >
             <Avatar entity={s} size={size} />
             <span className="max-w-full truncate text-xs font-medium text-text hover:underline">

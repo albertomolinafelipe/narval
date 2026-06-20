@@ -310,25 +310,19 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                   filtered.map((s) => (
                     <li
                       key={s.id}
-                      className={`border-b border-border last:border-b-0 ${
-                        s.has_boosted
-                          ? "border-l-4 border-l-brand bg-brand-subtle/10"
-                          : ""
-                      }`}
+                      className="border-b border-border last:border-b-0"
                     >
                       <button
                         type="button"
                         onClick={() => handleStartupClick(s)}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-bg-subtle ${
-                          selected?.id === s.id ? "bg-bg-subtle" : ""
-                        }`}
+                        className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition hover:bg-bg-subtle ${
+                          s.has_boosted
+                            ? "border-l-brand bg-brand-subtle/10"
+                            : "border-l-transparent"
+                        } ${selected?.id === s.id ? "bg-bg-subtle" : ""}`}
                       >
                         <div className="shrink-0">
-                          <BoostCounter
-                            count={s.boost_count ?? 0}
-                            boosted={s.has_boosted ?? false}
-                            clickable={false}
-                          />
+                          <BoostCounter startup={s} />
                         </div>
                         <Avatar entity={s} size={12} />
 
@@ -557,11 +551,7 @@ function AllStartupsList({
                 >
                   {/* Boost counter */}
                   <div className="shrink-0">
-                    <BoostCounter
-                      count={startup.boost_count ?? 0}
-                      boosted={startup.has_boosted ?? false}
-                      clickable={false}
-                    />
+                    <BoostCounter startup={startup} />
                   </div>
 
                   {/* Avatar and content */}
@@ -648,11 +638,7 @@ function LocationStartupsList({
               >
                 {/* Boost counter */}
                 <div className="shrink-0">
-                  <BoostCounter
-                    count={startup.boost_count ?? 0}
-                    boosted={startup.has_boosted ?? false}
-                    clickable={false}
-                  />
+                  <BoostCounter startup={startup} />
                 </div>
 
                 {/* Avatar and content */}
