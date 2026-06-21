@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ComponentType } from "react";
-import { Plus, Check, X, Pencil } from "lucide-react";
+import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { SiLinkedin, SiX, SiInstagram } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { useProfileEdit } from "./edit-context";
@@ -166,6 +166,97 @@ function EditableSocial({
   );
 }
 
+// Website — editable plain URL (no fixed prefix). Distinct from verified_domain,
+// which is locked and shown by the name badge.
+function EditableWebsite({ value }: { value: string }) {
+  const { isOwner, save } = useProfileEdit();
+  const edit = useInlineEdit(value, (next) =>
+    save({ website: next.trim() } as UpdateStartupRequest),
+  );
+
+  if (!edit.editing) {
+    const label = value.replace(/^https?:\/\/(www\.)?/, "").replace(/\/+$/, "");
+    const inner = (
+      <>
+        <Globe size={18} className="shrink-0" />
+        <span className="truncate">{label}</span>
+      </>
+    );
+
+    if (!isOwner) {
+      if (!value) return null;
+      return (
+        <a
+          href={value.startsWith("http") ? value : `https://${value}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-sm text-text-muted transition hover:text-text"
+        >
+          {inner}
+        </a>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={edit.start}
+        className="group flex items-center gap-2 text-sm text-text-muted transition hover:text-text"
+      >
+        {value ? (
+          inner
+        ) : (
+          <span className="flex items-center gap-2 text-text-subtle">
+            <Globe size={18} className="shrink-0" /> Add website
+          </span>
+        )}
+        <Pencil
+          size={12}
+          className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100"
+        />
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <input
+        autoFocus
+        value={edit.draft}
+        disabled={edit.saving}
+        placeholder="acme.com"
+        onChange={(e) => edit.setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            edit.commit(edit.draft.trim());
+          }
+          if (e.key === "Escape") edit.cancel();
+        }}
+        className="w-52 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-text outline-none focus:border-brand"
+      />
+      <button
+        type="button"
+        onClick={() => edit.commit(edit.draft.trim())}
+        disabled={edit.saving}
+        aria-label="Save"
+        className="shrink-0 rounded p-1 text-success transition hover:bg-success/10 disabled:opacity-50"
+      >
+        <Check size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={edit.cancel}
+        disabled={edit.saving}
+        aria-label="Cancel"
+        className="shrink-0 rounded p-1 text-danger transition hover:bg-danger/10 disabled:opacity-50"
+      >
+        <X size={16} />
+      </button>
+    </div>
+  );
+}
+
 export function SocialsColumn({ startup }: { startup: Startup }) {
   const { isOwner } = useProfileEdit();
   const [adding, setAdding] = useState<SocialField[]>([]);
@@ -182,10 +273,14 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
     (s) => !presentFields.has(s.field) && !adding.includes(s.field),
   );
 
-  if (!isOwner && present.length === 0) return null;
+  if (!isOwner && present.length === 0 && !startup.website) return null;
 
   return (
-    <div className="flex shrink-0 flex-col items-start gap-2">
+    <div className="flex shrink-0 flex-col items-start gap-3">
+      <span className="text-xs font-semibold uppercase tracking-wider text-text-subtle">
+        Links
+      </span>
+      <EditableWebsite value={startup.website ?? ""} />
       {present.map((def) => (
         <EditableSocial
           key={def.field}

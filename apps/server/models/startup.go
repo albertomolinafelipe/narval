@@ -9,21 +9,24 @@ import (
 
 // Startup account on the platform.
 type Startup struct {
-	ID           string `gorm:"type:uuid;primaryKey"          json:"id"`
-	Name         string `gorm:"not null;uniqueIndex"           json:"name"`
-	Tagline      string `json:"tagline"`
-	Description  string `gorm:"type:text"                      json:"description"`
-	Website      string `json:"website"`
-	LogoURL      string `json:"logo_url"`
-	Stage        string `json:"stage"`
-	Industry     string `json:"industry"`
-	TeamSize     int    `json:"team_size"`
-	Location     string `json:"location"`
-	FoundedYear  int    `json:"founded_year"`
-	TechStack    string `json:"tech_stack"`
-	BannerImage  string `json:"banner_image"`  // URL of the banner image
-	ProductLinks string `json:"product_links"` // JSON: {"web":"...","ios":"...","android":"..."}
-	Founders     string `json:"founders"`      // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	ID          string `gorm:"type:uuid;primaryKey"          json:"id"`
+	Name        string `gorm:"not null;uniqueIndex"           json:"name"`
+	Tagline     string `json:"tagline"`
+	Description string `gorm:"type:text"                      json:"description"`
+	Website     string `json:"website"`
+	// VerifiedDomain is set only at verified registration and is never updatable
+	// by the owner. Empty for non-verified startups.
+	VerifiedDomain string `json:"verified_domain"`
+	LogoURL        string `json:"logo_url"`
+	Stage          string `json:"stage"`
+	Industry       string `json:"industry"`
+	TeamSize       int    `json:"team_size"`
+	Location       string `json:"location"`
+	FoundedYear    int    `json:"founded_year"`
+	TechStack      string `json:"tech_stack"`
+	BannerImage    string `json:"banner_image"`  // URL of the banner image
+	ProductLinks   string `json:"product_links"` // JSON: {"web":"...","ios":"...","android":"..."}
+	Founders       string `json:"founders"`      // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
 
 	// Socials — explicit columns
 	Linkedin  string `json:"linkedin"`

@@ -17,6 +17,9 @@ properties:
     type: string
   website:
     type: string
+  verified_domain:
+    type: string
+    description: Verified domain (read-only, set at verification; empty if unverified)
   logo_url:
     type: string
   stage:

@@ -74,6 +74,7 @@ function EditShell({
   input,
   error,
   fill = false,
+  block = false,
   onStart,
   onCommit,
   onCancel,
@@ -86,8 +87,10 @@ function EditShell({
   saving: boolean;
   input: ReactNode;
   error?: string | null;
-  /** Stretch the editor to fill the parent's width (e.g. text / textarea). */
+  /** Stretch the editor input to fill the parent's width while editing. */
   fill?: boolean;
+  /** Full-width display that wraps (multiline); otherwise the pencil hugs the text. */
+  block?: boolean;
   onStart: () => void;
   onCommit: () => void;
   onCancel: () => void;
@@ -102,15 +105,19 @@ function EditShell({
       <button
         type="button"
         onClick={onStart}
-        className="group inline-flex max-w-full items-start gap-1 rounded text-left"
+        className={`group items-start rounded text-left ${
+          block ? "flex w-full gap-2" : "inline-flex max-w-full gap-1"
+        }`}
       >
-        {hasValue ? (
-          display
-        ) : (
-          <span className={`text-text-subtle ${placeholderClassName ?? ""}`}>
-            {placeholder}
-          </span>
-        )}
+        <span className={block ? "min-w-0 flex-1" : undefined}>
+          {hasValue ? (
+            display
+          ) : (
+            <span className={`text-text-subtle ${placeholderClassName ?? ""}`}>
+              {placeholder}
+            </span>
+          )}
+        </span>
         <Pencil
           size={15}
           className="mt-1.5 shrink-0 text-text-subtle opacity-0 transition group-hover:text-brand group-hover:opacity-100"
@@ -215,6 +222,7 @@ export function EditableText({
       editing={edit.editing}
       saving={edit.saving}
       fill
+      block={multiline}
       onStart={edit.start}
       onCommit={commit}
       onCancel={edit.cancel}

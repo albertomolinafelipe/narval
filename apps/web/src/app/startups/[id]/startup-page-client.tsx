@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/user";
 import { useEffect, useState } from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import {
   Star,
   Share2,
@@ -395,14 +396,35 @@ export default function StartupPageClient({
         <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
           <h1 className="flex items-center gap-2 text-2xl font-bold text-text">
             {startup.name}
-            {startup.verified && <BadgeCheck size={20} className="shrink-0 text-brand" />}
+            {startup.verified && (
+              <Tooltip.Provider delayDuration={150}>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <span className="flex items-center text-brand">
+                      <BadgeCheck size={20} className="shrink-0" />
+                    </span>
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      sideOffset={5}
+                      className="rounded-lg border border-border bg-bg-raised px-3 py-2 text-xs text-text shadow-md"
+                    >
+                      {startup.verified_domain
+                        ? `Verified · ${startup.verified_domain}`
+                        : "Verified"}
+                      <Tooltip.Arrow className="fill-border" />
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+            )}
           </h1>
           <EditableText
             field="tagline"
             value={startup.tagline ?? ""}
             placeholder="Add a tagline"
             maxLength={100}
-            className="mt-0.5 block text-sm text-text-muted"
+            className="mt-0.5 block break-words text-sm text-text-muted"
           />
         </div>
         <div className="flex shrink-0 items-center gap-1 max-md:ml-auto">
@@ -436,7 +458,7 @@ export default function StartupPageClient({
             placeholder="Add a description"
             multiline
             maxLength={600}
-            className="block whitespace-pre-wrap text-sm leading-relaxed text-text-muted"
+            className="block whitespace-pre-wrap break-words text-sm leading-relaxed text-text-muted"
           />
         </div>
         <SocialsColumn startup={startup} />

@@ -41,7 +41,6 @@ func extractDomain(websiteURL string) string {
 	return host
 }
 
-
 type Handler struct {
 	cfg    *config.Config
 	db     *gorm.DB
@@ -62,12 +61,12 @@ func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
 func (h *Handler) Register(c *gin.Context) {
 	var req struct {
 		AccountType string  `json:"account_type" binding:"required,oneof=user startup"`
-		Email       string  `json:"email"`         // user + startup open path
-		Nickname    string  `json:"nickname"`      // user path
-		Name        *string `json:"name"`          // startup (both paths)
-		Website     *string `json:"website"`       // startup verified path
-		EmailPrefix *string `json:"email_prefix"`  // startup verified path
-		Verified    bool    `json:"verified"`      // true = domain path, false = open path
+		Email       string  `json:"email"`        // user + startup open path
+		Nickname    string  `json:"nickname"`     // user path
+		Name        *string `json:"name"`         // startup (both paths)
+		Website     *string `json:"website"`      // startup verified path
+		EmailPrefix *string `json:"email_prefix"` // startup verified path
+		Verified    bool    `json:"verified"`     // true = domain path, false = open path
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
@@ -119,7 +118,7 @@ func (h *Handler) Register(c *gin.Context) {
 			}
 
 			var domainCount int64
-			h.db.Model(&models.Startup{}).Where("website = ?", normalizedDomain).Count(&domainCount)
+			h.db.Model(&models.Startup{}).Where("verified_domain = ?", normalizedDomain).Count(&domainCount)
 			if domainCount > 0 {
 				c.JSON(http.StatusConflict, gin.H{"code": "DOMAIN_TAKEN", "message": "a startup with this domain is already registered"})
 				return
@@ -278,11 +277,14 @@ func (h *Handler) Verify(c *gin.Context) {
 		// Auto-create startup profile if applicable
 		if draft.AccountType == models.AccountTypeStartup {
 			startup := models.Startup{
-				Name:       draft.Name,
-				Website:    draft.Website,
-				Verified:   draft.Verified,
-				OwnerID:    user.ID,
-				OwnerEmail: user.Email,
+				Name:    draft.Name,
+				Website: draft.Website,
+				// Lock in the verified domain; the editable Website is seeded
+				// to the same value but the owner can change it later.
+				VerifiedDomain: draft.Website,
+				Verified:       draft.Verified,
+				OwnerID:        user.ID,
+				OwnerEmail:     user.Email,
 			}
 			if err := h.db.Create(&startup).Error; err != nil {
 				h.logger.Printf("failed to create startup profile: %v", err)

@@ -1,4 +1,4 @@
-import { MapPin, Users, Calendar, Mail, Globe } from "lucide-react";
+import { MapPin, Users, Calendar, Mail } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { Pill } from "@/app/_components/shared/list-panel";
 import { Section, SocialLink } from "./ui";
@@ -9,7 +9,7 @@ type Startup = components["schemas"]["Startup"];
 export function OverviewTab({ startup }: { startup: Startup }) {
   const currentYear = new Date().getFullYear();
 
-  const hasLinks = startup.website || startup.contact_general;
+  const hasContact = !!startup.contact_general;
 
   return (
     <div className="flex flex-col gap-8">
@@ -102,26 +102,16 @@ export function OverviewTab({ startup }: { startup: Startup }) {
         </Section>
       )}
 
-      {/* Links */}
-      {hasLinks && (
-        <Section title="Links">
+      {/* Contact */}
+      {hasContact && (
+        <Section title="Contact">
           <div className="flex flex-wrap gap-3">
-            {startup.website && (
-              <SocialLink
-                href={startup.website}
-                label={startup.website.replace(/^https?:\/\//, "")}
-              >
-                <Globe size={14} />
-              </SocialLink>
-            )}
-            {startup.contact_general && (
-              <SocialLink
-                href={`mailto:${startup.contact_general}`}
-                label={startup.contact_general}
-              >
-                <Mail size={14} />
-              </SocialLink>
-            )}
+            <SocialLink
+              href={`mailto:${startup.contact_general}`}
+              label={startup.contact_general!}
+            >
+              <Mail size={14} />
+            </SocialLink>
           </div>
         </Section>
       )}

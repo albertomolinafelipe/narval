@@ -91,7 +91,7 @@ func (h *Handler) CheckStartupWebsite(c *gin.Context) {
 		return
 	}
 	var count int64
-	h.DB.Model(&models.Startup{}).Where("website = ?", urlParam).Count(&count)
+	h.DB.Model(&models.Startup{}).Where("verified_domain = ?", urlParam).Count(&count)
 	c.JSON(http.StatusOK, gin.H{"available": count == 0})
 }
 
@@ -316,10 +316,6 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 	if req.Name != "" {
 		st.Name = req.Name
 	}
-	if req.Website != nil && *req.Website != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "website cannot be changed after registration"})
-		return
-	}
 	applyStartupFields(&st, &req)
 
 	if err := h.DB.Save(&st).Error; err != nil {
@@ -499,6 +495,7 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"tagline":           s.Tagline,
 		"description":       s.Description,
 		"website":           s.Website,
+		"verified_domain":   s.VerifiedDomain,
 		"logo_url":          s.LogoURL,
 		"stage":             s.Stage,
 		"industry":          s.Industry,
