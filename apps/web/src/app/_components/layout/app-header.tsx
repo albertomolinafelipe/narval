@@ -80,7 +80,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
           aria-label="Home"
           className="text-text transition-opacity hover:opacity-80"
         >
-          <NarvalLogo className="h-9 w-9 rounded-sm" />
+          <NarvalLogo className="h-7 w-7 rounded-sm" />
         </Link>
         <div className="h-4 w-px bg-border" />
 
