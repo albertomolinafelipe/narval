@@ -424,14 +424,6 @@ export default function StartupPageClient({
           <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
             {copied ? <Check size={16} /> : <Share2 size={16} />}
           </IconButton>
-          {isOwner && (
-            <Link
-              href="/profile"
-              className="ml-1 rounded-lg border border-border bg-bg-raised px-3 py-1.5 text-xs font-medium text-text transition hover:bg-bg-subtle"
-            >
-              Edit profile
-            </Link>
-          )}
         </div>
       </div>
 
