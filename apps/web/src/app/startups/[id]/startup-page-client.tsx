@@ -11,7 +11,6 @@ import {
   Check,
   MapPin,
   Users,
-  Calendar,
   Mail,
   Globe,
   X,
@@ -36,6 +35,8 @@ import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { TECH_ICONS, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
+import { ProfileTabs } from "./_profile/profile-tabs";
+import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
 
@@ -395,25 +396,6 @@ export default function StartupPageClient({
           {startup.tagline && (
             <p className="mt-0.5 text-sm text-text-muted">{startup.tagline}</p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {startup.stage && <Pill label={startup.stage} />}
-            {startup.industry && <Pill label={startup.industry} />}
-            {startup.location && (
-              <Pill icon={<MapPin size={12} />} label={startup.location} />
-            )}
-            {startup.founded_year != null && startup.founded_year > 0 && (
-              <Pill
-                icon={<Calendar size={12} />}
-                label={`Founded ${startup.founded_year}`}
-              />
-            )}
-            {startup.team_size != null && startup.team_size > 0 && (
-              <Pill
-                icon={<Users size={12} />}
-                label={`${startup.team_size} people`}
-              />
-            )}
-          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1 pt-1 max-md:ml-auto max-md:pt-0">
           <IconButton
@@ -445,239 +427,16 @@ export default function StartupPageClient({
         </div>
       </div>
 
-      {/*  Body  */}
-      <div className="flex flex-col gap-8">
-          {/* Founders */}
-          {startup.founders && startup.founders.length > 0 && (
-            <Section title="Founders">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {startup.founders.map((founder, i) => (
-                  <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-bg-raised p-3">
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-bg-subtle border border-border">
-                      {founder.photo_url ? (
-                        <img
-                          src={founder.photo_url}
-                          alt={founder.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="flex h-full w-full items-center justify-center text-lg font-semibold text-brand">
-                          {founder.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-text">{founder.name}</p>
-                      {founder.linkedin && (
-                        <a
-                          href={founder.linkedin.startsWith("http") ? founder.linkedin : `https://linkedin.com/in/${founder.linkedin}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-brand hover:underline"
-                        >
-                          LinkedIn
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Section>
-          )}
+      {/*  Description  */}
+      {startup.description && (
+        <p className="mb-8 max-w-3xl text-sm leading-relaxed text-text-muted">
+          {startup.description}
+        </p>
+      )}
 
-          {/* About */}
-          {(startup.description || startup.website || startup.contact_general || startup.linkedin || startup.twitter || startup.github || startup.instagram) && (
-            <Section title="About">
-              {startup.description && (
-                <p className="text-sm leading-relaxed text-text-muted">
-                  {startup.description}
-                </p>
-              )}
-              <div className={`flex flex-wrap gap-3 ${startup.description ? "mt-4" : ""}`}>
-                {startup.website && (
-                  <SocialLink
-                    href={startup.website}
-                    label={startup.website.replace(/^https?:\/\//, "")}
-                  >
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {startup.contact_general && (
-                  <SocialLink
-                    href={`mailto:${startup.contact_general}`}
-                    label={startup.contact_general}
-                  >
-                    <Mail size={14} />
-                  </SocialLink>
-                )}
-                {startup.linkedin && (
-                  <SocialLink href={startup.linkedin} label="LinkedIn">
-                    <SiLinkedin size={14} />
-                  </SocialLink>
-                )}
-                {startup.twitter && (
-                  <SocialLink href={startup.twitter} label="X / Twitter">
-                    <SiX size={14} />
-                  </SocialLink>
-                )}
-                {startup.github && (
-                  <SocialLink href={startup.github} label="GitHub">
-                    <SiGithub size={14} />
-                  </SocialLink>
-                )}
-                {startup.instagram && (
-                  <SocialLink href={startup.instagram} label="Instagram">
-                    <SiInstagram size={14} />
-                  </SocialLink>
-                )}
-              </div>
-            </Section>
-          )}
-
-          {/* Tech stack */}
-          {techTags.length > 0 && (
-            <Section title="Tech stack">
-              <div className="flex flex-wrap gap-2">
-                {techTags.map((tag) => (
-                  <Pill
-                    key={tag}
-                    icon={TECH_ICONS[tag.toLowerCase()]}
-                    label={tag}
-                    variant="code"
-                  />
-                ))}
-              </div>
-            </Section>
-          )}
-
-          {/* Funding */}
-          {startup.is_raising && (
-            <Section title="Funding">
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap gap-2">
-                  {startup.current_round && (
-                    <Pill label={startup.current_round} variant="accent" />
-                  )}
-                  {startup.funding_ask && <Pill label={startup.funding_ask} />}
-                </div>
-                {startup.funding_use && (
-                  <p className="text-sm leading-relaxed text-text-muted">
-                    {startup.funding_use}
-                  </p>
-                )}
-                {startup.contact_funding && (
-                  <div className="flex flex-wrap gap-3 pt-1">
-                    <SocialLink
-                      href={`mailto:${startup.contact_funding}`}
-                      label={startup.contact_funding}
-                    >
-                      <Mail size={14} />
-                    </SocialLink>
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
-
-          {/* Talent / open roles */}
-          {startup.is_hiring && openRoleTags.length > 0 && (
-            <Section title="We're hiring">
-              <div className="flex flex-wrap gap-2">
-                {openRoleTags.map((role) => (
-                  <Pill key={role} label={role} variant="accent" />
-                ))}
-              </div>
-              {startup.contact_talent && (
-                <div className="mt-3 flex flex-wrap gap-3">
-                  <SocialLink
-                    href={`mailto:${startup.contact_talent}`}
-                    label={startup.contact_talent}
-                  >
-                    <Mail size={14} />
-                  </SocialLink>
-                </div>
-              )}
-            </Section>
-          )}
-
-          {/* Product links */}
-          {Object.keys(productLinks).length > 0 && (
-            <Section title="Product">
-              <div className="flex flex-wrap gap-3">
-                {productLinks.web && (
-                  <SocialLink href={productLinks.web} label="Try it online">
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.ios && (
-                  <SocialLink href={productLinks.ios} label="App Store">
-                    <SiAppstore size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.android && (
-                  <SocialLink href={productLinks.android} label="Google Play">
-                    <SiGoogleplay size={14} />
-                  </SocialLink>
-                )}
-              </div>
-            </Section>
-          )}
-
-      </div>
+      {/*  Tabs  */}
+      <ProfileTabs startup={startup} />
     </div>
   );
 }
 
-//  Layout helpers
-
-function Section({
-  title,
-  wip,
-  children,
-}: {
-  title: string;
-  wip?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <section className={wip ? "wip" : ""}>
-      <SectionHeading>{title}</SectionHeading>
-      {children}
-    </section>
-  );
-}
-
-//  Small components
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-text-subtle">
-      {children}
-    </h2>
-  );
-}
-
-function SocialLink({
-  href,
-  label,
-  children,
-}: {
-  href: string;
-  label: string;
-  children: React.ReactNode;
-}) {
-  const url = href.startsWith("http") || href.startsWith("mailto:") ? href : `https://${href}`;
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
-      className="flex items-center gap-1.5 rounded-lg border border-border bg-bg-subtle px-3 py-1.5 text-xs text-text-muted transition hover:bg-bg hover:text-text"
-    >
-      {children}
-      <span>{label}</span>
-    </a>
-  );
-}
