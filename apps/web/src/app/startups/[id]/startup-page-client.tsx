@@ -38,6 +38,7 @@ import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
+import { SocialsColumn } from "./_profile/socials";
 import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
@@ -434,16 +435,19 @@ export default function StartupPageClient({
         </div>
       </div>
 
-      {/*  Description  */}
-      <div className="mb-8 max-w-3xl">
-        <EditableText
-          field="description"
-          value={startup.description ?? ""}
-          placeholder="Add a description"
-          multiline
-          maxLength={600}
-          className="block whitespace-pre-wrap text-sm leading-relaxed text-text-muted"
-        />
+      {/*  Description + socials  */}
+      <div className="mb-8 flex items-start justify-between gap-6">
+        <div className="min-w-0 max-w-3xl flex-1">
+          <EditableText
+            field="description"
+            value={startup.description ?? ""}
+            placeholder="Add a description"
+            multiline
+            maxLength={600}
+            className="block whitespace-pre-wrap text-sm leading-relaxed text-text-muted"
+          />
+        </div>
+        <SocialsColumn startup={startup} />
       </div>
 
       {/*  Tabs  */}

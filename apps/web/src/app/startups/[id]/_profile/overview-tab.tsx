@@ -1,5 +1,4 @@
 import { MapPin, Users, Calendar, Mail, Globe } from "lucide-react";
-import { SiLinkedin, SiX, SiInstagram } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { Pill } from "@/app/_components/shared/list-panel";
 import { Section, SocialLink } from "./ui";
@@ -10,12 +9,7 @@ type Startup = components["schemas"]["Startup"];
 export function OverviewTab({ startup }: { startup: Startup }) {
   const currentYear = new Date().getFullYear();
 
-  const hasLinks =
-    startup.website ||
-    startup.contact_general ||
-    startup.linkedin ||
-    startup.twitter ||
-    startup.instagram;
+  const hasLinks = startup.website || startup.contact_general;
 
   return (
     <div className="flex flex-col gap-8">
@@ -126,21 +120,6 @@ export function OverviewTab({ startup }: { startup: Startup }) {
                 label={startup.contact_general}
               >
                 <Mail size={14} />
-              </SocialLink>
-            )}
-            {startup.linkedin && (
-              <SocialLink href={startup.linkedin} label="LinkedIn">
-                <SiLinkedin size={14} />
-              </SocialLink>
-            )}
-            {startup.twitter && (
-              <SocialLink href={startup.twitter} label="X / Twitter">
-                <SiX size={14} />
-              </SocialLink>
-            )}
-            {startup.instagram && (
-              <SocialLink href={startup.instagram} label="Instagram">
-                <SiInstagram size={14} />
               </SocialLink>
             )}
           </div>

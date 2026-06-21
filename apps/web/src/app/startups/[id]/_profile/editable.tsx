@@ -25,8 +25,9 @@ type NumberField = FieldOf<number>;
 export function useInlineEdit<T>(
   value: T,
   onSave: (next: T) => Promise<void> | void,
+  startOpen = false,
 ) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startOpen);
   const [draft, setDraft] = useState<T>(value);
   const [saving, setSaving] = useState(false);
 
