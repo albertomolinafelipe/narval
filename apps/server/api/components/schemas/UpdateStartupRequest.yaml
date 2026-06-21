@@ -46,6 +46,9 @@ properties:
     type: boolean
   open_roles:
     type: string
+  contributing_text:
+    type: string
+    description: Markdown describing how to contribute
   contact_general:
     type: string
   contact_funding:

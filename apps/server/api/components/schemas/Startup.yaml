@@ -64,6 +64,9 @@ properties:
   open_roles:
     type: string
     description: Comma-separated list of open roles
+  contributing_text:
+    type: string
+    description: Markdown describing how to contribute
   contact_general:
     type: string
   contact_funding:

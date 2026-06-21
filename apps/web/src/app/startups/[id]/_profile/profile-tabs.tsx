@@ -2,32 +2,51 @@
 
 import { useState } from "react";
 import { components } from "@/lib/api/generated";
+import { useProfileEdit } from "./edit-context";
 import { OverviewTab } from "./overview-tab";
 import { ProductTab } from "./product-tab";
 import { MetricsTab } from "./metrics-tab";
-import { ContributingTab } from "./contributing-tab";
+import { ContributingTab, isContributingEmpty } from "./contributing-tab";
 import { EmptyState } from "./ui";
 
 type Startup = components["schemas"]["Startup"];
 
 type TabId = "overview" | "product" | "metrics" | "contributing" | "updates";
 
-const TABS: { id: TabId; label: string }[] = [
+interface TabDef {
+  id: TabId;
+  label: string;
+  /** Hidden from visitors when isEmpty(startup) is true (owner always sees it). */
+  hideWhenEmpty?: boolean;
+  isEmpty?: (startup: Startup) => boolean;
+}
+
+const TABS: TabDef[] = [
   { id: "overview", label: "Overview" },
   { id: "product", label: "Product" },
   { id: "metrics", label: "Metrics" },
-  { id: "contributing", label: "Contributing" },
+  {
+    id: "contributing",
+    label: "Contributing",
+    hideWhenEmpty: true,
+    isEmpty: isContributingEmpty,
+  },
   { id: "updates", label: "Updates" },
 ];
 
 export function ProfileTabs({ startup }: { startup: Startup }) {
+  const { isOwner } = useProfileEdit();
   const [active, setActive] = useState<TabId>("overview");
+
+  const visibleTabs = TABS.filter(
+    (tab) => isOwner || !(tab.hideWhenEmpty && tab.isEmpty?.(startup)),
+  );
 
   return (
     <div className="flex flex-col">
       {/* Tab bar */}
       <div className="flex gap-1 overflow-x-auto border-b border-border">
-        {TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = tab.id === active;
           return (
             <button

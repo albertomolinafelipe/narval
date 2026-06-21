@@ -185,7 +185,7 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
   if (!isOwner && present.length === 0) return null;
 
   return (
-    <div className="flex shrink-0 flex-col items-end gap-2">
+    <div className="flex shrink-0 flex-col items-start gap-2">
       {present.map((def) => (
         <EditableSocial
           key={def.field}

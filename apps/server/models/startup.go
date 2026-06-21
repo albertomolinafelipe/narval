@@ -41,6 +41,9 @@ type Startup struct {
 	IsHiring  bool   `json:"is_hiring"`
 	OpenRoles string `json:"open_roles"` // comma list
 
+	// Contributing (markdown)
+	ContributingText string `gorm:"type:text" json:"contributing_text"`
+
 	// Contact
 	ContactGeneral string `json:"contact_general"`
 	ContactFunding string `json:"contact_funding"`

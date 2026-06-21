@@ -165,32 +165,33 @@ func (h *Handler) ListStartups(c *gin.Context) {
 
 // startupRequest holds optional fields for create/update.
 type startupRequest struct {
-	Name           string  `json:"name"           binding:"omitempty,min=2,max=100"`
-	Tagline        *string `json:"tagline"        binding:"omitempty,max=160"`
-	Description    *string `json:"description"    binding:"omitempty,max=1000"`
-	Website        *string `json:"website"`
-	Stage          *string `json:"stage"`
-	Industry       *string `json:"industry"`
-	TeamSize       *int    `json:"team_size"`
-	Location       *string `json:"location"`
-	FoundedYear    *int    `json:"founded_year"`
-	TechStack      *string `json:"tech_stack"`
-	ProductLinks   *string `json:"product_links"`
-	Linkedin       *string `json:"linkedin"`
-	Twitter        *string `json:"twitter"`
-	Github         *string `json:"github"`
-	Instagram      *string `json:"instagram"`
-	IsRaising      *bool   `json:"is_raising"`
-	CurrentRound   *string `json:"current_round"`
-	FundingAsk     *string `json:"funding_ask"`
-	FundingUse     *string `json:"funding_use"`
-	IsHiring       *bool   `json:"is_hiring"`
-	OpenRoles      *string `json:"open_roles"`
-	ContactGeneral *string `json:"contact_general"`
-	ContactFunding *string `json:"contact_funding"`
-	ContactTalent  *string `json:"contact_talent"`
-	ProfileSetup   *bool   `json:"profile_setup"`
-	Founders       *string `json:"founders"` // JSON array
+	Name             string  `json:"name"           binding:"omitempty,min=2,max=100"`
+	Tagline          *string `json:"tagline"        binding:"omitempty,max=160"`
+	Description      *string `json:"description"    binding:"omitempty,max=1000"`
+	Website          *string `json:"website"`
+	Stage            *string `json:"stage"`
+	Industry         *string `json:"industry"`
+	TeamSize         *int    `json:"team_size"`
+	Location         *string `json:"location"`
+	FoundedYear      *int    `json:"founded_year"`
+	TechStack        *string `json:"tech_stack"`
+	ProductLinks     *string `json:"product_links"`
+	Linkedin         *string `json:"linkedin"`
+	Twitter          *string `json:"twitter"`
+	Github           *string `json:"github"`
+	Instagram        *string `json:"instagram"`
+	IsRaising        *bool   `json:"is_raising"`
+	CurrentRound     *string `json:"current_round"`
+	FundingAsk       *string `json:"funding_ask"`
+	FundingUse       *string `json:"funding_use"`
+	IsHiring         *bool   `json:"is_hiring"`
+	OpenRoles        *string `json:"open_roles"`
+	ContributingText *string `json:"contributing_text" binding:"omitempty,max=2000"`
+	ContactGeneral   *string `json:"contact_general"`
+	ContactFunding   *string `json:"contact_funding"`
+	ContactTalent    *string `json:"contact_talent"`
+	ProfileSetup     *bool   `json:"profile_setup"`
+	Founders         *string `json:"founders"` // JSON array
 }
 
 // validateStartupRequest checks enum values; returns an error message or "".
@@ -493,38 +494,39 @@ func (h *Handler) UploadFounderPhoto(c *gin.Context) {
 func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]interface{} {
 	// Convert to map to add dynamic field
 	response := map[string]interface{}{
-		"id":              s.ID,
-		"name":            s.Name,
-		"tagline":         s.Tagline,
-		"description":     s.Description,
-		"website":         s.Website,
-		"logo_url":        s.LogoURL,
-		"stage":           s.Stage,
-		"industry":        s.Industry,
-		"team_size":       s.TeamSize,
-		"location":        s.Location,
-		"founded_year":    s.FoundedYear,
-		"tech_stack":      s.TechStack,
-		"banner_image":    s.BannerImage,
-		"product_links":   s.ProductLinks,
-		"linkedin":        s.Linkedin,
-		"twitter":         s.Twitter,
-		"github":          s.Github,
-		"instagram":       s.Instagram,
-		"is_raising":      s.IsRaising,
-		"current_round":   s.CurrentRound,
-		"funding_ask":     s.FundingAsk,
-		"funding_use":     s.FundingUse,
-		"is_hiring":       s.IsHiring,
-		"open_roles":      s.OpenRoles,
-		"contact_general": s.ContactGeneral,
-		"contact_funding": s.ContactFunding,
-		"contact_talent":  s.ContactTalent,
-		"owner_id":        s.OwnerID,
-		"owner_email":     s.OwnerEmail,
-		"profile_setup":   s.ProfileSetup,
-		"created_at":      s.CreatedAt,
-		"updated_at":      s.UpdatedAt,
+		"id":                s.ID,
+		"name":              s.Name,
+		"tagline":           s.Tagline,
+		"description":       s.Description,
+		"website":           s.Website,
+		"logo_url":          s.LogoURL,
+		"stage":             s.Stage,
+		"industry":          s.Industry,
+		"team_size":         s.TeamSize,
+		"location":          s.Location,
+		"founded_year":      s.FoundedYear,
+		"tech_stack":        s.TechStack,
+		"banner_image":      s.BannerImage,
+		"product_links":     s.ProductLinks,
+		"linkedin":          s.Linkedin,
+		"twitter":           s.Twitter,
+		"github":            s.Github,
+		"instagram":         s.Instagram,
+		"is_raising":        s.IsRaising,
+		"current_round":     s.CurrentRound,
+		"funding_ask":       s.FundingAsk,
+		"funding_use":       s.FundingUse,
+		"is_hiring":         s.IsHiring,
+		"open_roles":        s.OpenRoles,
+		"contributing_text": s.ContributingText,
+		"contact_general":   s.ContactGeneral,
+		"contact_funding":   s.ContactFunding,
+		"contact_talent":    s.ContactTalent,
+		"owner_id":          s.OwnerID,
+		"owner_email":       s.OwnerEmail,
+		"profile_setup":     s.ProfileSetup,
+		"created_at":        s.CreatedAt,
+		"updated_at":        s.UpdatedAt,
 	}
 
 	// Parse founders JSON into array so clients receive structured data.
@@ -632,6 +634,9 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	}
 	if req.OpenRoles != nil {
 		s.OpenRoles = *req.OpenRoles
+	}
+	if req.ContributingText != nil {
+		s.ContributingText = *req.ContributingText
 	}
 	if req.ContactGeneral != nil {
 		s.ContactGeneral = *req.ContactGeneral

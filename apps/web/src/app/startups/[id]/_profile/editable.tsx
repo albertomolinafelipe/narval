@@ -15,7 +15,7 @@ type FieldOf<V> = {
     ? K
     : never;
 }[keyof UpdateStartupRequest];
-type StringField = FieldOf<string>;
+export type StringField = FieldOf<string>;
 type NumberField = FieldOf<number>;
 
 /**

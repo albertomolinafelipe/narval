@@ -33,7 +33,7 @@ import {
 } from "@/lib/api/use-startups-query";
 import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
 import { BoostButton } from "@/app/_components/shared/boost-button";
-import { TECH_ICONS, parseTechStack } from "@/lib/tech-icons";
+import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
@@ -276,7 +276,7 @@ export default function StartupPageClient({
                 {techTags.map((tag) => (
                   <Pill
                     key={tag}
-                    icon={TECH_ICONS[tag.toLowerCase()]}
+                    icon={getTechIcon(tag)}
                     label={tag}
                     variant="code"
                   />

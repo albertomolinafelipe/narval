@@ -1,77 +1,70 @@
-import { Mail } from "lucide-react";
-import { SiGithub } from "react-icons/si";
 import { components } from "@/lib/api/generated";
-import { Pill } from "@/app/_components/shared/list-panel";
-import { TECH_ICONS, parseTechStack } from "@/lib/tech-icons";
-import { Section, SocialLink, EmptyState } from "./ui";
+import { parseTechStack, TechIcon } from "@/lib/tech-icons";
+import { Section } from "./ui";
+import { EditableMarkdown } from "./markdown";
+import { EditableSource } from "./source-link";
+import { EditableText } from "./editable";
+import { useProfileEdit } from "./edit-context";
 
 type Startup = components["schemas"]["Startup"];
 
+/** A tab with no content is hidden from visitors (only the owner sees it). */
+export function isContributingEmpty(startup: Startup): boolean {
+  const hasTech = parseTechStack(startup.tech_stack).length > 0;
+  return !(startup.contributing_text || hasTech || startup.github);
+}
+
 export function ContributingTab({ startup }: { startup: Startup }) {
+  const { isOwner } = useProfileEdit();
   const techTags = parseTechStack(startup.tech_stack);
 
-  const openRoleTags = startup.open_roles
-    ? startup.open_roles.split(",").map((t) => t.trim()).filter(Boolean)
-    : [];
-
-  const isHiring = startup.is_hiring && openRoleTags.length > 0;
-  const hasAny = techTags.length > 0 || startup.github || isHiring;
-
-  if (!hasAny) {
-    return (
-      <EmptyState
-        title="Nothing here yet"
-        hint="Open-source info, good first issues and ways to help will live here."
-      />
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-8">
-      {techTags.length > 0 && (
-        <Section title="Tech stack">
-          <div className="flex flex-wrap gap-2">
-            {techTags.map((tag) => (
-              <Pill
-                key={tag}
-                icon={TECH_ICONS[tag.toLowerCase()]}
-                label={tag}
-                variant="code"
-              />
-            ))}
-          </div>
-        </Section>
-      )}
+    <div className="grid gap-8 md:grid-cols-2">
+      {/* Left: editable markdown */}
+      <EditableMarkdown
+        field="contributing_text"
+        value={startup.contributing_text ?? ""}
+        placeholder="Describe how others can get involved (issues, repos…). Leave empty and this tab stays hidden from visitors."
+        maxLength={2000}
+      />
 
-      {startup.github && (
-        <Section title="Source">
-          <div className="flex flex-wrap gap-3">
-            <SocialLink href={startup.github} label="GitHub">
-              <SiGithub size={14} />
-            </SocialLink>
+      {/* Right: source + stack */}
+      <div className="flex flex-col gap-8">
+        {(startup.github || isOwner) && (
+          <div className="rounded-xl border border-brand/20 bg-brand-subtle/30 p-4">
+            <Section title="Source">
+              <EditableSource value={startup.github ?? ""} />
+            </Section>
           </div>
-        </Section>
-      )}
+        )}
 
-      {isHiring && (
-        <Section title="We're hiring">
-          <div className="flex flex-wrap gap-2">
-            {openRoleTags.map((role) => (
-              <Pill key={role} label={role} variant="accent" />
-            ))}
-          </div>
-          {startup.contact_talent && (
-            <div className="mt-3 flex flex-wrap gap-3">
-              <SocialLink
-                href={`mailto:${startup.contact_talent}`}
-                label={startup.contact_talent}
-              >
-                <Mail size={14} />
-              </SocialLink>
-            </div>
-          )}
-        </Section>
-      )}
+        {(techTags.length > 0 || isOwner) && (
+          <Section title="Tech stack">
+            <EditableText
+              field="tech_stack"
+              value={startup.tech_stack ?? ""}
+              placeholder="Add your stack (comma separated)"
+              maxLength={200}
+              display={(v) => (
+                <span className="flex flex-wrap gap-5">
+                  {parseTechStack(v).map((tag) => (
+                    <span
+                      key={tag}
+                      className="flex w-14 flex-col items-center gap-1.5 text-center"
+                      title={tag}
+                    >
+                      <TechIcon name={tag} size={34} />
+                      <span className="max-w-full truncate text-[11px] text-text-muted">
+                        {tag}
+                      </span>
+                    </span>
+                  ))}
+                </span>
+              )}
+            />
+          </Section>
+        )}
+      </div>
     </div>
   );
 }
