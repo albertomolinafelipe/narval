@@ -198,3 +198,27 @@ export async function boostStartup(
     throw new Error(errorData.message || "Failed to boost startup");
   }
 }
+
+/**
+ * Partially update a startup. Only the fields present in `patch` are changed;
+ * the server leaves omitted fields untouched. Returns the updated startup.
+ * SuperTokens session cookies are automatically included.
+ */
+export async function updateStartup(
+  id: string,
+  patch: components["schemas"]["UpdateStartupRequest"],
+): Promise<Startup> {
+  const response = await fetch(`/api/proxy/startups/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // Important: include cookies for SuperTokens session
+    body: JSON.stringify(patch),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update startup");
+  }
+
+  return response.json();
+}

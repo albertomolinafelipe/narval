@@ -36,6 +36,8 @@ import { BoostButton } from "@/app/_components/shared/boost-button";
 import { TECH_ICONS, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { ProfileTabs } from "./_profile/profile-tabs";
+import { ProfileEditProvider } from "./_profile/edit-context";
+import { EditableText } from "./_profile/editable";
 import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
@@ -361,6 +363,7 @@ export default function StartupPageClient({
 
   // Full page mode
   return (
+    <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
     <div className="mx-auto max-w-6xl px-6 py-8">
       {/*  Banner  */}
       {banner ? (
@@ -386,18 +389,22 @@ export default function StartupPageClient({
       )}
 
       {/*  Header: logo + name + actions  */}
-      <div className="mb-6 flex items-start gap-5 max-md:flex-wrap max-md:gap-3">
+      <div className="mb-6 flex items-center gap-5 max-md:flex-wrap max-md:gap-3">
         <Avatar entity={startup} size={18} />
         <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
           <h1 className="flex items-center gap-2 text-2xl font-bold text-text">
             {startup.name}
             {startup.verified && <BadgeCheck size={20} className="shrink-0 text-brand" />}
           </h1>
-          {startup.tagline && (
-            <p className="mt-0.5 text-sm text-text-muted">{startup.tagline}</p>
-          )}
+          <EditableText
+            field="tagline"
+            value={startup.tagline ?? ""}
+            placeholder="Add a tagline"
+            maxLength={100}
+            className="mt-0.5 block text-sm text-text-muted"
+          />
         </div>
-        <div className="flex shrink-0 items-center gap-1 pt-1 max-md:ml-auto max-md:pt-0">
+        <div className="flex shrink-0 items-center gap-1 max-md:ml-auto">
           <IconButton
             label={
               startup.is_favorited
@@ -428,15 +435,21 @@ export default function StartupPageClient({
       </div>
 
       {/*  Description  */}
-      {startup.description && (
-        <p className="mb-8 max-w-3xl text-sm leading-relaxed text-text-muted">
-          {startup.description}
-        </p>
-      )}
+      <div className="mb-8 max-w-3xl">
+        <EditableText
+          field="description"
+          value={startup.description ?? ""}
+          placeholder="Add a description"
+          multiline
+          maxLength={600}
+          className="block whitespace-pre-wrap text-sm leading-relaxed text-text-muted"
+        />
+      </div>
 
       {/*  Tabs  */}
       <ProfileTabs startup={startup} />
     </div>
+    </ProfileEditProvider>
   );
 }
 

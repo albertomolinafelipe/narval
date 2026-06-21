@@ -7,6 +7,7 @@ import {
   fetchStartup,
   toggleFavorite,
   boostStartup,
+  updateStartup,
   type FetchStartupsOptions,
 } from "./client";
 import { components } from "./generated";
@@ -68,6 +69,24 @@ export function useStartupQuery(id: string, placeholderData?: Startup) {
     placeholderData, // Use placeholderData instead of initialData
     // Refetch when session becomes available
     enabled: !loading,
+  });
+}
+
+/**
+ * Mutation hook for partially updating a startup (in-place editing).
+ * Sends only the changed fields; on success updates the detail cache with the
+ * returned startup and refreshes the lists. Owner enforcement is server-side.
+ */
+export function useUpdateStartupMutation(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (patch: components["schemas"]["UpdateStartupRequest"]) =>
+      updateStartup(id, patch),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(startupsKeys.detail(id), updated);
+      queryClient.invalidateQueries({ queryKey: startupsKeys.lists() });
+    },
   });
 }
 

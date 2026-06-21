@@ -23,6 +23,9 @@
   /* Danger */
   --danger: #ef4444;
 
+  /* Success */
+  --success: #16a34a;
+
   /* WIP / coming-soon */
   --wip-text: #ca8a04;
 
@@ -53,6 +56,9 @@
 
   /* Danger */
   --danger: #f87171;
+
+  /* Success */
+  --success: #22c55e;
 
   /* WIP / coming-soon */
   --wip-text: #eab308;
@@ -85,6 +91,7 @@
   --color-brand-text: var(--brand-text);
 
   --color-danger: var(--danger);
+  --color-success: var(--success);
 
   --color-wip-text: var(--wip-text);
 
