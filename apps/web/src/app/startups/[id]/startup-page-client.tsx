@@ -368,7 +368,7 @@ export default function StartupPageClient({
   // Full page mode
   return (
     <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
-    <div className="mx-auto max-w-6xl px-6 py-8">
+    <div className="mx-auto max-w-7xl px-6 py-8">
       {/*  Banner  */}
       <EditableImage
         kind="banner"
@@ -479,7 +479,7 @@ export default function StartupPageClient({
 
       {/*  Meta pills + description (left)  |  Links (right)  */}
       <div className="mb-8 flex items-start justify-between gap-6">
-        <div className="min-w-0 max-w-3xl flex-1">
+        <div className="min-w-0 max-w-4xl flex-1">
           {/*  Meta pills  */}
           <div className="mb-4">
             <MetaPills startup={startup} />

@@ -45,7 +45,7 @@ export function ProfileTabs({ startup }: { startup: Startup }) {
   return (
     <div className="flex flex-col">
       {/* Tab bar */}
-      <div className="flex gap-1 overflow-x-auto border-b border-border">
+      <div className="flex border-b border-border">
         {visibleTabs.map((tab) => {
           const isActive = tab.id === active;
           return (
@@ -53,7 +53,7 @@ export function ProfileTabs({ startup }: { startup: Startup }) {
               key={tab.id}
               type="button"
               onClick={() => setActive(tab.id)}
-              className={`-mb-px shrink-0 border-b-2 px-4 py-2.5 text-sm font-medium transition ${
+              className={`-mb-px border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
                 isActive
                   ? "border-brand text-text"
                   : "border-transparent text-text-muted hover:text-text"
