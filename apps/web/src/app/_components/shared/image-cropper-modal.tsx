@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ImageCropperModalProps {
   imageSrc: string;
@@ -154,20 +155,16 @@ export default function ImageCropperModal({
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-3">
-            <button
+            <Button
+              variant="outline"
               onClick={onCancel}
-              className="btn-ghost"
               disabled={isProcessing}
             >
               Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="btn-primary"
-              disabled={isProcessing}
-            >
+            </Button>
+            <Button onClick={handleSave} disabled={isProcessing}>
               {isProcessing ? "Processing..." : "Save"}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

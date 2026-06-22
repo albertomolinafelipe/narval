@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronRight, ChevronDown, User, LogOut } from "lucide-react";
+import { ChevronRight, Menu, X, User, LogOut } from "lucide-react";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import { useAuthModal } from "@/app/_components/auth/auth-modal-context";
@@ -167,10 +167,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
             aria-expanded={mobileOpen}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-subtle hover:text-text md:hidden"
           >
-            <ChevronDown
-              size={20}
-              className={`transition-transform ${mobileOpen ? "rotate-180" : ""}`}
-            />
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         )}
       </div>

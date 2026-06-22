@@ -14,7 +14,7 @@ const buttonVariants = cva(
         // Soft brand tint — secondary / active-toggled state.
         soft: "bg-brand-subtle text-brand-text hover:bg-brand-subtle/80",
         outline:
-          "border border-border bg-bg-raised text-text hover:bg-bg-subtle hover:text-text",
+          "border border-border bg-transparent text-text hover:bg-bg-subtle hover:text-text",
         ghost: "text-text-subtle hover:bg-bg-subtle hover:text-text",
         destructive: "bg-danger text-white shadow-sm hover:bg-danger/90",
       },

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import RegisterForm from "../forms/register-form";
+import { Button } from "@/components/ui/button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 type View = "login" | "register";
@@ -31,17 +32,18 @@ export default function AuthButton({ onSuccess }: { onSuccess?: () => void }) {
           Signed in as{" "}
           <span className="font-medium text-text">{user.email}</span>
         </p>
-        <button
+        <Button
+          variant="outline"
           onClick={async () => {
             trackAuth("logout");
             await signOut();
             window.location.reload(); // Reload to update UI
           }}
-          className="btn-ghost w-full"
+          className="w-full"
           data-umami-event="sign-out"
         >
           Sign out
-        </button>
+        </Button>
       </div>
     );
   }
@@ -172,15 +174,15 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
           />
         </div>
         {error && <p className="text-xs text-danger">{error}</p>}
-        <button
+        <Button
           type="submit"
           disabled={loading}
-          className="btn-primary w-full"
+          className="w-full"
           data-umami-event="auth-submit"
           data-umami-event-type="login-send-code"
         >
           {loading ? "Sending code…" : "Send code"}
-        </button>
+        </Button>
       </form>
     );
   }
@@ -211,26 +213,27 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         </p>
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
-      <button
+      <Button
         type="submit"
         disabled={loading || code.length !== 6}
-        className="btn-primary w-full"
+        className="w-full"
         data-umami-event="auth-submit"
         data-umami-event-type="login-verify"
       >
         {loading ? "Verifying…" : "Verify code"}
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
+        variant="outline"
         onClick={() => {
           setCodeSent(false);
           setCode("");
           setError("");
         }}
-        className="btn-ghost w-full text-xs"
+        className="w-full text-xs"
       >
         Use different email
-      </button>
+      </Button>
     </form>
   );
 }

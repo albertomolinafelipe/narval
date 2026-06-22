@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter as useNextRouter } from "next/navigation";
 import { ChevronLeft, BadgeCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 const apiBase = "/api/proxy";
@@ -155,9 +156,9 @@ function VerifiedStep1({
         {!websiteError && websiteStatus === "ok" && <p className="text-xs text-brand">Domain available.</p>}
       </div>
 
-      <button type="submit" disabled={websiteStatus === "taken" || !!websiteError} className="btn-primary w-full">
+      <Button type="submit" disabled={websiteStatus === "taken" || !!websiteError} className="w-full">
         Continue
-      </button>
+      </Button>
     </form>
   );
 }
@@ -211,9 +212,9 @@ function VerifiedStep2({
 
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      <button type="submit" disabled={submitting} className="btn-primary w-full">
+      <Button type="submit" disabled={submitting} className="w-full">
         {submitting ? "Sending code…" : "Continue"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -266,9 +267,9 @@ function OpenStep1({
         {emailError && <p className="text-xs text-danger">{emailError}</p>}
       </div>
 
-      <button type="submit" disabled={submitting} className="btn-primary w-full">
+      <Button type="submit" disabled={submitting} className="w-full">
         {submitting ? "Sending code…" : "Continue"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -334,9 +335,9 @@ function OtpStep({
           autoComplete="one-time-code" autoFocus className="input tracking-widest text-center" />
       </div>
       {error && <p className="text-xs text-danger">{error}</p>}
-      <button type="button" onClick={() => verify(code)} disabled={loading || code.length !== 6} className="btn-primary w-full">
+      <Button type="button" onClick={() => verify(code)} disabled={loading || code.length !== 6} className="w-full">
         {loading ? "Verifying…" : "Verify & create account"}
-      </button>
+      </Button>
     </div>
   );
 }

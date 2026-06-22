@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, User } from "lucide-react";
 import { GiUnicorn } from "react-icons/gi";
 import RegisterCompanyForm from "./register-company-form";
+import { Button } from "@/components/ui/button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 type AccountType = "user" | "startup";
@@ -160,9 +161,9 @@ function UserDetailsStep({
 
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      <button type="submit" disabled={loading} className="btn-primary w-full">
+      <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Sending code…" : "Continue"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -259,14 +260,14 @@ function UserVerifyStep({
 
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      <button
+      <Button
         type="button"
         onClick={() => verify(code)}
         disabled={loading || code.length !== 6}
-        className="btn-primary w-full"
+        className="w-full"
       >
         {loading ? "Verifying…" : "Verify & create account"}
-      </button>
+      </Button>
     </div>
   );
 }
