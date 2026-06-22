@@ -32,6 +32,7 @@ import {
   useFavoriteMutation,
 } from "@/lib/api/use-startups-query";
 import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
+import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
@@ -427,9 +428,25 @@ export default function StartupPageClient({
             className="mt-0.5 block break-words text-sm text-text-muted"
           />
         </div>
-        <div className="flex shrink-0 items-center gap-1 max-md:ml-auto">
-          <IconButton
-            label={
+        <div className="flex shrink-0 items-center gap-2 max-md:ml-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={copied ? "Copied!" : "Share"}
+            title={copied ? "Copied!" : "Share"}
+            onClick={handleShare}
+          >
+            {copied ? <Check size={16} /> : <Share2 size={16} />}
+          </Button>
+          <Button
+            variant={startup.is_favorited ? "soft" : "ghost"}
+            size="icon"
+            aria-label={
+              startup.is_favorited
+                ? "Remove from favorites"
+                : "Add to favorites"
+            }
+            title={
               startup.is_favorited
                 ? "Remove from favorites"
                 : "Add to favorites"
@@ -441,11 +458,8 @@ export default function StartupPageClient({
               size={16}
               fill={startup.is_favorited ? "currentColor" : "none"}
             />
-          </IconButton>
+          </Button>
           <BoostButton startup={startup} showCount={true} size="large" />
-          <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
-            {copied ? <Check size={16} /> : <Share2 size={16} />}
-          </IconButton>
         </div>
       </div>
 

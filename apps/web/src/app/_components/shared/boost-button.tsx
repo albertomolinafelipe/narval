@@ -3,6 +3,7 @@
 import { Rocket } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useBoostAction } from "./use-boost-action";
+import { Button } from "@/components/ui/button";
 import { components } from "@/lib/api/generated";
 
 type Startup = components["schemas"]["Startup"];
@@ -26,24 +27,19 @@ export function BoostButton({
     : "Boost this startup to give it visibility for 30 days";
 
   const isLarge = size === "large";
-  const iconSize = isLarge ? 20 : 16;
-  const buttonClasses = isLarge
-    ? "h-10 px-3 gap-2 text-sm font-medium"
-    : "h-8 px-2 gap-1.5 text-xs";
+  const iconSize = isLarge ? 18 : 16;
+  const variant = boosted ? "soft" : isLarge ? "default" : "ghost";
 
   return (
     <Tooltip.Provider delayDuration={300}>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <button
-            type="button"
+          <Button
+            variant={variant}
+            size={isLarge ? "default" : "sm"}
             onClick={boost}
             disabled={isPending}
-            className={`flex items-center justify-center rounded-lg transition ${buttonClasses} ${
-              boosted
-                ? "bg-brand-subtle text-brand-text hover:bg-brand-subtle/80"
-                : "text-text-subtle hover:bg-bg-subtle hover:text-text"
-            } ${isAnimating ? "boost-animate" : ""} ${
+            className={`${isAnimating ? "boost-animate" : ""} ${
               isPending ? "cursor-wait opacity-70" : ""
             }`}
           >
@@ -55,7 +51,7 @@ export function BoostButton({
             {showCount && (
               <span className="tabular-nums">{count > 0 ? count : ""}</span>
             )}
-          </button>
+          </Button>
         </Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content

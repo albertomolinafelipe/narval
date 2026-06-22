@@ -69,7 +69,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
   const profilePath =
     user?.account_type === "startup" && user.profile_id
       ? `/startups/${user.profile_id}`
-      : "/profile";
+      : "/startups";
 
   return (
     <header className="relative flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-6">
