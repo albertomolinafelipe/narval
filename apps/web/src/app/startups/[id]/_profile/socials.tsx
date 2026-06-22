@@ -4,6 +4,7 @@ import { useState, type ComponentType } from "react";
 import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { SiLinkedin, SiX, SiInstagram } from "react-icons/si";
 import { components } from "@/lib/api/generated";
+import PrefixInput from "@/app/_components/shared/prefix-input";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
 
@@ -124,26 +125,23 @@ function EditableSocial({
 
   return (
     <div className="flex items-center gap-1">
-      <div className="flex w-52 overflow-hidden rounded-lg border border-border bg-bg-raised focus-within:border-brand">
-        <span className="flex shrink-0 items-center border-r border-border bg-bg-subtle px-2 text-xs text-text-subtle">
-          {def.prefix.replace("https://", "")}
-        </span>
-        <input
-          autoFocus
-          value={edit.draft}
-          disabled={edit.saving}
-          placeholder={def.placeholder}
-          onChange={(e) => edit.setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              commit();
-            }
-            if (e.key === "Escape") cancel();
-          }}
-          className="min-w-0 flex-1 bg-transparent px-2 py-1 text-xs text-text outline-none placeholder:text-text-subtle"
-        />
-      </div>
+      <PrefixInput
+        prefix={def.prefix.replace("https://", "")}
+        value={edit.draft}
+        disabled={edit.saving}
+        placeholder={def.placeholder}
+        autoFocus
+        onChange={edit.setDraft}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commit();
+          }
+          if (e.key === "Escape") cancel();
+        }}
+        className="w-52 bg-bg-raised"
+        inputClassName="text-xs"
+      />
       <button
         type="button"
         onClick={commit}

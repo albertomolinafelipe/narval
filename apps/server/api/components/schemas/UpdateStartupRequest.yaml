@@ -58,3 +58,6 @@ properties:
   profile_setup:
     type: boolean
     description: Set to true to mark the profile as complete and visible in public listings
+  founders:
+    type: string
+    description: JSON-encoded array of founders ({name, photo_url, linkedin})

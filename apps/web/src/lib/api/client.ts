@@ -167,6 +167,33 @@ export async function uploadStartupImage(
 }
 
 /**
+ * Upload a founder photo and get back its public URL. The caller stores the URL
+ * inside the startup's founders JSON (this endpoint does not touch the startup).
+ * SuperTokens session cookies are automatically included.
+ */
+export async function uploadFounderPhoto(
+  id: string,
+  blob: Blob,
+): Promise<string> {
+  const form = new FormData();
+  form.append("photo", blob, "founder.jpg");
+
+  const response = await fetch(`/api/proxy/startups/${id}/founder-photo`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to upload photo");
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
+/**
  * Remove a startup's logo or banner. Returns the updated startup.
  * SuperTokens session cookies are automatically included.
  */
