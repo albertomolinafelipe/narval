@@ -39,6 +39,7 @@ import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
+import { EditableImage } from "./_profile/editable-image";
 import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
 import { Section, SocialLink } from "./_profile/ui";
@@ -369,31 +370,44 @@ export default function StartupPageClient({
     <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
     <div className="mx-auto max-w-6xl px-6 py-8">
       {/*  Banner  */}
-      {banner ? (
-        <div
-          className="relative mb-8 overflow-hidden rounded-2xl bg-bg-subtle max-md:-mx-6 max-md:rounded-none"
-          style={{ aspectRatio: "16/4" }}
-        >
-          <Image
-            src={banner}
-            alt={`${startup.name} banner`}
-            fill
-            className="object-cover"
+      <EditableImage
+        kind="banner"
+        hasImage={!!banner}
+        aspect={16 / 4}
+        rounded="rounded-2xl max-md:rounded-none"
+        className="mb-8 bg-bg-subtle max-md:-mx-6"
+      >
+        {banner ? (
+          <div className="relative w-full" style={{ aspectRatio: "16/4" }}>
+            <Image
+              src={banner}
+              alt={`${startup.name} banner`}
+              fill
+              className="object-cover"
+            />
+          </div>
+        ) : (
+          <div
+            className="h-36 w-full"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--color-brand-subtle) 0%, var(--color-bg-raised) 100%)",
+            }}
           />
-        </div>
-      ) : (
-        <div
-          className="mb-8 h-36 rounded-2xl max-md:-mx-6 max-md:rounded-none"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--color-brand-subtle) 0%, var(--color-bg-raised) 100%)",
-          }}
-        />
-      )}
+        )}
+      </EditableImage>
 
       {/*  Header: logo + name + actions  */}
       <div className="mb-6 flex items-center gap-5 max-md:flex-wrap max-md:gap-3">
-        <Avatar entity={startup} size={18} />
+        <EditableImage
+          kind="logo"
+          hasImage={!!startup.logo_url}
+          aspect={1}
+          rounded="rounded-lg"
+          className="shrink-0"
+        >
+          <Avatar entity={startup} size={18} />
+        </EditableImage>
         <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
           <h1 className="flex items-center gap-2 text-2xl font-bold text-text">
             {startup.name}

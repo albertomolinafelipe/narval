@@ -3,7 +3,11 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { components } from "@/lib/api/generated";
-import { useUpdateStartupMutation } from "@/lib/api/use-startups-query";
+import type { StartupImageKind } from "@/lib/api/client";
+import {
+  useUpdateStartupMutation,
+  useStartupImageMutation,
+} from "@/lib/api/use-startups-query";
 
 type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
@@ -13,6 +17,10 @@ interface ProfileEditValue {
   isSaving: boolean;
   /** Persist a partial update. Callers pass only the field(s) they changed. */
   save: (patch: UpdateStartupRequest) => Promise<void>;
+  /** Upload (or replace) the logo/banner with a cropped blob. */
+  uploadImage: (kind: StartupImageKind, blob: Blob) => Promise<void>;
+  /** Remove the logo/banner. */
+  removeImage: (kind: StartupImageKind) => Promise<void>;
 }
 
 const ProfileEditContext = createContext<ProfileEditValue | null>(null);
@@ -35,6 +43,7 @@ export function ProfileEditProvider({
   children: ReactNode;
 }) {
   const mutation = useUpdateStartupMutation(startupId);
+  const imageMutation = useStartupImageMutation(startupId);
 
   const value = useMemo<ProfileEditValue>(
     () => ({
@@ -48,8 +57,24 @@ export function ProfileEditProvider({
           throw err;
         }
       },
+      uploadImage: async (kind, blob) => {
+        try {
+          await imageMutation.mutateAsync({ kind, blob });
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Failed to upload");
+          throw err;
+        }
+      },
+      removeImage: async (kind) => {
+        try {
+          await imageMutation.mutateAsync({ kind, blob: null });
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Failed to remove");
+          throw err;
+        }
+      },
     }),
-    [isOwner, mutation],
+    [isOwner, mutation, imageMutation],
   );
 
   return (

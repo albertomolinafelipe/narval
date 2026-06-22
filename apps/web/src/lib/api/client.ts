@@ -136,6 +136,57 @@ export async function fetchStartup(
   return response.json();
 }
 
+export type StartupImageKind = "logo" | "banner";
+
+/**
+ * Upload (or replace) a startup's logo or banner. The multipart field name
+ * matches the image kind, mirroring the backend handlers. Returns the updated
+ * startup. SuperTokens session cookies are automatically included.
+ */
+export async function uploadStartupImage(
+  id: string,
+  kind: StartupImageKind,
+  blob: Blob,
+): Promise<Startup> {
+  const form = new FormData();
+  form.append(kind, blob, `${kind}.jpg`);
+
+  // Don't set Content-Type — the browser adds the multipart boundary.
+  const response = await fetch(`/api/proxy/startups/${id}/${kind}`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to upload ${kind}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Remove a startup's logo or banner. Returns the updated startup.
+ * SuperTokens session cookies are automatically included.
+ */
+export async function deleteStartupImage(
+  id: string,
+  kind: StartupImageKind,
+): Promise<Startup> {
+  const response = await fetch(`/api/proxy/startups/${id}/${kind}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to remove ${kind}`);
+  }
+
+  return response.json();
+}
+
 /**
  * Toggle favorite status for a startup.
  * SuperTokens session cookies are automatically included.

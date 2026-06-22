@@ -435,6 +435,47 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
+// clearStartupImage clears one image field (logo or banner) for an owned
+// startup. The blob is left in object storage (orphaned); only the reference is
+// dropped. apply mutates the loaded startup to zero the relevant field.
+func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply func(*models.Startup)) {
+	startupID := id.String()
+
+	var st models.Startup
+	if err := h.DB.First(&st, "id = ?", startupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
+		return
+	}
+
+	ownerID := middleware.GetDBUserID(c)
+	if st.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "not the owner of this startup"})
+		return
+	}
+
+	apply(&st)
+	if err := h.DB.Save(&st).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.startupResponse(c, st))
+}
+
+// DeleteStartupLogo removes the logo reference from the startup.
+func (h *Handler) DeleteStartupLogo(c *gin.Context, id openapi_types.UUID) {
+	h.clearStartupImage(c, id, func(st *models.Startup) { st.LogoURL = "" })
+}
+
+// DeleteStartupBanner removes the banner reference from the startup.
+func (h *Handler) DeleteStartupBanner(c *gin.Context, id openapi_types.UUID) {
+	h.clearStartupImage(c, id, func(st *models.Startup) { st.BannerImage = "" })
+}
+
 // UploadFounderPhoto uploads a founder photo and returns the public URL.
 // The client is responsible for storing the URL inside the founders JSON field.
 func (h *Handler) UploadFounderPhoto(c *gin.Context) {

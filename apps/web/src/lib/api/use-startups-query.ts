@@ -8,7 +8,10 @@ import {
   toggleFavorite,
   boostStartup,
   updateStartup,
+  uploadStartupImage,
+  deleteStartupImage,
   type FetchStartupsOptions,
+  type StartupImageKind,
 } from "./client";
 import { components } from "./generated";
 import { trackBoost } from "@/lib/analytics";
@@ -83,6 +86,31 @@ export function useUpdateStartupMutation(id: string) {
   return useMutation({
     mutationFn: (patch: components["schemas"]["UpdateStartupRequest"]) =>
       updateStartup(id, patch),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(startupsKeys.detail(id), updated);
+      queryClient.invalidateQueries({ queryKey: startupsKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Mutation hook for a startup's logo/banner: upload a cropped blob or remove it.
+ * On success updates the detail cache with the returned startup and refreshes
+ * the lists (so avatars elsewhere reflect the change). Owner enforcement is
+ * server-side.
+ */
+export function useStartupImageMutation(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (
+      variables:
+        | { kind: StartupImageKind; blob: Blob }
+        | { kind: StartupImageKind; blob: null },
+    ) =>
+      variables.blob
+        ? uploadStartupImage(id, variables.kind, variables.blob)
+        : deleteStartupImage(id, variables.kind),
     onSuccess: (updated) => {
       queryClient.setQueryData(startupsKeys.detail(id), updated);
       queryClient.invalidateQueries({ queryKey: startupsKeys.lists() });

@@ -53,3 +53,40 @@ post:
         application/json:
           schema:
             $ref: ../components/schemas/Error.yaml
+delete:
+  operationId: deleteStartupLogo
+  summary: Remove the logo image for the startup
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: Logo removed
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Startup.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Forbidden – not the owner
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

@@ -57,6 +57,12 @@ func (s *server) UploadStartupLogo(c *gin.Context, id openapi_types.UUID) {
 func (s *server) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 	s.startups.UploadStartupBanner(c, id)
 }
+func (s *server) DeleteStartupLogo(c *gin.Context, id openapi_types.UUID) {
+	s.startups.DeleteStartupLogo(c, id)
+}
+func (s *server) DeleteStartupBanner(c *gin.Context, id openapi_types.UUID) {
+	s.startups.DeleteStartupBanner(c, id)
+}
 func (s *server) FavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 	s.startups.FavoriteStartup(c, id)
 }
