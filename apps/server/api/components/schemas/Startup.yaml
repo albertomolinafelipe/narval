@@ -23,14 +23,9 @@ properties:
   logo_url:
     type: string
   stage:
-    type: string
-    description: idea | pre-seed | seed | series-a | series-b | growth | profitable
+    $ref: ./Stage.yaml
   industry:
-    type: string
-    description: >-
-      AI/ML | FinTech | HealthTech | Climate Tech | EdTech | SaaS | Marketplace
-      | Developer Tools | Hardware | Consumer | Deep Tech | Logistics | Legal
-      Tech | HR Tech | Other
+    $ref: ./Industry.yaml
   team_size:
     type: integer
   location:
@@ -56,8 +51,7 @@ properties:
   is_raising:
     type: boolean
   current_round:
-    type: string
-    description: pre-seed | seed | series-a | series-b | bridge
+    $ref: ./FundingRound.yaml
   funding_ask:
     type: string
   funding_use:

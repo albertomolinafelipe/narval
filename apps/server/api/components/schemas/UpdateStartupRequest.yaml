@@ -13,9 +13,9 @@ properties:
   website:
     type: string
   stage:
-    type: string
+    $ref: ./Stage.yaml
   industry:
-    type: string
+    $ref: ./Industry.yaml
   team_size:
     type: integer
   location:
@@ -37,7 +37,7 @@ properties:
   is_raising:
     type: boolean
   current_round:
-    type: string
+    $ref: ./FundingRound.yaml
   funding_ask:
     type: string
   funding_use:

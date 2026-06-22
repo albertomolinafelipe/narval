@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { Check, X, Pencil } from "lucide-react";
+import * as Select from "@radix-ui/react-select";
 import { components } from "@/lib/api/generated";
 import LocationInput from "@/app/_components/forms/location-input";
 import { useProfileEdit } from "./edit-context";
@@ -341,6 +342,8 @@ interface EditableLocationProps {
   field: StringField;
   value: string;
   placeholder?: string;
+  /** Tailwind classes applied to the placeholder and the input. */
+  className?: string;
   display?: (value: string) => ReactNode;
 }
 
@@ -349,6 +352,7 @@ export function EditableLocation({
   field,
   value,
   placeholder = "Location",
+  className,
   display,
 }: EditableLocationProps) {
   const { save } = useProfileEdit();
@@ -369,6 +373,7 @@ export function EditableLocation({
     <EditShell
       display={display ? display(value) : <span>{value}</span>}
       placeholder={placeholder}
+      placeholderClassName={className}
       hasValue={value.length > 0}
       editing={edit.editing}
       saving={edit.saving}
@@ -381,10 +386,94 @@ export function EditableLocation({
             id={`edit-${field}`}
             value={edit.draft}
             onChange={edit.setDraft}
-            className={`${inputBase} w-full`}
+            className={`${inputBase} w-full ${className ?? ""}`}
           />
         </div>
       }
     />
+  );
+}
+
+interface EditableSelectProps {
+  field: StringField;
+  value: string;
+  options: readonly string[];
+  placeholder?: string;
+  display?: (value: string) => ReactNode;
+}
+
+/**
+ * Enum editor backed by Radix Select: the trigger doubles as the click-to-edit
+ * display (pill + pencil), and picking an option saves immediately — no
+ * separate confirm step. Accessibility, keyboard nav and positioning come from
+ * Radix, so this only supplies styling and the save wiring.
+ */
+export function EditableSelect({
+  field,
+  value,
+  options,
+  placeholder = "Select…",
+  display,
+}: EditableSelectProps) {
+  const { isOwner, isSaving, save } = useProfileEdit();
+  const hasValue = value.length > 0;
+
+  // Viewers: value only, nothing when empty.
+  if (!isOwner) {
+    if (!hasValue) return null;
+    return <>{display ? display(value) : value}</>;
+  }
+
+  return (
+    <Select.Root
+      value={hasValue ? value : undefined}
+      disabled={isSaving}
+      onValueChange={(next) => {
+        if (next !== value) save({ [field]: next } as UpdateStartupRequest);
+      }}
+    >
+      <Select.Trigger
+        aria-label={field}
+        className="group inline-flex max-w-full items-center gap-1 rounded text-left outline-none disabled:opacity-50"
+      >
+        {hasValue ? (
+          display ? (
+            display(value)
+          ) : (
+            <span>{value}</span>
+          )
+        ) : (
+          <span className="text-sm text-text-subtle">{placeholder}</span>
+        )}
+        <Pencil
+          size={15}
+          className="shrink-0 text-text-subtle opacity-0 transition group-hover:text-brand group-hover:opacity-100"
+        />
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Content
+          position="popper"
+          sideOffset={6}
+          className="z-50 max-h-[var(--radix-select-content-available-height)] overflow-hidden rounded-lg border border-border bg-bg shadow-lg"
+        >
+          <Select.Viewport className="max-h-72 overflow-y-auto p-1">
+            {options.map((opt) => (
+              <Select.Item
+                key={opt}
+                value={opt}
+                className="flex cursor-pointer items-center gap-2 rounded-md py-1.5 pl-2 pr-3 text-sm text-text outline-none data-[highlighted]:bg-bg-subtle data-[state=checked]:text-brand"
+              >
+                <span className="flex w-4 shrink-0 items-center justify-center">
+                  <Select.ItemIndicator>
+                    <Check size={14} />
+                  </Select.ItemIndicator>
+                </span>
+                <Select.ItemText>{opt}</Select.ItemText>
+              </Select.Item>
+            ))}
+          </Select.Viewport>
+        </Select.Content>
+      </Select.Portal>
+    </Select.Root>
   );
 }

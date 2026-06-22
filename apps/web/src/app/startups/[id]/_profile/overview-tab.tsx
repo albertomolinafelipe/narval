@@ -1,59 +1,14 @@
-import { MapPin, Users, Calendar, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { components } from "@/lib/api/generated";
-import { Pill } from "@/app/_components/shared/list-panel";
 import { Section, SocialLink } from "./ui";
-import { EditableText, EditableNumber, EditableLocation } from "./editable";
 
 type Startup = components["schemas"]["Startup"];
 
 export function OverviewTab({ startup }: { startup: Startup }) {
-  const currentYear = new Date().getFullYear();
-
   const hasContact = !!startup.contact_general;
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Meta */}
-      <div className="flex flex-wrap items-center gap-2">
-        <EditableText
-          field="stage"
-          value={startup.stage ?? ""}
-          placeholder="Stage"
-          display={(v) => <Pill label={v} />}
-        />
-        <EditableText
-          field="industry"
-          value={startup.industry ?? ""}
-          placeholder="Industry"
-          display={(v) => <Pill label={v} />}
-        />
-        <EditableLocation
-          field="location"
-          value={startup.location ?? ""}
-          placeholder="Location"
-          display={(v) => <Pill icon={<MapPin size={12} />} label={v} />}
-        />
-        <EditableNumber
-          field="founded_year"
-          value={startup.founded_year}
-          placeholder="Founded year"
-          min={1900}
-          max={currentYear}
-          display={(v) => (
-            <Pill icon={<Calendar size={12} />} label={`Founded ${v}`} />
-          )}
-        />
-        <EditableNumber
-          field="team_size"
-          value={startup.team_size}
-          placeholder="Team size"
-          min={1}
-          display={(v) => (
-            <Pill icon={<Users size={12} />} label={`${v} people`} />
-          )}
-        />
-      </div>
-
       {/* Founders */}
       {startup.founders && startup.founders.length > 0 && (
         <Section title="Founders">

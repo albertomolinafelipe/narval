@@ -10,8 +10,6 @@ import {
   Star,
   Share2,
   Check,
-  MapPin,
-  Users,
   Mail,
   Globe,
   X,
@@ -26,6 +24,7 @@ import {
   SiAppstore,
   SiGoogleplay,
 } from "react-icons/si";
+import { MdLocationOn, MdGroups } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import {
@@ -40,6 +39,7 @@ import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
 import { SocialsColumn } from "./_profile/socials";
+import { MetaPills } from "./_profile/meta-pills";
 import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
@@ -211,11 +211,11 @@ export default function StartupPageClient({
             {startup.stage && <Pill label={startup.stage} />}
             {startup.industry && <Pill label={startup.industry} />}
             {startup.location && (
-              <Pill icon={<MapPin size={12} />} label={startup.location} />
+              <Pill icon={<MdLocationOn size={14} />} label={startup.location} />
             )}
             {startup.team_size != null && startup.team_size > 0 && (
               <Pill
-                icon={<Users size={12} />}
+                icon={<MdGroups size={14} />}
                 label={`${startup.team_size} people`}
               />
             )}
@@ -449,9 +449,13 @@ export default function StartupPageClient({
         </div>
       </div>
 
-      {/*  Description + socials  */}
+      {/*  Meta pills + description (left)  |  Links (right)  */}
       <div className="mb-8 flex items-start justify-between gap-6">
         <div className="min-w-0 max-w-3xl flex-1">
+          {/*  Meta pills  */}
+          <div className="mb-4">
+            <MetaPills startup={startup} />
+          </div>
           <EditableText
             field="description"
             value={startup.description ?? ""}

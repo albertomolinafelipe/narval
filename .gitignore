@@ -36,3 +36,6 @@ scripts/seed/assets/*
 # Production
 caddy_data/
 caddy_config/
+
+# Local working notes
+*TODO.md
