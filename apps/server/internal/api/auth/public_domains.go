@@ -10,17 +10,17 @@ var publicEmailDomains = map[string]bool{
 	"live.com": true, "live.co.uk": true,
 	"icloud.com": true, "me.com": true, "mac.com": true,
 	"protonmail.com": true, "proton.me": true,
-	"aol.com": true,
+	"aol.com":  true,
 	"mail.com": true, "email.com": true,
-	"zoho.com": true,
+	"zoho.com":   true,
 	"yandex.com": true, "yandex.ru": true,
 	"gmx.com": true, "gmx.de": true,
 	"tutanota.com": true, "tuta.com": true,
 	"fastmail.com": true,
-	"hey.com": true,
-	"pm.me": true,
-	"msn.com": true,
-	"inbox.com": true,
+	"hey.com":      true,
+	"pm.me":        true,
+	"msn.com":      true,
+	"inbox.com":    true,
 }
 
 func isPublicEmailDomain(domain string) bool {

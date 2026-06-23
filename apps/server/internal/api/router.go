@@ -73,7 +73,6 @@ func (s *server) BoostStartup(c *gin.Context, id openapi_types.UUID) {
 	s.startups.BoostStartup(c, id)
 }
 
-
 func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.Client) *gin.Engine {
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
