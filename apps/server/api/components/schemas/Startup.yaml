@@ -49,6 +49,9 @@ properties:
   product_links:
     type: string
     description: 'JSON object with product links: {"web":"...","ios":"...","android":"..."}'
+  gallery:
+    type: string
+    description: 'JSON array of vertical product screenshot URLs (max 4): ["url1","url2"]'
   linkedin:
     type: string
   twitter:

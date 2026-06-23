@@ -27,9 +27,10 @@ type Startup struct {
 	Location       string `json:"location"`
 	FoundedYear    int    `json:"founded_year"`
 	TechStack      string `json:"tech_stack"`
-	BannerImage    string `json:"banner_image"`  // URL of the banner image
-	ProductLinks   string `json:"product_links"` // JSON: {"web":"...","ios":"...","android":"..."}
-	Founders       string `json:"founders"`      // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	BannerImage    string `json:"banner_image"`             // URL of the banner image
+	ProductLinks   string `json:"product_links"`            // JSON: {"web":"...","ios":"...","android":"..."}
+	Founders       string `json:"founders"`                 // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	Gallery        string `gorm:"type:text" json:"gallery"` // JSON: ["url1","url2",…] vertical product screenshots (max 4)
 
 	// Socials — explicit columns
 	Linkedin  string `json:"linkedin"`

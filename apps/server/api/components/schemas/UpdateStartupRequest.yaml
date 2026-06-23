@@ -38,6 +38,9 @@ properties:
     type: string
   product_links:
     type: string
+  gallery:
+    type: string
+    description: JSON-encoded array of product screenshot URLs (max 4)
   linkedin:
     type: string
   twitter:

@@ -127,6 +127,9 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 	// Founder photo upload (not in OpenAPI spec — returns {url} for client to store in founders JSON)
 	v1.POST("/startups/:id/founder-photo", authMiddleware, srv.startups.UploadFounderPhoto)
 
+	// Product screenshot upload (not in OpenAPI spec — returns {url} for client to store in gallery JSON)
+	v1.POST("/startups/:id/screenshot", authMiddleware, srv.startups.UploadStartupScreenshot)
+
 	// TODO: Test endpoint for SuperTokens - need to query SuperTokens DB for codes
 	// SuperTokens stores codes in its own database, not in RegistrationDraft
 	// For now, tests will need to use actual email or mock SuperTokens API

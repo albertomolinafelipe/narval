@@ -7,7 +7,10 @@ import type { StartupImageKind } from "@/lib/api/client";
 import { useProfileEdit } from "./edit-context";
 
 interface EditableImageProps {
-  kind: StartupImageKind;
+  /** Image kind for the default context-driven upload/delete (logo/banner). */
+  kind?: StartupImageKind;
+  /** Noun used in aria labels when no kind is given (e.g. "screenshot"). */
+  label?: string;
   /** Whether an image currently exists — gates the Delete button. */
   hasImage: boolean;
   /** Crop aspect ratio (1 for a square logo, 16/4 for a banner). */
@@ -17,29 +20,42 @@ interface EditableImageProps {
   rounded?: string;
   /** Classes for the wrapper — should size to the underlying image. */
   className?: string;
+  /** Hide the Change (pencil) action and its picker — delete-only overlay. */
+  showChange?: boolean;
+  /** Override the upload flow (default: context uploadImage for `kind`). */
+  onUpload?: (blob: Blob) => Promise<void> | void;
+  /** Override the delete flow (default: context removeImage for `kind`). */
+  onDelete?: () => Promise<void> | void;
   /** The rendered image (or placeholder) shown underneath the overlay. */
   children: ReactNode;
 }
 
 /**
- * Owner-only hover overlay for an editable profile image. Non-owners see the
- * image untouched. On hover the owner gets a blurred scrim with Change / Delete
- * actions; Change opens the file picker → crop modal → upload. Generic over the
- * image kind so logo and banner (and any future profile image) share one flow.
+ * Owner-only hover overlay for an editable image. Non-owners see the image
+ * untouched. On hover the owner gets a blurred scrim with Change / Delete
+ * actions; Change opens the file picker → crop modal → upload. Used for logo and
+ * banner (context-driven via `kind`), and for gallery shots (delete-only via
+ * `showChange={false}` + an `onDelete` override).
  */
 export function EditableImage({
   kind,
+  label,
   hasImage,
   aspect,
   cropShape = "rect",
   rounded = "rounded-lg",
   className,
+  showChange = true,
+  onUpload,
+  onDelete,
   children,
 }: EditableImageProps) {
   const { isOwner, uploadImage, removeImage } = useProfileEdit();
   const inputRef = useRef<HTMLInputElement>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const noun = kind ?? label ?? "image";
 
   const wrapperClass = `relative overflow-hidden ${rounded} ${className ?? ""}`;
 
@@ -63,7 +79,8 @@ export function EditableImage({
   const onCropComplete = async (blob: Blob) => {
     setBusy(true);
     try {
-      await uploadImage(kind, blob);
+      if (onUpload) await onUpload(blob);
+      else if (kind) await uploadImage(kind, blob);
       closeCropper();
     } catch {
       // context toasts the error; keep the cropper open to retry.
@@ -72,10 +89,11 @@ export function EditableImage({
     }
   };
 
-  const onDelete = async () => {
+  const handleDelete = async () => {
     setBusy(true);
     try {
-      await removeImage(kind);
+      if (onDelete) await onDelete();
+      else if (kind) await removeImage(kind);
     } catch {
       // context toasts the error.
     } finally {
@@ -85,13 +103,15 @@ export function EditableImage({
 
   return (
     <>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={onFileChange}
-      />
+      {showChange && (
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onFileChange}
+        />
+      )}
       <div className={`group ${wrapperClass}`}>
         {children}
 
@@ -107,20 +127,22 @@ export function EditableImage({
             <Loader2 size={18} className="animate-spin text-white" />
           ) : (
             <>
-              <button
-                type="button"
-                onClick={pickFile}
-                aria-label={hasImage ? `Change ${kind}` : `Add ${kind}`}
-                title={hasImage ? "Change" : "Add"}
-                className="flex items-center justify-center rounded-full bg-white/90 p-1.5 text-black transition hover:bg-white"
-              >
-                <Pencil size={15} />
-              </button>
+              {showChange && (
+                <button
+                  type="button"
+                  onClick={pickFile}
+                  aria-label={hasImage ? `Change ${noun}` : `Add ${noun}`}
+                  title={hasImage ? "Change" : "Add"}
+                  className="flex items-center justify-center rounded-full bg-white/90 p-1.5 text-black transition hover:bg-white"
+                >
+                  <Pencil size={15} />
+                </button>
+              )}
               {hasImage && (
                 <button
                   type="button"
-                  onClick={onDelete}
-                  aria-label={`Remove ${kind}`}
+                  onClick={handleDelete}
+                  aria-label={`Remove ${noun}`}
                   title="Remove"
                   className="flex items-center justify-center rounded-full bg-white/90 p-1.5 text-danger transition hover:bg-white"
                 >
@@ -137,7 +159,7 @@ export function EditableImage({
           imageSrc={cropSrc}
           aspect={aspect}
           cropShape={cropShape}
-          title={`Crop ${kind}`}
+          title={`Crop ${noun}`}
           onComplete={onCropComplete}
           onCancel={closeCropper}
         />

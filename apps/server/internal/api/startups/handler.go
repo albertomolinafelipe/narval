@@ -195,6 +195,7 @@ type startupRequest struct {
 	ContactTalent    *string `json:"contact_talent"`
 	ProfileSetup     *bool   `json:"profile_setup"`
 	Founders         *string `json:"founders"` // JSON array
+	Gallery          *string `json:"gallery"`  // JSON array of screenshot URLs
 }
 
 // validateStartupRequest checks enum values; returns an error message or "".
@@ -527,6 +528,54 @@ func (h *Handler) UploadFounderPhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": photoURL})
 }
 
+// UploadStartupScreenshot uploads a single product screenshot and returns its
+// public URL. The client stores the URL inside the startup's gallery JSON field.
+func (h *Handler) UploadStartupScreenshot(c *gin.Context) {
+	startupID := c.Param("id")
+	ownerID := middleware.GetDBUserID(c)
+
+	var st models.Startup
+	if err := h.DB.First(&st, "id = ?", startupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
+		return
+	}
+
+	if st.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "not the owner of this startup"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("screenshot")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "screenshot file is required"})
+		return
+	}
+	defer file.Close() //nolint:errcheck
+
+	if header.Size > maxLogoSize {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "screenshot exceeds 5 MiB limit"})
+		return
+	}
+
+	ct := header.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "image/") {
+		ct = "image/jpeg"
+	}
+
+	objectName := fmt.Sprintf("screenshots/%s/%d-%s", startupID, time.Now().UnixMilli(), header.Filename)
+	url, err := h.Storage.UploadLogo(c.Request.Context(), objectName, file, header.Size, ct)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "STORAGE_ERROR", "message": "failed to upload screenshot"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": url})
+}
+
 //  Response helpers
 
 // startupResponse converts a Startup model to the API response.
@@ -552,6 +601,7 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"tech_stack":        s.TechStack,
 		"banner_image":      s.BannerImage,
 		"product_links":     s.ProductLinks,
+		"gallery":           s.Gallery,
 		"linkedin":          s.Linkedin,
 		"twitter":           s.Twitter,
 		"github":            s.Github,
@@ -706,6 +756,33 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	if req.Founders != nil {
 		s.Founders = *req.Founders
 	}
+	if req.Gallery != nil {
+		s.Gallery = capGalleryJSON(*req.Gallery)
+	}
+}
+
+// maxGalleryImages caps the product screenshot carousel.
+const maxGalleryImages = 4
+
+// capGalleryJSON keeps at most maxGalleryImages entries. Invalid JSON is passed
+// through untouched (the frontend always sends a well-formed array); only the
+// happy path is trimmed so an over-long client payload can't grow unbounded.
+func capGalleryJSON(raw string) string {
+	if raw == "" {
+		return raw
+	}
+	var urls []string
+	if err := json.Unmarshal([]byte(raw), &urls); err != nil {
+		return raw
+	}
+	if len(urls) <= maxGalleryImages {
+		return raw
+	}
+	trimmed, err := json.Marshal(urls[:maxGalleryImages])
+	if err != nil {
+		return raw
+	}
+	return string(trimmed)
 }
 
 // FavoriteStartup creates a favorite for the authenticated user on the specified startup.

@@ -194,6 +194,33 @@ export async function uploadFounderPhoto(
 }
 
 /**
+ * Upload a product screenshot and get back its public URL. The caller stores the
+ * URL inside the startup's gallery JSON array (this endpoint does not touch the
+ * startup). SuperTokens session cookies are automatically included.
+ */
+export async function uploadScreenshot(
+  id: string,
+  blob: Blob,
+): Promise<string> {
+  const form = new FormData();
+  form.append("screenshot", blob, "screenshot.jpg");
+
+  const response = await fetch(`/api/proxy/startups/${id}/screenshot`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to upload screenshot");
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
+/**
  * Remove a startup's logo or banner. Returns the updated startup.
  * SuperTokens session cookies are automatically included.
  */
