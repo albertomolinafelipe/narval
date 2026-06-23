@@ -13,6 +13,9 @@ type Startup struct {
 	Name        string `gorm:"not null;uniqueIndex"           json:"name"`
 	Tagline     string `json:"tagline"`
 	Description string `gorm:"type:text"                      json:"description"`
+	About       string `gorm:"type:text"                      json:"about"`      // long-form markdown pitch (Overview tab)
+	VideoURL    string `json:"video_url"`                                        // YouTube URL embedded on Overview tab
+	Milestones  string `gorm:"type:text"                      json:"milestones"` // JSON: {"items":[{"text","link","category"}],"achieved":n}
 	Website     string `json:"website"`
 	// VerifiedDomain is set only at verified registration and is never updatable
 	// by the owner. Empty for non-verified startups.

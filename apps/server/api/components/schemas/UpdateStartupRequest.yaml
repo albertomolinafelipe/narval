@@ -10,6 +10,18 @@ properties:
   description:
     type: string
     maxLength: 1000
+  about:
+    type: string
+    maxLength: 5000
+    description: Long-form markdown pitch shown on the Overview tab
+  video_url:
+    type: string
+    maxLength: 500
+    description: YouTube URL embedded on the Overview tab
+  milestones:
+    type: string
+    maxLength: 20000
+    description: 'JSON object: {"items":[{"text","link","category"}],"achieved":n}'
   website:
     type: string
   stage:

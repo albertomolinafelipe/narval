@@ -168,6 +168,9 @@ type startupRequest struct {
 	Name             string  `json:"name"           binding:"omitempty,min=2,max=100"`
 	Tagline          *string `json:"tagline"        binding:"omitempty,max=160"`
 	Description      *string `json:"description"    binding:"omitempty,max=1000"`
+	About            *string `json:"about"          binding:"omitempty,max=5000"`
+	VideoURL         *string `json:"video_url"      binding:"omitempty,max=500"`
+	Milestones       *string `json:"milestones"     binding:"omitempty,max=20000"`
 	Website          *string `json:"website"`
 	Stage            *string `json:"stage"`
 	Industry         *string `json:"industry"`
@@ -535,6 +538,9 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"name":              s.Name,
 		"tagline":           s.Tagline,
 		"description":       s.Description,
+		"about":             s.About,
+		"video_url":         s.VideoURL,
+		"milestones":        s.Milestones,
 		"website":           s.Website,
 		"verified_domain":   s.VerifiedDomain,
 		"logo_url":          s.LogoURL,
@@ -618,6 +624,15 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	}
 	if req.Description != nil {
 		s.Description = *req.Description
+	}
+	if req.About != nil {
+		s.About = *req.About
+	}
+	if req.VideoURL != nil {
+		s.VideoURL = *req.VideoURL
+	}
+	if req.Milestones != nil {
+		s.Milestones = *req.Milestones
 	}
 	if req.Website != nil {
 		s.Website = common.NormalizeWebsite(*req.Website)

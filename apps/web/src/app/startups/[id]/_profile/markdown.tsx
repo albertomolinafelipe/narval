@@ -9,6 +9,25 @@ import { useInlineEdit, type StringField } from "./editable";
 
 type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
+/** Owner-only nudge linking to a markdown cheatsheet. Renders nothing for visitors. */
+export function MarkdownHelp() {
+  const { isOwner } = useProfileEdit();
+  if (!isOwner) return null;
+  return (
+    <p className="mb-2 text-xs text-text-subtle">
+      You can use Markdown to format the text.{" "}
+      <a
+        href="https://www.markdownguide.org/cheat-sheet/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-brand hover:underline"
+      >
+        Learn how →
+      </a>
+    </p>
+  );
+}
+
 /** Renders user-authored markdown safely (no raw HTML) with themed elements. */
 export function MarkdownView({ text }: { text: string }) {
   return (
@@ -86,7 +105,7 @@ export function EditableMarkdown({
           type="button"
           onClick={edit.start}
           aria-label="Edit"
-          className="absolute right-0 top-0 rounded p-1 text-text-subtle opacity-0 transition hover:bg-bg-subtle hover:text-brand group-hover:opacity-100"
+          className="absolute right-0 top-0 rounded p-1 text-brand transition hover:bg-bg-subtle hover:text-text-subtle"
         >
           <Pencil size={15} />
         </button>

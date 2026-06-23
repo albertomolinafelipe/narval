@@ -15,6 +15,15 @@ properties:
     type: string
   description:
     type: string
+  about:
+    type: string
+    description: Long-form markdown pitch shown on the Overview tab
+  video_url:
+    type: string
+    description: YouTube URL embedded on the Overview tab
+  milestones:
+    type: string
+    description: 'JSON object: {"items":[{"text","link","category"}],"achieved":n} shown on the Overview tab'
   website:
     type: string
   verified_domain:

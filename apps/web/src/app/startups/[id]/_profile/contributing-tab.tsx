@@ -1,7 +1,7 @@
 import { components } from "@/lib/api/generated";
 import { parseTechStack, TechIcon } from "@/lib/tech-icons";
 import { Section } from "./ui";
-import { EditableMarkdown } from "./markdown";
+import { EditableMarkdown, MarkdownHelp } from "./markdown";
 import { EditableSource } from "./source-link";
 import { EditableText } from "./editable";
 import { useProfileEdit } from "./edit-context";
@@ -21,12 +21,15 @@ export function ContributingTab({ startup }: { startup: Startup }) {
   return (
     <div className="grid gap-8 md:grid-cols-2">
       {/* Left: editable markdown */}
-      <EditableMarkdown
-        field="contributing_text"
-        value={startup.contributing_text ?? ""}
-        placeholder="Describe how others can get involved (issues, repos…). Leave empty and this tab stays hidden from visitors."
-        maxLength={2000}
-      />
+      <div>
+        <MarkdownHelp />
+        <EditableMarkdown
+          field="contributing_text"
+          value={startup.contributing_text ?? ""}
+          placeholder="Describe how others can get involved (issues, repos…). Leave empty and this tab stays hidden from visitors."
+          maxLength={2000}
+        />
+      </div>
 
       {/* Right: source + stack */}
       <div className="flex flex-col gap-8">

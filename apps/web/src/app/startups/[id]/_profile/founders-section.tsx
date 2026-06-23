@@ -7,6 +7,7 @@ import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
 import PrefixInput from "@/app/_components/shared/prefix-input";
 import { uploadFounderPhoto } from "@/lib/api/client";
 import { components } from "@/lib/api/generated";
+import { Button } from "@/components/ui/button";
 import { Section } from "./ui";
 import { useProfileEdit } from "./edit-context";
 
@@ -264,23 +265,13 @@ export function FoundersSection({ startup }: { startup: Startup }) {
 
       {dirty && (
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={saving}
-            className="rounded-lg px-3 py-1.5 text-sm text-text-muted transition hover:text-text disabled:opacity-50"
-          >
+          <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-text transition hover:opacity-90 disabled:opacity-50"
-          >
+          </Button>
+          <Button size="sm" onClick={onSave} disabled={saving}>
             {saving && <Loader2 size={14} className="animate-spin" />}
             Save
-          </button>
+          </Button>
         </div>
       )}
     </Section>
