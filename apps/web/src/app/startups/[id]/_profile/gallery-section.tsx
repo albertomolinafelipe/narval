@@ -14,8 +14,6 @@ type Startup = components["schemas"]["Startup"];
 const MAX_SCREENSHOTS = 4;
 /** Vertical, app-store style. Matches the 9:16 crop the cropper enforces. */
 const ASPECT = 9 / 16;
-/** Display width of each portrait shot (height derives from ASPECT). */
-const SHOT_WIDTH = 150;
 
 /** Parse the gallery JSON array, tolerating empty / malformed values. */
 function parseGallery(raw?: string | null): string[] {
@@ -30,13 +28,10 @@ function parseGallery(raw?: string | null): string[] {
   }
 }
 
-/** A single 9:16 screenshot frame. */
+/** A single 9:16 screenshot frame — fills its grid cell. */
 function Frame({ url }: { url: string }) {
   return (
-    <div
-      className="border border-border bg-bg-subtle"
-      style={{ width: SHOT_WIDTH, aspectRatio: "9/16" }}
-    >
+    <div className="h-full w-full bg-bg-subtle" style={{ aspectRatio: "9/16" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt="Product screenshot" className="h-full w-full object-cover" />
     </div>
@@ -57,19 +52,25 @@ export function GallerySection({ startup }: { startup: Startup }) {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Viewer: read-only row, hidden when empty.
+  // Viewer: always 4 slots, empty bg for missing ones.
   if (!isOwner) {
     if (urls.length === 0) return null;
     return (
-      <Section title="Screenshots">
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {urls.map((url, i) => (
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: MAX_SCREENSHOTS }).map((_, i) =>
+          urls[i] ? (
             <div key={i} className="overflow-hidden rounded-xl">
-              <Frame url={url} />
+              <Frame url={urls[i]} />
             </div>
-          ))}
-        </div>
-      </Section>
+          ) : (
+            <div
+              key={i}
+              className="rounded-xl bg-bg-subtle"
+              style={{ aspectRatio: "9/16" }}
+            />
+          )
+        )}
+      </div>
     );
   }
 
@@ -122,6 +123,11 @@ export function GallerySection({ startup }: { startup: Startup }) {
 
   return (
     <Section title="Screenshots">
+      {urls.length === 0 && (
+        <p className="mb-3 text-xs text-text-subtle">
+          This tab won&apos;t be shown to visitors until you add screenshots.
+        </p>
+      )}
       <input
         ref={inputRef}
         type="file"
@@ -129,62 +135,78 @@ export function GallerySection({ startup }: { startup: Startup }) {
         className="hidden"
         onChange={onFileChange}
       />
-      <div className="flex flex-wrap gap-4">
-        {urls.map((url, i) => (
-          <div key={i} className="group relative" style={{ width: SHOT_WIDTH }}>
-            <EditableImage
-              label="screenshot"
-              hasImage
-              aspect={ASPECT}
-              rounded="rounded-xl"
-              showChange={false}
-              onDelete={() => removeAt(i)}
-            >
-              <Frame url={url} />
-            </EditableImage>
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: MAX_SCREENSHOTS }).map((_, i) => {
+          const url = urls[i];
+          if (url) {
+            return (
+              <div key={i} className="group relative">
+                <EditableImage
+                  label="screenshot"
+                  hasImage
+                  aspect={ASPECT}
+                  rounded="rounded-xl"
+                  showChange={false}
+                  onDelete={() => removeAt(i)}
+                >
+                  <Frame url={url} />
+                </EditableImage>
 
-            {/* Reorder controls — revealed on hover, layered above the scrim. */}
-            <div className="pointer-events-none absolute inset-x-1.5 top-1/2 z-20 flex -translate-y-1/2 justify-between opacity-0 transition group-hover:opacity-100">
+                {/* Reorder controls */}
+                <div className="pointer-events-none absolute inset-x-1.5 top-1/2 z-20 flex -translate-y-1/2 justify-between opacity-0 transition group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => move(i, i - 1)}
+                    disabled={busy || i === 0}
+                    aria-label="Move left"
+                    className="pointer-events-auto flex items-center justify-center rounded-full bg-white/90 p-1 text-black transition hover:bg-white disabled:opacity-30"
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(i, i + 1)}
+                    disabled={busy || i === urls.length - 1}
+                    aria-label="Move right"
+                    className="pointer-events-auto flex items-center justify-center rounded-full bg-white/90 p-1 text-black transition hover:bg-white disabled:opacity-30"
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          if (i === urls.length) {
+            // Next empty slot — add button
+            return (
               <button
+                key={i}
                 type="button"
-                onClick={() => move(i, i - 1)}
-                disabled={busy || i === 0}
-                aria-label="Move left"
-                className="pointer-events-auto flex items-center justify-center rounded-full bg-white/90 p-1 text-black transition hover:bg-white disabled:opacity-30"
+                onClick={() => inputRef.current?.click()}
+                disabled={busy}
+                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border text-text-subtle transition hover:border-brand hover:text-text disabled:opacity-50"
+                style={{ aspectRatio: "9/16" }}
               >
-                <ChevronLeft size={14} />
+                {busy ? (
+                  <Loader2 size={20} className="animate-spin" />
+                ) : (
+                  <>
+                    <Plus size={20} />
+                    <span className="text-xs">Add</span>
+                  </>
+                )}
               </button>
-              <button
-                type="button"
-                onClick={() => move(i, i + 1)}
-                disabled={busy || i === urls.length - 1}
-                aria-label="Move right"
-                className="pointer-events-auto flex items-center justify-center rounded-full bg-white/90 p-1 text-black transition hover:bg-white disabled:opacity-30"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
-        ))}
-
-        {!atLimit && (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy}
-            className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border text-text-subtle transition hover:border-brand hover:text-text disabled:opacity-50"
-            style={{ width: SHOT_WIDTH, aspectRatio: "9/16" }}
-          >
-            {busy ? (
-              <Loader2 size={20} className="animate-spin" />
-            ) : (
-              <>
-                <Plus size={20} />
-                <span className="text-xs">Add screenshot</span>
-              </>
-            )}
-          </button>
-        )}
+            );
+          }
+          // Remaining empty slots
+          return (
+            <div
+              key={i}
+              className="rounded-xl bg-bg-subtle"
+              style={{ aspectRatio: "9/16" }}
+            />
+          );
+        })}
       </div>
 
       {cropSrc && (

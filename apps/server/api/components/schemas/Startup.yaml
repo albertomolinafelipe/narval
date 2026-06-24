@@ -52,6 +52,12 @@ properties:
   gallery:
     type: string
     description: 'JSON array of vertical product screenshot URLs (max 4): ["url1","url2"]'
+  product_status:
+    type: string
+    description: 'Launch status shown on the Product tab: coming-soon | waitlist | beta | live (empty = none)'
+  features:
+    type: string
+    description: 'JSON array of key product features shown on the Product tab: [{"title","description"}]'
   linkedin:
     type: string
   twitter:

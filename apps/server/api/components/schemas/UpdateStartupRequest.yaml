@@ -41,6 +41,14 @@ properties:
   gallery:
     type: string
     description: JSON-encoded array of product screenshot URLs (max 4)
+  product_status:
+    type: string
+    maxLength: 20
+    description: 'Launch status: coming-soon | waitlist | beta | live (empty = none)'
+  features:
+    type: string
+    maxLength: 4000
+    description: 'JSON-encoded array of key product features: [{"title","description"}]'
   linkedin:
     type: string
   twitter:

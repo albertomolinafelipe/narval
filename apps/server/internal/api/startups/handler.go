@@ -34,6 +34,10 @@ var validRounds = map[string]bool{
 	"series-a": true, "series-b": true, "bridge": true,
 }
 
+var validProductStatuses = map[string]bool{
+	"coming-soon": true, "waitlist": true, "beta": true, "live": true,
+}
+
 var validIndustries = map[string]bool{
 	"AI/ML": true, "FinTech": true, "HealthTech": true, "Climate Tech": true,
 	"EdTech": true, "SaaS": true, "Marketplace": true, "Developer Tools": true,
@@ -194,8 +198,10 @@ type startupRequest struct {
 	ContactFunding   *string `json:"contact_funding"`
 	ContactTalent    *string `json:"contact_talent"`
 	ProfileSetup     *bool   `json:"profile_setup"`
-	Founders         *string `json:"founders"` // JSON array
-	Gallery          *string `json:"gallery"`  // JSON array of screenshot URLs
+	Founders         *string `json:"founders"`       // JSON array
+	Gallery          *string `json:"gallery"`        // JSON array of screenshot URLs
+	ProductStatus    *string `json:"product_status"` // coming-soon | waitlist | beta | live
+	Features         *string `json:"features"`       // JSON array of {title, description}
 }
 
 // validateStartupRequest checks enum values; returns an error message or "".
@@ -213,6 +219,11 @@ func validateStartupRequest(req *startupRequest) string {
 	if req.CurrentRound != nil && *req.CurrentRound != "" {
 		if !validRounds[*req.CurrentRound] {
 			return fmt.Sprintf("invalid current_round %q", *req.CurrentRound)
+		}
+	}
+	if req.ProductStatus != nil && *req.ProductStatus != "" {
+		if !validProductStatuses[*req.ProductStatus] {
+			return fmt.Sprintf("invalid product_status %q", *req.ProductStatus)
 		}
 	}
 	return ""
@@ -602,6 +613,8 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"banner_image":      s.BannerImage,
 		"product_links":     s.ProductLinks,
 		"gallery":           s.Gallery,
+		"product_status":    s.ProductStatus,
+		"features":          s.Features,
 		"linkedin":          s.Linkedin,
 		"twitter":           s.Twitter,
 		"github":            s.Github,
@@ -759,6 +772,12 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	if req.Gallery != nil {
 		s.Gallery = capGalleryJSON(*req.Gallery)
 	}
+	if req.ProductStatus != nil {
+		s.ProductStatus = *req.ProductStatus
+	}
+	if req.Features != nil {
+		s.Features = capFeaturesJSON(*req.Features)
+	}
 }
 
 // maxGalleryImages caps the product screenshot carousel.
@@ -779,6 +798,37 @@ func capGalleryJSON(raw string) string {
 		return raw
 	}
 	trimmed, err := json.Marshal(urls[:maxGalleryImages])
+	if err != nil {
+		return raw
+	}
+	return string(trimmed)
+}
+
+// maxFeatures caps the key-features list on the Product tab.
+const maxFeatures = 8
+
+// feature mirrors the {title, description} objects the frontend stores in the
+// features JSON array. Only title/description are kept on the round-trip.
+type feature struct {
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+}
+
+// capFeaturesJSON keeps at most maxFeatures entries. Invalid JSON is passed
+// through untouched (the frontend always sends a well-formed array); only the
+// happy path is trimmed so an over-long client payload can't grow unbounded.
+func capFeaturesJSON(raw string) string {
+	if raw == "" {
+		return raw
+	}
+	var items []feature
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return raw
+	}
+	if len(items) <= maxFeatures {
+		return raw
+	}
+	trimmed, err := json.Marshal(items[:maxFeatures])
 	if err != nil {
 		return raw
 	}

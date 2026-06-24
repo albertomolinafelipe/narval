@@ -16,6 +16,7 @@ apps/server/api/openapi.bundled.yaml
 .env
 .env.local
 .env.production
+.env.example
 apps/server/.env
 apps/web/.env.local
 

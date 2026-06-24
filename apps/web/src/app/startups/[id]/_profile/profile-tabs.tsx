@@ -9,6 +9,15 @@ import { MetricsTab } from "./metrics-tab";
 import { ContributingTab, isContributingEmpty } from "./contributing-tab";
 import { EmptyState } from "./ui";
 
+function isProductEmpty(startup: Startup): boolean {
+  try {
+    const g = JSON.parse(startup.gallery ?? "[]");
+    return !Array.isArray(g) || g.length === 0;
+  } catch {
+    return true;
+  }
+}
+
 type Startup = components["schemas"]["Startup"];
 
 type TabId = "overview" | "product" | "metrics" | "contributing" | "updates";
@@ -23,7 +32,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: "overview", label: "Overview" },
-  { id: "product", label: "Product" },
+  { id: "product", label: "Product", hideWhenEmpty: true, isEmpty: isProductEmpty },
   { id: "metrics", label: "Metrics" },
   {
     id: "contributing",
