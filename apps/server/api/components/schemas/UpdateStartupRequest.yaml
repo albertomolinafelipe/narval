@@ -10,12 +10,24 @@ properties:
   description:
     type: string
     maxLength: 1000
+  about:
+    type: string
+    maxLength: 5000
+    description: Long-form markdown pitch shown on the Overview tab
+  video_url:
+    type: string
+    maxLength: 500
+    description: YouTube URL embedded on the Overview tab
+  milestones:
+    type: string
+    maxLength: 20000
+    description: 'JSON object: {"items":[{"text","link","category"}],"achieved":n}'
   website:
     type: string
   stage:
-    type: string
+    $ref: ./Stage.yaml
   industry:
-    type: string
+    $ref: ./Industry.yaml
   team_size:
     type: integer
   location:
@@ -26,6 +38,17 @@ properties:
     type: string
   product_links:
     type: string
+  gallery:
+    type: string
+    description: JSON-encoded array of product screenshot URLs (max 4)
+  product_status:
+    type: string
+    maxLength: 20
+    description: 'Launch status: coming-soon | waitlist | beta | live (empty = none)'
+  features:
+    type: string
+    maxLength: 4000
+    description: 'JSON-encoded array of key product features: [{"title","description"}]'
   linkedin:
     type: string
   twitter:
@@ -37,7 +60,7 @@ properties:
   is_raising:
     type: boolean
   current_round:
-    type: string
+    $ref: ./FundingRound.yaml
   funding_ask:
     type: string
   funding_use:
@@ -46,6 +69,9 @@ properties:
     type: boolean
   open_roles:
     type: string
+  contributing_text:
+    type: string
+    description: Markdown describing how to contribute
   contact_general:
     type: string
   contact_funding:
@@ -55,3 +81,6 @@ properties:
   profile_setup:
     type: boolean
     description: Set to true to mark the profile as complete and visible in public listings
+  founders:
+    type: string
+    description: JSON-encoded array of founders ({name, photo_url, linkedin})

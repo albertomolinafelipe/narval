@@ -45,7 +45,7 @@ export default function HomePage() {
 
         {/* Hero content — centered in remaining space */}
         <main className="relative z-10 flex flex-1 flex-col items-center justify-center px-6 text-center">
-          <NarvalLogo className="mb-8 h-80 w-80 rounded-2xl max-md:h-56 max-md:w-56" />
+          <NarvalLogo className="mb-8 h-64 w-64 rounded-2xl max-md:h-44 max-md:w-44" />
           <h1 className="text-8xl font-bold tracking-tight text-text max-md:text-6xl">
             Narval
           </h1>

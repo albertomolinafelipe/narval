@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const slogans = [
   "Discover startups. Connect with investors.",
@@ -39,17 +40,17 @@ export function HomeHero() {
         {slogans[index]}
       </p>
 
-      <div className="mt-12 flex gap-5">
-        <Link href="/startups" className="btn-primary px-10 py-4 text-lg">
-          Browse Startups
-        </Link>
-        <Link
-          href="/investors"
-          className="btn-ghost px-10 py-4 text-lg text-text"
-          style={{ borderColor: "var(--color-text-muted)" }}
+      <div className="mt-12 flex flex-col gap-5 sm:flex-row">
+        <Button asChild className="h-auto w-full px-10 py-4 text-lg sm:w-auto">
+          <Link href="/startups">Browse Startups</Link>
+        </Button>
+        <Button
+          asChild
+          variant="outline"
+          className="h-auto w-full border-text-muted px-10 py-4 text-lg text-text sm:w-auto"
         >
-          Meet Investors
-        </Link>
+          <Link href="/investors">Meet Investors</Link>
+        </Button>
       </div>
     </>
   );

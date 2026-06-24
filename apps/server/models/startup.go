@@ -9,21 +9,30 @@ import (
 
 // Startup account on the platform.
 type Startup struct {
-	ID           string `gorm:"type:uuid;primaryKey"          json:"id"`
-	Name         string `gorm:"not null;uniqueIndex"           json:"name"`
-	Tagline      string `json:"tagline"`
-	Description  string `gorm:"type:text"                      json:"description"`
-	Website      string `json:"website"`
-	LogoURL      string `json:"logo_url"`
-	Stage        string `json:"stage"`
-	Industry     string `json:"industry"`
-	TeamSize     int    `json:"team_size"`
-	Location     string `json:"location"`
-	FoundedYear  int    `json:"founded_year"`
-	TechStack    string `json:"tech_stack"`
-	BannerImage  string `json:"banner_image"`  // URL of the banner image
-	ProductLinks string `json:"product_links"` // JSON: {"web":"...","ios":"...","android":"..."}
-	Founders     string `json:"founders"`      // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	ID          string `gorm:"type:uuid;primaryKey"          json:"id"`
+	Name        string `gorm:"not null;uniqueIndex"           json:"name"`
+	Tagline     string `json:"tagline"`
+	Description string `gorm:"type:text"                      json:"description"`
+	About       string `gorm:"type:text"                      json:"about"`      // long-form markdown pitch (Overview tab)
+	VideoURL    string `json:"video_url"`                                        // YouTube URL embedded on Overview tab
+	Milestones  string `gorm:"type:text"                      json:"milestones"` // JSON: {"items":[{"text","link","category"}],"achieved":n}
+	Website     string `json:"website"`
+	// VerifiedDomain is set only at verified registration and is never updatable
+	// by the owner. Empty for non-verified startups.
+	VerifiedDomain string `json:"verified_domain"`
+	LogoURL        string `json:"logo_url"`
+	Stage          string `json:"stage"`
+	Industry       string `json:"industry"`
+	TeamSize       int    `json:"team_size"`
+	Location       string `json:"location"`
+	FoundedYear    int    `json:"founded_year"`
+	TechStack      string `json:"tech_stack"`
+	BannerImage    string `json:"banner_image"`             // URL of the banner image
+	ProductLinks   string `json:"product_links"`            // JSON: {"web":"...","ios":"...","android":"..."}
+	Founders       string `json:"founders"`                 // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	Gallery        string `gorm:"type:text" json:"gallery"`  // JSON: ["url1","url2",…] vertical product screenshots (max 4)
+	ProductStatus  string `json:"product_status"`            // coming-soon | waitlist | beta | live (empty = none)
+	Features       string `gorm:"type:text" json:"features"` // JSON: [{"title":"...","description":"..."}] key product features (max 8)
 
 	// Socials — explicit columns
 	Linkedin  string `json:"linkedin"`
@@ -40,6 +49,9 @@ type Startup struct {
 	// Talent
 	IsHiring  bool   `json:"is_hiring"`
 	OpenRoles string `json:"open_roles"` // comma list
+
+	// Contributing (markdown)
+	ContributingText string `gorm:"type:text" json:"contributing_text"`
 
 	// Contact
 	ContactGeneral string `json:"contact_general"`

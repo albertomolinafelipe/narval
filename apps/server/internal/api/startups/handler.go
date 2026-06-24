@@ -34,6 +34,10 @@ var validRounds = map[string]bool{
 	"series-a": true, "series-b": true, "bridge": true,
 }
 
+var validProductStatuses = map[string]bool{
+	"coming-soon": true, "waitlist": true, "beta": true, "live": true,
+}
+
 var validIndustries = map[string]bool{
 	"AI/ML": true, "FinTech": true, "HealthTech": true, "Climate Tech": true,
 	"EdTech": true, "SaaS": true, "Marketplace": true, "Developer Tools": true,
@@ -91,7 +95,7 @@ func (h *Handler) CheckStartupWebsite(c *gin.Context) {
 		return
 	}
 	var count int64
-	h.DB.Model(&models.Startup{}).Where("website = ?", urlParam).Count(&count)
+	h.DB.Model(&models.Startup{}).Where("verified_domain = ?", urlParam).Count(&count)
 	c.JSON(http.StatusOK, gin.H{"available": count == 0})
 }
 
@@ -165,32 +169,39 @@ func (h *Handler) ListStartups(c *gin.Context) {
 
 // startupRequest holds optional fields for create/update.
 type startupRequest struct {
-	Name           string  `json:"name"           binding:"omitempty,min=2,max=100"`
-	Tagline        *string `json:"tagline"        binding:"omitempty,max=160"`
-	Description    *string `json:"description"    binding:"omitempty,max=1000"`
-	Website        *string `json:"website"`
-	Stage          *string `json:"stage"`
-	Industry       *string `json:"industry"`
-	TeamSize       *int    `json:"team_size"`
-	Location       *string `json:"location"`
-	FoundedYear    *int    `json:"founded_year"`
-	TechStack      *string `json:"tech_stack"`
-	ProductLinks   *string `json:"product_links"`
-	Linkedin       *string `json:"linkedin"`
-	Twitter        *string `json:"twitter"`
-	Github         *string `json:"github"`
-	Instagram      *string `json:"instagram"`
-	IsRaising      *bool   `json:"is_raising"`
-	CurrentRound   *string `json:"current_round"`
-	FundingAsk     *string `json:"funding_ask"`
-	FundingUse     *string `json:"funding_use"`
-	IsHiring       *bool   `json:"is_hiring"`
-	OpenRoles      *string `json:"open_roles"`
-	ContactGeneral *string `json:"contact_general"`
-	ContactFunding *string `json:"contact_funding"`
-	ContactTalent  *string `json:"contact_talent"`
-	ProfileSetup   *bool   `json:"profile_setup"`
-	Founders       *string `json:"founders"` // JSON array
+	Name             string  `json:"name"           binding:"omitempty,min=2,max=100"`
+	Tagline          *string `json:"tagline"        binding:"omitempty,max=160"`
+	Description      *string `json:"description"    binding:"omitempty,max=1000"`
+	About            *string `json:"about"          binding:"omitempty,max=5000"`
+	VideoURL         *string `json:"video_url"      binding:"omitempty,max=500"`
+	Milestones       *string `json:"milestones"     binding:"omitempty,max=20000"`
+	Website          *string `json:"website"`
+	Stage            *string `json:"stage"`
+	Industry         *string `json:"industry"`
+	TeamSize         *int    `json:"team_size"`
+	Location         *string `json:"location"`
+	FoundedYear      *int    `json:"founded_year"`
+	TechStack        *string `json:"tech_stack"`
+	ProductLinks     *string `json:"product_links"`
+	Linkedin         *string `json:"linkedin"`
+	Twitter          *string `json:"twitter"`
+	Github           *string `json:"github"`
+	Instagram        *string `json:"instagram"`
+	IsRaising        *bool   `json:"is_raising"`
+	CurrentRound     *string `json:"current_round"`
+	FundingAsk       *string `json:"funding_ask"`
+	FundingUse       *string `json:"funding_use"`
+	IsHiring         *bool   `json:"is_hiring"`
+	OpenRoles        *string `json:"open_roles"`
+	ContributingText *string `json:"contributing_text" binding:"omitempty,max=2000"`
+	ContactGeneral   *string `json:"contact_general"`
+	ContactFunding   *string `json:"contact_funding"`
+	ContactTalent    *string `json:"contact_talent"`
+	ProfileSetup     *bool   `json:"profile_setup"`
+	Founders         *string `json:"founders"`       // JSON array
+	Gallery          *string `json:"gallery"`        // JSON array of screenshot URLs
+	ProductStatus    *string `json:"product_status"` // coming-soon | waitlist | beta | live
+	Features         *string `json:"features"`       // JSON array of {title, description}
 }
 
 // validateStartupRequest checks enum values; returns an error message or "".
@@ -208,6 +219,11 @@ func validateStartupRequest(req *startupRequest) string {
 	if req.CurrentRound != nil && *req.CurrentRound != "" {
 		if !validRounds[*req.CurrentRound] {
 			return fmt.Sprintf("invalid current_round %q", *req.CurrentRound)
+		}
+	}
+	if req.ProductStatus != nil && *req.ProductStatus != "" {
+		if !validProductStatuses[*req.ProductStatus] {
+			return fmt.Sprintf("invalid product_status %q", *req.ProductStatus)
 		}
 	}
 	return ""
@@ -314,10 +330,6 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 
 	if req.Name != "" {
 		st.Name = req.Name
-	}
-	if req.Website != nil && *req.Website != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "website cannot be changed after registration"})
-		return
 	}
 	applyStartupFields(&st, &req)
 
@@ -438,6 +450,47 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
+// clearStartupImage clears one image field (logo or banner) for an owned
+// startup. The blob is left in object storage (orphaned); only the reference is
+// dropped. apply mutates the loaded startup to zero the relevant field.
+func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply func(*models.Startup)) {
+	startupID := id.String()
+
+	var st models.Startup
+	if err := h.DB.First(&st, "id = ?", startupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
+		return
+	}
+
+	ownerID := middleware.GetDBUserID(c)
+	if st.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "not the owner of this startup"})
+		return
+	}
+
+	apply(&st)
+	if err := h.DB.Save(&st).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
+		return
+	}
+
+	c.JSON(http.StatusOK, h.startupResponse(c, st))
+}
+
+// DeleteStartupLogo removes the logo reference from the startup.
+func (h *Handler) DeleteStartupLogo(c *gin.Context, id openapi_types.UUID) {
+	h.clearStartupImage(c, id, func(st *models.Startup) { st.LogoURL = "" })
+}
+
+// DeleteStartupBanner removes the banner reference from the startup.
+func (h *Handler) DeleteStartupBanner(c *gin.Context, id openapi_types.UUID) {
+	h.clearStartupImage(c, id, func(st *models.Startup) { st.BannerImage = "" })
+}
+
 // UploadFounderPhoto uploads a founder photo and returns the public URL.
 // The client is responsible for storing the URL inside the founders JSON field.
 func (h *Handler) UploadFounderPhoto(c *gin.Context) {
@@ -486,6 +539,54 @@ func (h *Handler) UploadFounderPhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"url": photoURL})
 }
 
+// UploadStartupScreenshot uploads a single product screenshot and returns its
+// public URL. The client stores the URL inside the startup's gallery JSON field.
+func (h *Handler) UploadStartupScreenshot(c *gin.Context) {
+	startupID := c.Param("id")
+	ownerID := middleware.GetDBUserID(c)
+
+	var st models.Startup
+	if err := h.DB.First(&st, "id = ?", startupID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
+		return
+	}
+
+	if st.OwnerID != ownerID {
+		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "not the owner of this startup"})
+		return
+	}
+
+	file, header, err := c.Request.FormFile("screenshot")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "screenshot file is required"})
+		return
+	}
+	defer file.Close() //nolint:errcheck
+
+	if header.Size > maxLogoSize {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "screenshot exceeds 5 MiB limit"})
+		return
+	}
+
+	ct := header.Header.Get("Content-Type")
+	if !strings.HasPrefix(ct, "image/") {
+		ct = "image/jpeg"
+	}
+
+	objectName := fmt.Sprintf("screenshots/%s/%d-%s", startupID, time.Now().UnixMilli(), header.Filename)
+	url, err := h.Storage.UploadLogo(c.Request.Context(), objectName, file, header.Size, ct)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "STORAGE_ERROR", "message": "failed to upload screenshot"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"url": url})
+}
+
 //  Response helpers
 
 // startupResponse converts a Startup model to the API response.
@@ -493,38 +594,46 @@ func (h *Handler) UploadFounderPhoto(c *gin.Context) {
 func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]interface{} {
 	// Convert to map to add dynamic field
 	response := map[string]interface{}{
-		"id":              s.ID,
-		"name":            s.Name,
-		"tagline":         s.Tagline,
-		"description":     s.Description,
-		"website":         s.Website,
-		"logo_url":        s.LogoURL,
-		"stage":           s.Stage,
-		"industry":        s.Industry,
-		"team_size":       s.TeamSize,
-		"location":        s.Location,
-		"founded_year":    s.FoundedYear,
-		"tech_stack":      s.TechStack,
-		"banner_image":    s.BannerImage,
-		"product_links":   s.ProductLinks,
-		"linkedin":        s.Linkedin,
-		"twitter":         s.Twitter,
-		"github":          s.Github,
-		"instagram":       s.Instagram,
-		"is_raising":      s.IsRaising,
-		"current_round":   s.CurrentRound,
-		"funding_ask":     s.FundingAsk,
-		"funding_use":     s.FundingUse,
-		"is_hiring":       s.IsHiring,
-		"open_roles":      s.OpenRoles,
-		"contact_general": s.ContactGeneral,
-		"contact_funding": s.ContactFunding,
-		"contact_talent":  s.ContactTalent,
-		"owner_id":        s.OwnerID,
-		"owner_email":     s.OwnerEmail,
-		"profile_setup":   s.ProfileSetup,
-		"created_at":      s.CreatedAt,
-		"updated_at":      s.UpdatedAt,
+		"id":                s.ID,
+		"name":              s.Name,
+		"tagline":           s.Tagline,
+		"description":       s.Description,
+		"about":             s.About,
+		"video_url":         s.VideoURL,
+		"milestones":        s.Milestones,
+		"website":           s.Website,
+		"verified_domain":   s.VerifiedDomain,
+		"logo_url":          s.LogoURL,
+		"stage":             s.Stage,
+		"industry":          s.Industry,
+		"team_size":         s.TeamSize,
+		"location":          s.Location,
+		"founded_year":      s.FoundedYear,
+		"tech_stack":        s.TechStack,
+		"banner_image":      s.BannerImage,
+		"product_links":     s.ProductLinks,
+		"gallery":           s.Gallery,
+		"product_status":    s.ProductStatus,
+		"features":          s.Features,
+		"linkedin":          s.Linkedin,
+		"twitter":           s.Twitter,
+		"github":            s.Github,
+		"instagram":         s.Instagram,
+		"is_raising":        s.IsRaising,
+		"current_round":     s.CurrentRound,
+		"funding_ask":       s.FundingAsk,
+		"funding_use":       s.FundingUse,
+		"is_hiring":         s.IsHiring,
+		"open_roles":        s.OpenRoles,
+		"contributing_text": s.ContributingText,
+		"contact_general":   s.ContactGeneral,
+		"contact_funding":   s.ContactFunding,
+		"contact_talent":    s.ContactTalent,
+		"owner_id":          s.OwnerID,
+		"owner_email":       s.OwnerEmail,
+		"profile_setup":     s.ProfileSetup,
+		"created_at":        s.CreatedAt,
+		"updated_at":        s.UpdatedAt,
 	}
 
 	// Parse founders JSON into array so clients receive structured data.
@@ -578,6 +687,15 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	}
 	if req.Description != nil {
 		s.Description = *req.Description
+	}
+	if req.About != nil {
+		s.About = *req.About
+	}
+	if req.VideoURL != nil {
+		s.VideoURL = *req.VideoURL
+	}
+	if req.Milestones != nil {
+		s.Milestones = *req.Milestones
 	}
 	if req.Website != nil {
 		s.Website = common.NormalizeWebsite(*req.Website)
@@ -633,6 +751,9 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	if req.OpenRoles != nil {
 		s.OpenRoles = *req.OpenRoles
 	}
+	if req.ContributingText != nil {
+		s.ContributingText = *req.ContributingText
+	}
 	if req.ContactGeneral != nil {
 		s.ContactGeneral = *req.ContactGeneral
 	}
@@ -648,6 +769,70 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	if req.Founders != nil {
 		s.Founders = *req.Founders
 	}
+	if req.Gallery != nil {
+		s.Gallery = capGalleryJSON(*req.Gallery)
+	}
+	if req.ProductStatus != nil {
+		s.ProductStatus = *req.ProductStatus
+	}
+	if req.Features != nil {
+		s.Features = capFeaturesJSON(*req.Features)
+	}
+}
+
+// maxGalleryImages caps the product screenshot carousel.
+const maxGalleryImages = 4
+
+// capGalleryJSON keeps at most maxGalleryImages entries. Invalid JSON is passed
+// through untouched (the frontend always sends a well-formed array); only the
+// happy path is trimmed so an over-long client payload can't grow unbounded.
+func capGalleryJSON(raw string) string {
+	if raw == "" {
+		return raw
+	}
+	var urls []string
+	if err := json.Unmarshal([]byte(raw), &urls); err != nil {
+		return raw
+	}
+	if len(urls) <= maxGalleryImages {
+		return raw
+	}
+	trimmed, err := json.Marshal(urls[:maxGalleryImages])
+	if err != nil {
+		return raw
+	}
+	return string(trimmed)
+}
+
+// maxFeatures caps the key-features list on the Product tab.
+const maxFeatures = 8
+
+// feature mirrors the {title, description} objects the frontend stores in the
+// features JSON array. Only title/description are kept on the round-trip.
+type feature struct {
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
+}
+
+// capFeaturesJSON keeps at most maxFeatures entries. Invalid JSON is passed
+// through untouched (the frontend always sends a well-formed array); only the
+// happy path is trimmed so an over-long client payload can't grow unbounded.
+func capFeaturesJSON(raw string) string {
+	if raw == "" {
+		return raw
+	}
+	var items []feature
+	if err := json.Unmarshal([]byte(raw), &items); err != nil {
+		return raw
+	}
+	if len(items) <= maxFeatures {
+		return raw
+	}
+	trimmed, err := json.Marshal(items[:maxFeatures])
+	if err != nil {
+		return raw
+	}
+	return string(trimmed)
 }
 
 // FavoriteStartup creates a favorite for the authenticated user on the specified startup.

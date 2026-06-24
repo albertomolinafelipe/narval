@@ -9,27 +9,11 @@ import AppHeader from "@/app/_components/layout/app-header";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { components } from "@/lib/api/generated";
+import { INDUSTRIES } from "@/lib/enums";
 
 type Startup = components["schemas"]["Startup"];
 
-const ALL_SECTORS = [
-  "All",
-  "AI/ML",
-  "FinTech",
-  "HealthTech",
-  "Climate Tech",
-  "EdTech",
-  "SaaS",
-  "Marketplace",
-  "Developer Tools",
-  "Hardware",
-  "Consumer",
-  "Deep Tech",
-  "Logistics",
-  "Legal Tech",
-  "HR Tech",
-  "Other",
-];
+const ALL_SECTORS = ["All", ...INDUSTRIES];
 
 // Tallest podium bar takes this fraction of the podium area, leaving
 // headroom above every bar for the content card (crown, name, boosts).
@@ -208,7 +192,7 @@ export default function AwardsPage() {
   }, []);
 
   const activeSectors = useMemo(() => {
-    const industriesWithBoosts = new Set(
+    const industriesWithBoosts = new Set<string>(
       allStartups
         .filter((s) => (s.boost_count ?? 0) > 0 && s.industry)
         .map((s) => s.industry!),

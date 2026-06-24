@@ -136,6 +136,111 @@ export async function fetchStartup(
   return response.json();
 }
 
+export type StartupImageKind = "logo" | "banner";
+
+/**
+ * Upload (or replace) a startup's logo or banner. The multipart field name
+ * matches the image kind, mirroring the backend handlers. Returns the updated
+ * startup. SuperTokens session cookies are automatically included.
+ */
+export async function uploadStartupImage(
+  id: string,
+  kind: StartupImageKind,
+  blob: Blob,
+): Promise<Startup> {
+  const form = new FormData();
+  form.append(kind, blob, `${kind}.jpg`);
+
+  // Don't set Content-Type — the browser adds the multipart boundary.
+  const response = await fetch(`/api/proxy/startups/${id}/${kind}`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to upload ${kind}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Upload a founder photo and get back its public URL. The caller stores the URL
+ * inside the startup's founders JSON (this endpoint does not touch the startup).
+ * SuperTokens session cookies are automatically included.
+ */
+export async function uploadFounderPhoto(
+  id: string,
+  blob: Blob,
+): Promise<string> {
+  const form = new FormData();
+  form.append("photo", blob, "founder.jpg");
+
+  const response = await fetch(`/api/proxy/startups/${id}/founder-photo`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to upload photo");
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
+/**
+ * Upload a product screenshot and get back its public URL. The caller stores the
+ * URL inside the startup's gallery JSON array (this endpoint does not touch the
+ * startup). SuperTokens session cookies are automatically included.
+ */
+export async function uploadScreenshot(
+  id: string,
+  blob: Blob,
+): Promise<string> {
+  const form = new FormData();
+  form.append("screenshot", blob, "screenshot.jpg");
+
+  const response = await fetch(`/api/proxy/startups/${id}/screenshot`, {
+    method: "POST",
+    credentials: "include",
+    body: form,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to upload screenshot");
+  }
+
+  const data = (await response.json()) as { url: string };
+  return data.url;
+}
+
+/**
+ * Remove a startup's logo or banner. Returns the updated startup.
+ * SuperTokens session cookies are automatically included.
+ */
+export async function deleteStartupImage(
+  id: string,
+  kind: StartupImageKind,
+): Promise<Startup> {
+  const response = await fetch(`/api/proxy/startups/${id}/${kind}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to remove ${kind}`);
+  }
+
+  return response.json();
+}
+
 /**
  * Toggle favorite status for a startup.
  * SuperTokens session cookies are automatically included.
@@ -197,4 +302,28 @@ export async function boostStartup(
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to boost startup");
   }
+}
+
+/**
+ * Partially update a startup. Only the fields present in `patch` are changed;
+ * the server leaves omitted fields untouched. Returns the updated startup.
+ * SuperTokens session cookies are automatically included.
+ */
+export async function updateStartup(
+  id: string,
+  patch: components["schemas"]["UpdateStartupRequest"],
+): Promise<Startup> {
+  const response = await fetch(`/api/proxy/startups/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // Important: include cookies for SuperTokens session
+    body: JSON.stringify(patch),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update startup");
+  }
+
+  return response.json();
 }

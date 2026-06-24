@@ -1,0 +1,9 @@
+type: string
+enum:
+  - idea
+  - pre-seed
+  - seed
+  - series-a
+  - series-b
+  - growth
+  - profitable

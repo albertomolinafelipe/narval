@@ -1,0 +1,17 @@
+type: string
+enum:
+  - AI/ML
+  - FinTech
+  - HealthTech
+  - Climate Tech
+  - EdTech
+  - SaaS
+  - Marketplace
+  - Developer Tools
+  - Hardware
+  - Consumer
+  - Deep Tech
+  - Logistics
+  - Legal Tech
+  - HR Tech
+  - Other

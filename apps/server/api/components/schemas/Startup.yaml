@@ -15,19 +15,26 @@ properties:
     type: string
   description:
     type: string
+  about:
+    type: string
+    description: Long-form markdown pitch shown on the Overview tab
+  video_url:
+    type: string
+    description: YouTube URL embedded on the Overview tab
+  milestones:
+    type: string
+    description: 'JSON object: {"items":[{"text","link","category"}],"achieved":n} shown on the Overview tab'
   website:
     type: string
+  verified_domain:
+    type: string
+    description: Verified domain (read-only, set at verification; empty if unverified)
   logo_url:
     type: string
   stage:
-    type: string
-    description: idea | pre-seed | seed | series-a | series-b | growth | profitable
+    $ref: ./Stage.yaml
   industry:
-    type: string
-    description: >-
-      AI/ML | FinTech | HealthTech | Climate Tech | EdTech | SaaS | Marketplace
-      | Developer Tools | Hardware | Consumer | Deep Tech | Logistics | Legal
-      Tech | HR Tech | Other
+    $ref: ./Industry.yaml
   team_size:
     type: integer
   location:
@@ -42,6 +49,15 @@ properties:
   product_links:
     type: string
     description: 'JSON object with product links: {"web":"...","ios":"...","android":"..."}'
+  gallery:
+    type: string
+    description: 'JSON array of vertical product screenshot URLs (max 4): ["url1","url2"]'
+  product_status:
+    type: string
+    description: 'Launch status shown on the Product tab: coming-soon | waitlist | beta | live (empty = none)'
+  features:
+    type: string
+    description: 'JSON array of key product features shown on the Product tab: [{"title","description"}]'
   linkedin:
     type: string
   twitter:
@@ -53,8 +69,7 @@ properties:
   is_raising:
     type: boolean
   current_round:
-    type: string
-    description: pre-seed | seed | series-a | series-b | bridge
+    $ref: ./FundingRound.yaml
   funding_ask:
     type: string
   funding_use:
@@ -64,6 +79,9 @@ properties:
   open_roles:
     type: string
     description: Comma-separated list of open roles
+  contributing_text:
+    type: string
+    description: Markdown describing how to contribute
   contact_general:
     type: string
   contact_funding:

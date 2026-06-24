@@ -63,13 +63,13 @@ export function Pill({
 }) {
   const cls =
     variant === "accent"
-      ? "border-brand/30 bg-brand-subtle text-brand-text"
+      ? "bg-brand-subtle text-brand-text"
       : variant === "code"
-        ? "border-border bg-bg-raised font-mono text-text-subtle"
-        : "border-border bg-bg-subtle text-text-muted";
+        ? "bg-bg-raised font-mono text-text-subtle"
+        : "bg-bg-subtle text-text-muted";
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs ${cls}`}
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm ${cls}`}
     >
       {icon}
       {label}

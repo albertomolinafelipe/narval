@@ -16,6 +16,7 @@ apps/server/api/openapi.bundled.yaml
 .env
 .env.local
 .env.production
+.env.example
 apps/server/.env
 apps/web/.env.local
 
@@ -36,3 +37,6 @@ scripts/seed/assets/*
 # Production
 caddy_data/
 caddy_config/
+
+# Local working notes
+*TODO.md

@@ -249,5 +249,6 @@ make deploy-seed     # Seed production DB (builds binary, SSHes to droplet, runs
 - **Do not edit generated files** (`generated.go`, `generated.ts`, `openapi.bundled.yaml`). Change the source, run `make generate`.
 - **No comments unless the WHY is non-obvious.** Identifiers should be self-documenting.
 - **Tailwind classes** use a custom design token set (CSS variables like `--color-brand`, `--color-bg-raised`). Follow existing patterns.
+- **Use shadcn/ui whenever possible** for frontend components (buttons, inputs, selects, dialogs, etc.). The web app uses shadcn manually token-mapped (`cn` util, `components/ui/`), not `shadcn init`. Reach for an existing or new shadcn primitive before hand-rolling raw `<button>`/`<input>`/`<select>` elements.
 - **Seed data** lives in `scripts/seed/main.go` as hardcoded Go structs. Logos are fetched from Clearbit; placeholder fallback is in `scripts/seed/assets/`.
 - **Integration tests** are in `apps/server/integration/` and require a real Postgres + MinIO. Unit tests are co-located with the code they test (`_test.go` files).

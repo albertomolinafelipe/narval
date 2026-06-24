@@ -1,0 +1,7 @@
+type: string
+enum:
+  - pre-seed
+  - seed
+  - series-a
+  - series-b
+  - bridge

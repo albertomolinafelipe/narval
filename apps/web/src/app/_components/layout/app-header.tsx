@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { ChevronRight, ChevronDown, User, LogOut } from "lucide-react";
+import { ChevronRight, Menu, X, User, LogOut } from "lucide-react";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import { useAuthModal } from "@/app/_components/auth/auth-modal-context";
@@ -69,7 +69,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
   const profilePath =
     user?.account_type === "startup" && user.profile_id
       ? `/startups/${user.profile_id}`
-      : "/profile";
+      : "/startups";
 
   return (
     <header className="relative flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-6">
@@ -80,7 +80,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
           aria-label="Home"
           className="text-text transition-opacity hover:opacity-80"
         >
-          <NarvalLogo className="h-9 w-9 rounded-sm" />
+          <NarvalLogo className="h-7 w-7 rounded-sm" />
         </Link>
         <div className="h-4 w-px bg-border" />
 
@@ -167,10 +167,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
             aria-expanded={mobileOpen}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition hover:bg-bg-subtle hover:text-text md:hidden"
           >
-            <ChevronDown
-              size={20}
-              className={`transition-transform ${mobileOpen ? "rotate-180" : ""}`}
-            />
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         )}
       </div>

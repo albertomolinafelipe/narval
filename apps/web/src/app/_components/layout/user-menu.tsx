@@ -6,6 +6,7 @@ import { useUser } from "@/lib/user";
 import Link from "next/link";
 import Image from "next/image";
 import { AlertCircle, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useAuthModal } from "../auth/auth-modal-context";
 
 export default function UserMenu() {
@@ -52,15 +53,15 @@ export default function UserMenu() {
 
   if (!authenticated || !user) {
     return (
-      <button
+      <Button
         type="button"
         onClick={openModal}
-        className="btn-primary text-sm px-4 py-1.5 max-md:px-2"
+        className="max-md:px-2"
         aria-label="Sign in"
       >
         <span className="md:hidden"><User size={18} /></span>
         <span className="max-md:hidden">Sign in</span>
-      </button>
+      </Button>
     );
   }
 
@@ -71,7 +72,7 @@ export default function UserMenu() {
   const hasProfile = accountType === "startup";
   const showProfileWarning = hasProfile && profileSetup === false;
 
-  const profilePath = profileId ? `/startups/${profileId}` : "/profile";
+  const profilePath = profileId ? `/startups/${profileId}` : "/startups";
 
   return (
     <div ref={ref} className="relative z-50">
