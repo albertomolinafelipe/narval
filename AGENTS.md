@@ -4,28 +4,26 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Verified startup slugs
+## 🚧 Currently working on: Image cache fix + home/startups list polish
 
-Goal: verified startups get a clean public URL at `/startups/<domain>` (e.g. `/startups/acme.com`); everything else lives at `/startups/in/<uuid>` (`in` = internal canonical).
+Three workstreams on branch `prettify-home-page`.
 
-Design decisions (locked):
-- **Slug is canonical.** `/startups/<domain>` stays in the address bar — no redirect away from it. The redirect only goes **uuid → domain**: hitting `/startups/in/<uuid>` for a *verified* startup 301s up to `/startups/<domain>`. Non-verified uuid routes stay as-is.
-- **Dotted, not underscored.** The URL segment *is* the verified domain verbatim — no encode/decode.
-- **UUID stays the only internal identity** (DB, mutations, analytics). The domain is purely a public URL alias derived from `verified` + `verified_domain`; nothing new is stored.
-- **Clean break** on old `/startups/<uuid>` links — no legacy redirect.
-- **No DB index** for now (early; app-level `DOMAIN_TAKEN` check is enough).
-- Backend: overload `GET /startups/{id}` to resolve by UUID *or* domain (branch on UUID-parse), rather than adding a second endpoint.
-- Frontend: one `startupPath(startup)` helper is the single source of truth for building startup links.
+### 1. Fix stale image cache (logo + banner)
 
-Progress:
-- [x] Backend: overload startup lookup to accept uuid-or-domain (`GetStartup` branches on `uuid.Parse`)
-- [x] `make generate` (regen Go + web client) — server builds
-- [x] Restructure web routes: shared `_profile`/client up; `startups/in/[id]` (uuid) + `startups/[slug]` (domain)
-- [x] Canonical redirect (uuid → domain) for verified, in `in/[id]/page.tsx`
-- [x] `startupPath()` helper (`@/lib/startup-url`) applied at all link sites (awards, startups-client, profile client share/expand, header/menu/banner self-links)
-- [x] Verify: `tsc --noEmit`, Go short tests, web tests, `next build` all pass
+Root cause (diagnosed on prod): logo and banner are stored at a **fixed object key** — `logos/<id>/logo.jpg` and `banners/<id>/banner.jpg` — and overwritten in place on every upload. The stored URL never changes, MinIO serves the objects with **no `Cache-Control` header**, so browsers keep showing the cached old image even though the new bytes uploaded fine (`POST .../logo` returns `200`, object mtime updates). Incognito works because it has no cache. Screenshots/gallery are unaffected because they use unique timestamped filenames (`<ts>-screenshot.jpg`).
 
-Status: **complete, ready for review.** Not yet committed.
+Fix (pick one, prefer cache-busting):
+- [x] **Timestamped filenames for logo/banner** (option A) — `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys, matching screenshots/founders. Unique URL per upload → no stale cache. Orphan cleanup left to separate TODO.
+
+### 2. Prettify the home page
+
+- [ ] Polish the landing/home page visuals (follow existing Tailwind design tokens + shadcn primitives).
+
+### 3. Prettify the startups list page
+
+- [ ] Polish the `/startups` list page layout/cards.
+
+Status: **not started.**
 
 ---
 

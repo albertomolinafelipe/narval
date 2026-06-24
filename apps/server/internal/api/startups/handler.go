@@ -390,7 +390,7 @@ func (h *Handler) UploadStartupLogo(c *gin.Context, id openapi_types.UUID) {
 		ct = "image/jpeg" // fallback
 	}
 
-	objectName := fmt.Sprintf("logos/%s/%s", startupID, header.Filename)
+	objectName := fmt.Sprintf("logos/%s/%d-%s", startupID, time.Now().UnixMilli(), header.Filename)
 
 	logoURL, err := h.Storage.UploadLogo(c.Request.Context(), objectName, file, header.Size, ct)
 	if err != nil {
@@ -444,7 +444,7 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 		ct = "image/jpeg"
 	}
 
-	objectName := fmt.Sprintf("banners/%s/%s", startupID, header.Filename)
+	objectName := fmt.Sprintf("banners/%s/%d-%s", startupID, time.Now().UnixMilli(), header.Filename)
 
 	bannerURL, err := h.Storage.UploadLogo(c.Request.Context(), objectName, file, header.Size, ct)
 	if err != nil {
