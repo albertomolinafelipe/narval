@@ -43,6 +43,7 @@ import { EditableText } from "./_profile/editable";
 import { EditableImage } from "./_profile/editable-image";
 import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
+import { SetupBanner } from "./_profile/setup-banner";
 import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
@@ -370,6 +371,9 @@ export default function StartupPageClient({
   return (
     <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
     <div className="mx-auto max-w-7xl px-6 py-8">
+      {/*  Setup invitation (owner, profile not yet published)  */}
+      {isOwner && !startup.profile_setup && <SetupBanner />}
+
       {/*  Banner  */}
       <EditableImage
         kind="banner"
