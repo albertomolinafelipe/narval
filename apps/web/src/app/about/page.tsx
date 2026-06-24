@@ -12,22 +12,20 @@ export default function AboutPage() {
         </Link>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl px-6 py-16">
+      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
         <h1 className="text-3xl font-bold tracking-tight">About Narval</h1>
 
-        <p className="mt-6 text-text-muted leading-relaxed">WHAT IS NARVAL</p>
+        <p className="mt-6 max-w-md text-text-muted leading-relaxed">
+          We could write a boring About page about ourselves… but we built a
+          whole platform for exactly that. So we use it.
+        </p>
 
-        <p className="mt-4 text-text-muted leading-relaxed">OUR GOAL</p>
-
-        <h2 className="mt-10 text-lg font-semibold">Who it&apos;s for</h2>
-        <ul className="mt-3 space-y-2 text-text-muted">
-          <li>
-            <span className="font-medium text-text">Founders</span> — ...
-          </li>
-          <li>
-            <span className="font-medium text-text">Investors</span>- ...
-          </li>
-        </ul>
+        <Link
+          href="/startups/gonarval.com"
+          className="mt-8 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white transition hover:bg-brand/90"
+        >
+          Meet us on Narval →
+        </Link>
       </main>
     </div>
   );

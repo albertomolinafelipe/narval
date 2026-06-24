@@ -72,7 +72,7 @@ export default function UserMenu() {
   const hasProfile = accountType === "startup";
   const showProfileWarning = hasProfile && profileSetup === false;
 
-  const profilePath = profileId ? `/startups/${profileId}` : "/startups";
+  const profilePath = profileId ? `/startups/in/${profileId}` : "/startups";
 
   return (
     <div ref={ref} className="relative z-50">

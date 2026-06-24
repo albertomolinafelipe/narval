@@ -36,12 +36,14 @@ import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
+import { startupPath } from "@/lib/startup-url";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
 import { EditableImage } from "./_profile/editable-image";
 import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
+import { SetupBanner } from "./_profile/setup-banner";
 import { Section, SocialLink } from "./_profile/ui";
 
 type Startup = components["schemas"]["Startup"];
@@ -79,7 +81,7 @@ export default function StartupPageClient({
   const [copied, setCopied] = useState(false);
 
   function handleShare() {
-    const url = `${window.location.origin}/startups/${startup.id}`;
+    const url = `${window.location.origin}${startupPath(startup)}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -142,7 +144,7 @@ export default function StartupPageClient({
           <div className="flex items-center gap-4">
             <button
               type="button"
-              onClick={() => router.push(`/startups/${startup.id}`)}
+              onClick={() => router.push(startupPath(startup))}
               className="shrink-0 transition hover:opacity-80"
               aria-label="View full startup page"
             >
@@ -172,7 +174,7 @@ export default function StartupPageClient({
 
           {/* Action icons */}
           <div className="flex items-center gap-1">
-            <Link href={`/startups/${startup.id}`}>
+            <Link href={startupPath(startup)}>
               <IconButton label="Expand to full page">
                 <Maximize2 size={16} />
               </IconButton>
@@ -369,6 +371,9 @@ export default function StartupPageClient({
   return (
     <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
     <div className="mx-auto max-w-7xl px-6 py-8">
+      {/*  Setup invitation (owner, profile not yet published)  */}
+      {isOwner && !startup.profile_setup && <SetupBanner />}
+
       {/*  Banner  */}
       <EditableImage
         kind="banner"

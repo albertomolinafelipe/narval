@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"gorm.io/gorm"
 
@@ -99,10 +100,20 @@ func (h *Handler) CheckStartupWebsite(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"available": count == 0})
 }
 
-// GetStartup fetches a single startup by its UUID.
-func (h *Handler) GetStartup(c *gin.Context, id openapi_types.UUID) {
+// GetStartup fetches a single startup by its UUID, or — for verified startups —
+// by its verified domain. A well-formed UUID is looked up by id; anything else
+// is treated as a domain and matched against verified startups only.
+func (h *Handler) GetStartup(c *gin.Context, idOrDomain string) {
 	var st models.Startup
-	if err := h.DB.First(&st, "id = ?", id.String()).Error; err != nil {
+
+	var query *gorm.DB
+	if _, err := uuid.Parse(idOrDomain); err == nil {
+		query = h.DB.Where("id = ?", idOrDomain)
+	} else {
+		query = h.DB.Where("verified_domain = ? AND verified = ?", common.NormalizeWebsite(idOrDomain), true)
+	}
+
+	if err := query.First(&st).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
 			return

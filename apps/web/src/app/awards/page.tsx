@@ -10,6 +10,7 @@ import { Avatar } from "@/app/_components/shared/list-panel";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { components } from "@/lib/api/generated";
 import { INDUSTRIES } from "@/lib/enums";
+import { startupPath } from "@/lib/startup-url";
 
 type Startup = components["schemas"]["Startup"];
 
@@ -53,7 +54,7 @@ function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number 
         {startups.map((s) => (
           <Link
             key={s.id}
-            href={`/startups/${s.id}`}
+            href={startupPath(s)}
             className="flex w-16 flex-col items-center gap-1"
           >
             <Avatar entity={s} size={size} />
@@ -92,7 +93,7 @@ function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number 
       {open && (
         <div className="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 rounded-md border border-border bg-bg p-2 shadow-lg">
           {startups.map((s) => (
-            <Link key={s.id} href={`/startups/${s.id}`}>
+            <Link key={s.id} href={startupPath(s)}>
               <p className="whitespace-nowrap py-0.5 text-xs text-text hover:underline">
                 {s.name}
               </p>
@@ -327,7 +328,7 @@ export default function AwardsPage() {
                       <span className="w-6 shrink-0 text-right text-xs text-text-muted">
                         {rank ?? "—"}
                       </span>
-                      <Link href={`/startups/${startup.id}`} className="shrink-0">
+                      <Link href={startupPath(startup)} className="shrink-0">
                         <Avatar entity={startup} size={8} />
                       </Link>
                       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

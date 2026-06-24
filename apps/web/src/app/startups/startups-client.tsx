@@ -11,7 +11,8 @@ import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
-import StartupPageClient from "./[id]/startup-page-client";
+import StartupPageClient from "./startup-page-client";
+import { startupPath } from "@/lib/startup-url";
 import type { LocationGroup } from "./startups-map";
 
 type Startup = components["schemas"]["Startup"];
@@ -99,11 +100,11 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
 
   function handleStartupClick(startup: Startup) {
     if (isMobile) {
-      router.push(`/startups/${startup.id}`);
+      router.push(startupPath(startup));
       return;
     }
     if (selected?.id === startup.id) {
-      router.push(`/startups/${startup.id}`);
+      router.push(startupPath(startup));
     } else {
       setSelected(startup);
     }

@@ -1,12 +1,15 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import AppHeader from "@/app/_components/layout/app-header";
-import StartupPageClient from "./startup-page-client";
+import StartupPageClient from "@/app/startups/startup-page-client";
 import { fetchStartup } from "@/lib/api/client";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+// Internal canonical route, addressed by UUID. Verified startups have a prettier
+// public URL at /startups/<domain>, so we redirect up to it; non-verified ones
+// live here permanently.
 export default async function StartupDetailPage({ params }: Props) {
   const { id } = await params;
 
@@ -15,6 +18,10 @@ export default async function StartupDetailPage({ params }: Props) {
   const startup = await fetchStartup(id);
 
   if (!startup) notFound();
+
+  if (startup.verified && startup.verified_domain) {
+    redirect(`/startups/${startup.verified_domain}`);
+  }
 
   return (
     <div className="flex h-screen flex-col bg-bg">

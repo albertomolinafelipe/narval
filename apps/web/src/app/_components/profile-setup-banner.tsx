@@ -16,7 +16,9 @@ export default function ProfileSetupBanner({
 
   if (dismissed) return null;
 
-  const profilePath = `/startups/${profileId}`;
+  // Own-profile link uses the internal canonical route; if the startup is
+  // verified the server redirects to its /startups/<domain> URL.
+  const profilePath = `/startups/in/${profileId}`;
 
   return (
     <div className="bg-warning/10 border-b border-warning px-6 py-2 flex items-center justify-between">

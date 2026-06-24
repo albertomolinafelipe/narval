@@ -1,13 +1,13 @@
 get:
   operationId: getStartup
-  summary: Get a startup by ID (public)
+  summary: Get a startup by UUID or verified domain (public)
   parameters:
     - name: id
       in: path
       required: true
+      description: Startup UUID, or the verified domain of a verified startup
       schema:
         type: string
-        format: uuid
   responses:
     '200':
       description: Startup found
