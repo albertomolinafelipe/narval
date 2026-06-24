@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
@@ -244,7 +244,7 @@ function ViewerGallery({ urls }: { urls: string[] }) {
             "--yarl__color_backdrop": "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
-          } as React.CSSProperties,
+          },
         }}
       />
     </>
