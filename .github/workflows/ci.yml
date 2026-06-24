@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,14 +27,10 @@ jobs:
       - name: Install web dependencies
         run: cd apps/web && npm ci
 
-      - name: Bundle OpenAPI spec
-        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
-
       - name: Install oapi-codegen
         run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
 
-      - name: Generate server code
-        run: cd apps/server && go generate ./...
+      - run: make generate
 
       - name: Run Go tests
         run: cd apps/server && go test -v -short ./...
@@ -41,8 +38,35 @@ jobs:
       - name: Run web tests
         run: cd apps/web && npm run test
 
+  test-build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/server/go.mod
+          cache-dependency-path: apps/server/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: cd apps/web && npm ci
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - run: make generate
+
+      - run: make build
+
   build-server:
-    needs: test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,11 +83,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Bundle OpenAPI spec
-        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
-
       - name: Install oapi-codegen
         run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - name: Bundle OpenAPI spec
+        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
 
       - name: Generate server code
         run: cd apps/server && go generate ./...
@@ -71,7 +95,6 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
-        if: github.event_name == 'push'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -81,7 +104,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/server
-          push: ${{ github.event_name == 'push' }}
+          push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/narval-server:latest
             ghcr.io/${{ github.repository_owner }}/narval-server:${{ github.sha }}
@@ -90,7 +113,7 @@ jobs:
           cache-to: type=gha,scope=server,mode=max
 
   build-web:
-    needs: test
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -116,7 +139,6 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
-        if: github.event_name == 'push'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -126,7 +148,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/web
-          push: ${{ github.event_name == 'push' }}
+          push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/narval-web:latest
             ghcr.io/${{ github.repository_owner }}/narval-web:${{ github.sha }}
