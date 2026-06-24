@@ -107,7 +107,7 @@ function EditShell({
         type="button"
         onClick={onStart}
         className={`group items-start rounded text-left ${
-          block ? "flex w-full gap-2" : "inline-flex max-w-full gap-1"
+          block ? "flex w-fit max-w-prose gap-2" : "inline-flex max-w-full gap-1"
         }`}
       >
         <span className={block ? "min-w-0 flex-1" : undefined}>

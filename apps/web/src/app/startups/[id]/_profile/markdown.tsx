@@ -99,7 +99,7 @@ export function EditableMarkdown({
         {value ? (
           <MarkdownView text={value} />
         ) : (
-          <p className="text-sm text-text-subtle">{placeholder}</p>
+          <p className="whitespace-pre-line text-sm text-text-subtle">{placeholder}</p>
         )}
         <button
           type="button"

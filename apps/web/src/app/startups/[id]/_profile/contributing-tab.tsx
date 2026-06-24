@@ -26,7 +26,7 @@ export function ContributingTab({ startup }: { startup: Startup }) {
         <EditableMarkdown
           field="contributing_text"
           value={startup.contributing_text ?? ""}
-          placeholder="Describe how others can get involved (issues, repos…). Leave empty and this tab stays hidden from visitors."
+          placeholder={`Describe how others can get involved (issues, repos…).\nLeave empty and this tab stays hidden from visitors.`}
           maxLength={2000}
         />
       </div>
