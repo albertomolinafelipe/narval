@@ -114,11 +114,13 @@ export async function fetchStartup(
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
-  // Handle both server-side and client-side contexts
+  // Handle both server-side and client-side contexts. `id` may be a UUID or a
+  // verified domain (e.g. acme.com); the backend resolves either.
   const isServer = typeof window === "undefined";
+  const handle = encodeURIComponent(id);
   const url = isServer
-    ? `${API_URL}/startups/${id}`
-    : `/api/proxy/startups/${id}`;
+    ? `${API_URL}/startups/${handle}`
+    : `/api/proxy/startups/${handle}`;
 
   const response = await fetch(url, {
     headers,

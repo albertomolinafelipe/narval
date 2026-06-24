@@ -4,6 +4,31 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
+## 🚧 Currently working on: Verified startup slugs
+
+Goal: verified startups get a clean public URL at `/startups/<domain>` (e.g. `/startups/acme.com`); everything else lives at `/startups/in/<uuid>` (`in` = internal canonical).
+
+Design decisions (locked):
+- **Slug is canonical.** `/startups/<domain>` stays in the address bar — no redirect away from it. The redirect only goes **uuid → domain**: hitting `/startups/in/<uuid>` for a *verified* startup 301s up to `/startups/<domain>`. Non-verified uuid routes stay as-is.
+- **Dotted, not underscored.** The URL segment *is* the verified domain verbatim — no encode/decode.
+- **UUID stays the only internal identity** (DB, mutations, analytics). The domain is purely a public URL alias derived from `verified` + `verified_domain`; nothing new is stored.
+- **Clean break** on old `/startups/<uuid>` links — no legacy redirect.
+- **No DB index** for now (early; app-level `DOMAIN_TAKEN` check is enough).
+- Backend: overload `GET /startups/{id}` to resolve by UUID *or* domain (branch on UUID-parse), rather than adding a second endpoint.
+- Frontend: one `startupPath(startup)` helper is the single source of truth for building startup links.
+
+Progress:
+- [x] Backend: overload startup lookup to accept uuid-or-domain (`GetStartup` branches on `uuid.Parse`)
+- [x] `make generate` (regen Go + web client) — server builds
+- [x] Restructure web routes: shared `_profile`/client up; `startups/in/[id]` (uuid) + `startups/[slug]` (domain)
+- [x] Canonical redirect (uuid → domain) for verified, in `in/[id]/page.tsx`
+- [x] `startupPath()` helper (`@/lib/startup-url`) applied at all link sites (awards, startups-client, profile client share/expand, header/menu/banner self-links)
+- [x] Verify: `tsc --noEmit`, Go short tests, web tests, `next build` all pass
+
+Status: **complete, ready for review.** Not yet committed.
+
+---
+
 ## What is Narval?
 
 Narval is a web platform where startups present themselves and get discovered. Users can browse startup profiles, bookmark favourites, and boost the ones they find compelling. Startups register and manage their own profiles.

@@ -42,7 +42,7 @@ func (s *server) GetHealth(c *gin.Context)    { s.health.GetHealth(c) }
 
 func (s *server) ListStartups(c *gin.Context)  { s.startups.ListStartups(c) }
 func (s *server) CreateStartup(c *gin.Context) { s.startups.CreateStartup(c) }
-func (s *server) GetStartup(c *gin.Context, id openapi_types.UUID) {
+func (s *server) GetStartup(c *gin.Context, id string) {
 	s.startups.GetStartup(c, id)
 }
 func (s *server) CheckStartupWebsite(c *gin.Context, params CheckStartupWebsiteParams) {
