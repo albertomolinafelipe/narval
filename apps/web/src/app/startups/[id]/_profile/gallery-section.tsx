@@ -1,6 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 import { Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
 import { uploadScreenshot } from "@/lib/api/client";
@@ -52,25 +54,11 @@ export function GallerySection({ startup }: { startup: Startup }) {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Viewer: always 4 slots, empty bg for missing ones.
+  // Viewer: always 4 slots, empty bg for missing ones. Click opens lightbox.
   if (!isOwner) {
     if (urls.length === 0) return null;
     return (
-      <div className="grid grid-cols-4 gap-3">
-        {Array.from({ length: MAX_SCREENSHOTS }).map((_, i) =>
-          urls[i] ? (
-            <div key={i} className="overflow-hidden rounded-xl">
-              <Frame url={urls[i]} />
-            </div>
-          ) : (
-            <div
-              key={i}
-              className="rounded-xl bg-bg-subtle"
-              style={{ aspectRatio: "9/16" }}
-            />
-          )
-        )}
-      </div>
+      <ViewerGallery urls={urls} />
     );
   }
 
@@ -220,5 +208,45 @@ export function GallerySection({ startup }: { startup: Startup }) {
         />
       )}
     </Section>
+  );
+}
+
+function ViewerGallery({ urls }: { urls: string[] }) {
+  const [index, setIndex] = useState(-1);
+  return (
+    <>
+      <div className="grid grid-cols-4 gap-3">
+        {Array.from({ length: MAX_SCREENSHOTS }).map((_, i) =>
+          urls[i] ? (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIndex(i)}
+              className="overflow-hidden rounded-xl transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+            >
+              <Frame url={urls[i]} />
+            </button>
+          ) : (
+            <div key={i} className="rounded-xl bg-bg-subtle" style={{ aspectRatio: "9/16" }} />
+          )
+        )}
+      </div>
+
+      <Lightbox
+        open={index >= 0}
+        index={index}
+        close={() => setIndex(-1)}
+        on={{ view: ({ index: i }) => setIndex(i) }}
+        slides={urls.map((src) => ({ src }))}
+        controller={{ closeOnBackdropClick: true }}
+        styles={{
+          root: {
+            "--yarl__color_backdrop": "rgba(0, 0, 0, 0.5)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          } as React.CSSProperties,
+        }}
+      />
+    </>
   );
 }
