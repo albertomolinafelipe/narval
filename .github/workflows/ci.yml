@@ -2,47 +2,12 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
     branches: ["**"]
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: apps/server/go.mod
-          cache-dependency-path: apps/server/go.sum
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: apps/web/package-lock.json
-
-      - name: Install web dependencies
-        run: cd apps/web && npm ci
-
-      - name: Bundle OpenAPI spec
-        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
-
-      - name: Install oapi-codegen
-        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
-
-      - name: Generate server code
-        run: cd apps/server && go generate ./...
-
-      - name: Run Go tests
-        run: cd apps/server && go test -v -short ./...
-
-      - name: Run web tests
-        run: cd apps/web && npm run test
-
-  pr-build:
-    needs: test
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -65,18 +30,43 @@ jobs:
       - name: Install oapi-codegen
         run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
 
-      - name: Generate
-        run: make generate
+      - run: make generate
 
-      - name: Build images
-        run: make build
-        env:
-          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
-          NEXT_PUBLIC_SITE_URL: https://gonarval.com
+      - name: Run Go tests
+        run: cd apps/server && go test -v -short ./...
+
+      - name: Run web tests
+        run: cd apps/web && npm run test
+
+  test-build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/server/go.mod
+          cache-dependency-path: apps/server/go.sum
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        run: cd apps/web && npm ci
+
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - run: make generate
+
+      - run: make build
 
   build-server:
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -93,11 +83,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Bundle OpenAPI spec
-        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
-
       - name: Install oapi-codegen
         run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.5.1
+
+      - name: Bundle OpenAPI spec
+        run: cd apps/server/api && npx --yes @redocly/cli bundle openapi.yaml -o openapi.bundled.yaml
 
       - name: Generate server code
         run: cd apps/server && go generate ./...
@@ -123,8 +113,7 @@ jobs:
           cache-to: type=gha,scope=server,mode=max
 
   build-web:
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -172,7 +161,7 @@ jobs:
 
   deploy:
     needs: [build-server, build-web]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to droplet
