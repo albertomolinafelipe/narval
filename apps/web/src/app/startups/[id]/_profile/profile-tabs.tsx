@@ -82,8 +82,8 @@ export function ProfileTabs({ startup }: { startup: Startup }) {
         {active === "contributing" && <ContributingTab startup={startup} />}
         {active === "updates" && (
           <EmptyState
-            title="Nothing here yet"
-            hint="Roadmap and news will live here."
+            title="Coming soon"
+            hint="Roadmap and news."
           />
         )}
       </div>

@@ -9,8 +9,8 @@ export function MetricsTab({ startup }: { startup: Startup }) {
   if (!startup.is_raising) {
     return (
       <EmptyState
-        title="Nothing here yet"
-        hint="Traction — users, growth and milestones — will live here."
+        title="Coming soon"
+        hint="Traction — users, growth and milestones."
       />
     );
   }
