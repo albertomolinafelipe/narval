@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
     branches: ["**"]
 
@@ -43,7 +43,6 @@ jobs:
 
   build-server:
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -72,6 +71,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
+        if: github.event_name == 'push'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -81,7 +81,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/server
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/narval-server:latest
             ghcr.io/${{ github.repository_owner }}/narval-server:${{ github.sha }}
@@ -91,7 +91,6 @@ jobs:
 
   build-web:
     needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -117,6 +116,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
 
       - uses: docker/login-action@v3
+        if: github.event_name == 'push'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -126,7 +126,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./apps/web
-          push: true
+          push: ${{ github.event_name == 'push' }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/narval-web:latest
             ghcr.io/${{ github.repository_owner }}/narval-web:${{ github.sha }}
@@ -139,7 +139,7 @@ jobs:
 
   deploy:
     needs: [build-server, build-web]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to droplet
