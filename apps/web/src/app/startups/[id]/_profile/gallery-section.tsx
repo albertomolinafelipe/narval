@@ -244,7 +244,11 @@ function ViewerGallery({ urls }: { urls: string[] }) {
             "--yarl__color_backdrop": "rgba(0, 0, 0, 0.5)",
             backdropFilter: "blur(20px)",
             WebkitBackdropFilter: "blur(20px)",
+<<<<<<< HEAD
           },
+=======
+          } as React.CSSProperties,
+>>>>>>> main
         }}
       />
     </>
