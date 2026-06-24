@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { GripVertical, Loader2, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Plus, X } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { Button } from "@/components/ui/button";
 import { Section } from "./ui";
@@ -54,7 +54,6 @@ export function FeaturesSection({ startup }: { startup: Startup }) {
 
   const [draft, setDraft] = useState<Feature[]>(() => JSON.parse(savedJson));
   const [saving, setSaving] = useState(false);
-  const dragIndex = useRef<number | null>(null);
 
   useEffect(() => {
     setDraft(JSON.parse(savedJson));
@@ -84,21 +83,6 @@ export function FeaturesSection({ startup }: { startup: Startup }) {
   };
   const removeItem = (i: number) => setDraft((d) => d.filter((_, j) => j !== i));
 
-  const onDragStart = (i: number) => {
-    dragIndex.current = i;
-  };
-  const onDrop = (toIndex: number) => {
-    const from = dragIndex.current;
-    if (from === null || from === toIndex) return;
-    setDraft((d) => {
-      const items = [...d];
-      const [moved] = items.splice(from, 1);
-      items.splice(toIndex, 0, moved);
-      return items;
-    });
-    dragIndex.current = null;
-  };
-
   const onSave = async () => {
     setSaving(true);
     try {
@@ -117,17 +101,8 @@ export function FeaturesSection({ startup }: { startup: Startup }) {
         {draft.map((f, i) => (
           <div
             key={i}
-            draggable
-            onDragStart={() => onDragStart(i)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => onDrop(i)}
             className="flex items-start gap-2 rounded-lg border border-border bg-bg-subtle/30 p-2"
           >
-            <GripVertical
-              size={15}
-              className="mt-1.5 shrink-0 cursor-grab text-text-subtle active:cursor-grabbing"
-            />
-
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <input
                 value={f.title}
