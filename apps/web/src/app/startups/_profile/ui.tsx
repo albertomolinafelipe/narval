@@ -1,6 +1,7 @@
 // Shared presentational helpers for the startup profile (tabs + compact panel).
 
 import type { ReactNode } from "react";
+import { Badge } from "@/components/ui/badge";
 
 export function Section({
   title,
@@ -41,17 +42,18 @@ export function SocialLink({
       ? href
       : `https://${href}`;
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      title={label}
-      className="flex items-center gap-1.5 rounded-lg border border-border bg-bg-subtle px-3 py-1.5 text-xs text-text-muted transition hover:bg-bg hover:text-text"
-    >
-      {children}
-      <span>{label}</span>
-    </a>
+    <Badge asChild variant="secondary">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={label}
+        title={label}
+      >
+        {children}
+        <span>{label}</span>
+      </a>
+    </Badge>
   );
 }
 

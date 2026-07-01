@@ -11,21 +11,12 @@ import {
   Share2,
   Check,
   Mail,
-  Globe,
   X,
   Maximize2,
   BadgeCheck,
   Pencil,
   Eye,
 } from "lucide-react";
-import {
-  SiLinkedin,
-  SiGithub,
-  SiX,
-  SiInstagram,
-  SiAppstore,
-  SiGoogleplay,
-} from "react-icons/si";
 import { MdLocationOn, MdGroups } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -39,7 +30,7 @@ import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { startupPath, startupEditPath } from "@/lib/startup-url";
-import { parseProductLinks } from "@/lib/startup/product-links";
+import { getStartupSocials, getStartupProductLinks } from "@/lib/startup/links";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
@@ -48,6 +39,7 @@ import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
 import { SetupBanner } from "./_profile/setup-banner";
 import { Section, SocialLink } from "./_profile/ui";
+import { StartupLinks } from "./_profile/startup-links";
 
 type Startup = components["schemas"]["Startup"];
 
@@ -123,7 +115,8 @@ export default function StartupPageClient({
 
   const banner = startup.banner_image ?? null;
 
-  const productLinks = parseProductLinks(startup.product_links);
+  const socialLinks = getStartupSocials(startup);
+  const productLinkItems = getStartupProductLinks(startup);
 
   const techTags = parseTechStack(startup.tech_stack);
 
@@ -225,51 +218,17 @@ export default function StartupPageClient({
           </div>
 
           {/* About */}
-          {(startup.description || startup.website || startup.contact_general || startup.linkedin || startup.twitter || startup.github || startup.instagram) && (
+          {(startup.description || socialLinks.length > 0) && (
             <Section title="About">
               {startup.description && (
                 <p className="text-sm leading-relaxed text-text-muted">
                   {startup.description}
                 </p>
               )}
-              <div className={`flex flex-wrap gap-3 ${startup.description ? "mt-4" : ""}`}>
-                {startup.website && (
-                  <SocialLink
-                    href={startup.website}
-                    label={startup.website.replace(/^https?:\/\//, "")}
-                  >
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {startup.contact_general && (
-                  <SocialLink
-                    href={`mailto:${startup.contact_general}`}
-                    label={startup.contact_general}
-                  >
-                    <Mail size={14} />
-                  </SocialLink>
-                )}
-                {startup.linkedin && (
-                  <SocialLink href={startup.linkedin} label="LinkedIn">
-                    <SiLinkedin size={14} />
-                  </SocialLink>
-                )}
-                {startup.twitter && (
-                  <SocialLink href={startup.twitter} label="X / Twitter">
-                    <SiX size={14} />
-                  </SocialLink>
-                )}
-                {startup.github && (
-                  <SocialLink href={startup.github} label="GitHub">
-                    <SiGithub size={14} />
-                  </SocialLink>
-                )}
-                {startup.instagram && (
-                  <SocialLink href={startup.instagram} label="Instagram">
-                    <SiInstagram size={14} />
-                  </SocialLink>
-                )}
-              </div>
+              <StartupLinks
+                links={socialLinks}
+                className={startup.description ? "mt-4" : undefined}
+              />
             </Section>
           )}
 
@@ -340,25 +299,9 @@ export default function StartupPageClient({
           )}
 
           {/* Product links */}
-          {Object.keys(productLinks).length > 0 && (
+          {productLinkItems.length > 0 && (
             <Section title="Product">
-              <div className="flex flex-wrap gap-3">
-                {productLinks.web && (
-                  <SocialLink href={productLinks.web} label="Try it online">
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.ios && (
-                  <SocialLink href={productLinks.ios} label="App Store">
-                    <SiAppstore size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.android && (
-                  <SocialLink href={productLinks.android} label="Google Play">
-                    <SiGoogleplay size={14} />
-                  </SocialLink>
-                )}
-              </div>
+              <StartupLinks links={productLinkItems} />
             </Section>
           )}
         </div>
