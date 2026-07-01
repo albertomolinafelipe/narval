@@ -4,26 +4,22 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Image cache fix + home/startups list polish
+## 🚧 Currently working on: Prettify & maintain the frontend
 
-Three workstreams on branch `prettify-home-page`.
+Branch `prettify-home-page`. The theme of this branch is **polishing and maintaining the web frontend** — not new features. Concretely:
 
-### 1. Fix stale image cache (logo + banner)
+- **Responsiveness** — make pages behave well across mobile/tablet/desktop breakpoints.
+- **Component consistency** — unify spacing, colors, and interaction patterns around the existing design tokens + shadcn primitives; replace hand-rolled elements with shared components.
+- **Refactoring** — break up large page/client files, extract reusable pieces, tidy structure.
+- **Visual polish** — landing/home page and the `/startups` pages.
 
-Root cause (diagnosed on prod): logo and banner are stored at a **fixed object key** — `logos/<id>/logo.jpg` and `banners/<id>/banner.jpg` — and overwritten in place on every upload. The stored URL never changes, MinIO serves the objects with **no `Cache-Control` header**, so browsers keep showing the cached old image even though the new bytes uploaded fine (`POST .../logo` returns `200`, object mtime updates). Incognito works because it has no cache. Screenshots/gallery are unaffected because they use unique timestamped filenames (`<ts>-screenshot.jpg`).
+Keep changes focused and non-behavioral where possible; this is cleanup, not a rewrite.
 
-Fix (pick one, prefer cache-busting):
-- [x] **Timestamped filenames for logo/banner** (option A) — `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys, matching screenshots/founders. Unique URL per upload → no stale cache. Orphan cleanup left to separate TODO.
+### Progress
 
-### 2. Prettify the home page
-
-- [ ] Polish the landing/home page visuals (follow existing Tailwind design tokens + shadcn primitives).
-
-### 3. Prettify the startups list page
-
-- [ ] Polish the `/startups` list page layout/cards.
-
-Status: **not started.**
+- [x] **Stale image cache fix (logo + banner)** — logo/banner were stored at a fixed object key (`logos/<id>/logo.jpg`) and overwritten in place, so the URL never changed and MinIO's missing `Cache-Control` header served stale bytes. `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys (matching screenshots/founders) for a unique URL per upload. Orphan cleanup left as a separate TODO.
+- [~] **Home page polish** — in progress.
+- [~] **Startups list page** — `/startups` list view now uses a **persistent right-hand detail panel**: the list stays a fixed width and the panel is always shown, rendering a static placeholder (`StartupDetailPlaceholder`) until a startup is clicked, then swapping to its details. Clicking the already-selected startup opens its full page. (`startups-client.tsx`)
 
 ---
 
@@ -46,6 +42,8 @@ narval/
 │   └── seed/            # Standalone Go module — seeds the database via MinIO + Postgres
 ├── docker-compose.yml   # Full local stack (postgres, redis, minio, supertokens, umami)
 ├── go.work              # Go workspace linking apps/server and scripts/seed
+├── flake.nix / flake.lock  # Nix dev environment — pins toolchain (Go, Node, etc.)
+├── .envrc               # direnv hook that loads the Nix dev shell on `cd`
 ├── Makefile             # Primary developer interface — see `make help`
 └── AGENTS.md            # This file
 ```
@@ -126,6 +124,8 @@ The generated files are:
 - `apps/server/internal/api/generated.go` — Go server interface + types
 - `apps/web/src/lib/api/generated.ts` — TypeScript types for the frontend
 
+These generated files are now **tracked in git** (committed, not gitignored) so the repo builds without a generate step and diffs are reviewable. Don't hand-edit them — change the OpenAPI source and re-run `make generate`, then commit the regenerated output alongside your change.
+
 **Any time you add, remove, or change an API endpoint or schema, run `make generate`.**
 
 ### Auth flow
@@ -170,6 +170,9 @@ apps/web/src/
 ## Infrastructure
 
 ### Local development
+
+**Dev environment (Nix flake).** The toolchain (Go, Node, and friends) is pinned by `flake.nix` / `flake.lock`. With Nix + direnv installed, `cd` into the repo and `.envrc` loads the dev shell automatically (`direnv allow` on first entry); otherwise run `nix develop`. This replaces manually installing language runtimes — use the flake so everyone builds against the same versions.
+
 All services are defined in `docker-compose.yml`. The `server` and `web` services require `--profile full` (or `make dev`). Infrastructure services (postgres, redis, minio, supertokens, umami) start without a profile.
 
 Copy `.env.example` to `.env` and fill in `SMTP_PASSWORD` (Zoho mail password for `contact@gonarval.com`).
