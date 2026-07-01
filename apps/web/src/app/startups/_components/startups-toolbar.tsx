@@ -1,8 +1,14 @@
 import { List, Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
-import { Segmented, SegmentButton } from "@/app/_components/shared/segmented";
+import { Toggle } from "@/components/ui/toggle";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Input } from "@/components/ui/input";
 
 export type View = "list" | "map";
 export type SortMode = "recent" | "trending";
+
+// Matches the ToggleGroup container so standalone (single) toggles look the same.
+const singleToggleBox =
+  "inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm";
 
 interface Props {
   view: View;
@@ -35,61 +41,52 @@ export function StartupsToolbar({
 }: Props) {
   return (
     <div className="flex items-center gap-2 pb-3">
-      <Segmented>
-        <SegmentButton
-          active={view === "list"}
-          onClick={() => onViewChange("list")}
-          icon={<List size={13} />}
-        >
+      <ToggleGroup
+        type="single"
+        value={view}
+        // Single-select must always keep a value — ignore deselection (empty).
+        onValueChange={(v) => v && onViewChange(v as View)}
+      >
+        <ToggleGroupItem value="list">
+          <List size={13} />
           List
-        </SegmentButton>
-        <SegmentButton
-          active={view === "map"}
-          onClick={() => onViewChange("map")}
-          icon={<Map size={13} />}
-        >
+        </ToggleGroupItem>
+        <ToggleGroupItem value="map">
+          <Map size={13} />
           Map
-        </SegmentButton>
-      </Segmented>
+        </ToggleGroupItem>
+      </ToggleGroup>
 
-      <Segmented>
-        <SegmentButton
-          active={showFavorites}
-          onClick={onFavoritesToggle}
-          icon={<Star size={13} fill={showFavorites ? "currentColor" : "none"} />}
-        >
+      <div className={singleToggleBox}>
+        <Toggle pressed={showFavorites} onPressedChange={onFavoritesToggle}>
+          <Star size={13} fill={showFavorites ? "currentColor" : "none"} />
           Favorites
-        </SegmentButton>
-      </Segmented>
+        </Toggle>
+      </div>
 
       {view === "list" && (
         <>
-          <Segmented>
-            <SegmentButton
-              active={sort === "recent"}
-              onClick={() => onSortChange("recent")}
-              icon={<Clock size={13} />}
-            >
+          <ToggleGroup
+            type="single"
+            value={sort}
+            onValueChange={(v) => v && onSortChange(v as SortMode)}
+          >
+            <ToggleGroupItem value="recent">
+              <Clock size={13} />
               Recent
-            </SegmentButton>
-            <SegmentButton
-              active={sort === "trending"}
-              onClick={() => onSortChange("trending")}
-              icon={<TrendingUp size={13} />}
-            >
+            </ToggleGroupItem>
+            <ToggleGroupItem value="trending">
+              <TrendingUp size={13} />
               Trending
-            </SegmentButton>
-          </Segmented>
+            </ToggleGroupItem>
+          </ToggleGroup>
 
-          <Segmented className="max-md:hidden">
-            <SegmentButton
-              active={expanded}
-              onClick={() => onExpandedChange(!expanded)}
-              icon={<LayoutList size={13} />}
-            >
+          <div className={`${singleToggleBox} max-md:hidden`}>
+            <Toggle pressed={expanded} onPressedChange={onExpandedChange}>
+              <LayoutList size={13} />
               Details
-            </SegmentButton>
-          </Segmented>
+            </Toggle>
+          </div>
         </>
       )}
 
@@ -98,12 +95,12 @@ export function StartupsToolbar({
           size={13}
           className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
         />
-        <input
+        <Input
           type="search"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Filter startups…"
-          className="h-8 w-full rounded-lg border border-border bg-bg-raised pl-8 pr-3 text-xs text-text placeholder:text-text-subtle outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20"
+          className="h-8 pl-8 pr-3 text-xs"
         />
       </div>
     </div>
