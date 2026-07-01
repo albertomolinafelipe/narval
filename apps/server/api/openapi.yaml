@@ -14,6 +14,8 @@ components:
 paths:
   /health:
     $ref: paths/health.yaml
+  /stats:
+    $ref: paths/stats.yaml
 
   /auth/login:
     $ref: paths/auth_login.yaml
