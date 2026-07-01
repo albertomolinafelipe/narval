@@ -3,20 +3,18 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck } from "lucide-react";
-import { SiAppstore, SiGoogleplay } from "react-icons/si";
+import { Loader2 } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
 import { useMediaQuery } from "@/lib/use-media-query";
-import { Avatar } from "@/app/_components/shared/list-panel";
-import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import StartupPageClient from "./startup-page-client";
+import { StartupsToolbar, type View, type SortMode } from "./_components/startups-toolbar";
+import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
 import { StartupResultsList } from "./_components/startup-results-list";
 import { startupPath } from "@/lib/startup-url";
-import { parseProductLinks } from "@/lib/startup/product-links";
 import type { LocationGroup } from "./startups-map";
 
 type Startup = components["schemas"]["Startup"];
@@ -26,8 +24,6 @@ const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 interface Props {
   showFavoritedOnly?: boolean;
 }
-
-type View = "list" | "map";
 
 export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const router = useRouter();
@@ -40,7 +36,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     "all" | "location" | null
   >(null);
   const [view, setView] = useState<View>("list");
-  const [sort, setSort] = useState<"recent" | "trending">("recent");
+  const [sort, setSort] = useState<SortMode>("recent");
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showFavorites, setShowFavorites] = useState(showFavoritedOnly);
@@ -163,96 +159,19 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     return <p className="text-sm text-text-muted">No startups yet.</p>;
   }
 
-  const toggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setView("list")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          view === "list"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <List size={13} />
-        List
-      </button>
-      <button
-        type="button"
-        onClick={() => setView("map")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          view === "map"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Map size={13} />
-        Map
-      </button>
-    </div>
-  );
-
-  const favoritesToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={handleFavoritedToggle}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          showFavorites
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Star size={13} fill={showFavorites ? "currentColor" : "none"} />
-        Favorites
-      </button>
-    </div>
-  );
-
-  const sortToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setSort("recent")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          sort === "recent"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Clock size={13} />
-        Recent
-      </button>
-      <button
-        type="button"
-        onClick={() => setSort("trending")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          sort === "trending"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <TrendingUp size={13} />
-        Trending
-      </button>
-    </div>
-  );
-
-  const expandToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm max-md:hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          expanded
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <LayoutList size={13} />
-        Details
-      </button>
-    </div>
+  const toolbar = (
+    <StartupsToolbar
+      view={view}
+      onViewChange={setView}
+      showFavorites={showFavorites}
+      onFavoritesToggle={handleFavoritedToggle}
+      sort={sort}
+      onSortChange={setSort}
+      expanded={expanded}
+      onExpandedChange={setExpanded}
+      query={query}
+      onQueryChange={setQuery}
+    />
   );
 
   const allStartupsSubtitle = `${filtered.length} startup${filtered.length !== 1 ? "s" : ""}`;
@@ -264,26 +183,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     <div className="flex h-full flex-col overflow-hidden">
       {view === "list" ? (
         <>
-          {/* Toolbar - fixed on left */}
-          <div className="flex items-center gap-2 pb-3">
-            {toggle}
-            {favoritesToggle}
-            {sortToggle}
-            {expandToggle}
-            <div className="relative w-56">
-              <Search
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter startups…"
-                className="h-8 w-full rounded-lg border border-border bg-bg-raised pl-8 pr-3 text-xs text-text placeholder:text-text-subtle outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20"
-              />
-            </div>
-          </div>
+          {toolbar}
 
           {/* Content: list + panel */}
           <div className="flex w-full flex-1 gap-4 overflow-hidden">
@@ -310,74 +210,13 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                   </li>
                 ) : (
                   filtered.map((s) => (
-                    <li
+                    <StartupListRow
                       key={s.id}
-                      className="border-b border-border last:border-b-0"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleStartupClick(s)}
-                        className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition hover:bg-bg-subtle ${
-                          s.has_boosted
-                            ? "border-l-brand bg-brand-subtle/10"
-                            : "border-l-transparent"
-                        } ${selected?.id === s.id ? "bg-bg-subtle" : ""}`}
-                      >
-                        <div className="shrink-0">
-                          <BoostCounter startup={s} />
-                        </div>
-                        <Avatar entity={s} size={12} />
-
-                        {/* Name + email — fixed width when expanded so columns align */}
-                        <div className={`min-w-0 ${expanded ? "w-44 shrink-0" : "flex-1"}`}>
-                          <p className="flex items-center gap-1 text-sm font-medium text-text">
-                            <span className="truncate">{s.name}</span>
-                            {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
-                          </p>
-                          {s.verified
-                            ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>
-                            : s.contact_general && <p className="truncate text-xs text-text-muted">{s.contact_general}</p>
-                          }
-                          {!expanded && (s.tagline || s.description) && (
-                            <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
-                              {s.tagline ?? s.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Metadata columns — only when expanded */}
-                        {expanded && (
-                          <>
-                            <span className="w-14 shrink-0 text-xs tabular-nums text-text-muted">
-                              {s.founded_year ?? "—"}
-                            </span>
-                            <span className="w-16 shrink-0 text-xs text-text-muted">
-                              {s.team_size ? `${s.team_size} ppl` : "—"}
-                            </span>
-                            <span className="w-24 shrink-0 truncate text-xs capitalize text-text-muted">
-                              {s.stage ?? "—"}
-                            </span>
-                            <span className="w-32 shrink-0 truncate text-xs text-text-muted">
-                              {s.industry ?? "—"}
-                            </span>
-                          </>
-                        )}
-
-                        {/* Platform icons — only in detailed view */}
-                        {expanded && (() => {
-                          const links = parseProductLinks(s.product_links ?? undefined);
-                          const hasAny = links.web || links.ios || links.android;
-                          if (!hasAny) return null;
-                          return (
-                            <div className="flex shrink-0 items-center gap-2 text-text-subtle">
-                              {links.web && <Globe size={15} />}
-                              {links.ios && <SiAppstore size={15} />}
-                              {links.android && <SiGoogleplay size={15} />}
-                            </div>
-                          );
-                        })()}
-                      </button>
-                    </li>
+                      startup={s}
+                      expanded={expanded}
+                      selected={selected?.id === s.id}
+                      onClick={() => handleStartupClick(s)}
+                    />
                   ))
                 )}
               </ul>
@@ -414,24 +253,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
         </>
       ) : (
         <>
-          {/* Toolbar - static above map */}
-          <div className="flex items-center gap-2 pb-3">
-            {toggle}
-            {favoritesToggle}
-            <div className="relative w-56">
-              <Search
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter startups…"
-                className="h-8 w-full rounded-lg border border-border bg-bg-raised pl-8 pr-3 text-xs text-text placeholder:text-text-subtle outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20"
-              />
-            </div>
-          </div>
+          {toolbar}
 
           {/* Map view */}
           <div className={`flex flex-1 overflow-hidden ${isMobile ? "flex-col" : "w-full gap-4"}`}>
