@@ -7,9 +7,7 @@ apps/server/*.out
 apps/web/node_modules/
 apps/web/.next/
 
-# Generated
-apps/server/internal/api/generated.go
-apps/web/src/lib/api/generated.ts
+# Generated (committed; regenerated via `make generate`)
 apps/server/api/openapi.bundled.yaml
 
 # Env
@@ -19,6 +17,9 @@ apps/server/api/openapi.bundled.yaml
 .env.example
 apps/server/.env
 apps/web/.env.local
+
+# Nix / direnv
+.direnv/
 
 # OS / IDE
 .DS_Store
