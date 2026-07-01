@@ -23,7 +23,7 @@ export default function PageHeader({
   showLogo = true,
 }: PageHeaderProps) {
   return (
-    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-6">
+    <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-[var(--page-px)]">
       <nav className="flex items-center gap-3">
         {showLogo && (
           <>

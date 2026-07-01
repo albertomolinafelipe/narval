@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function AboutPage() {
   return (
     <div className="flex min-h-screen flex-col bg-bg text-text">
-      <header className="flex h-14 flex-shrink-0 items-center px-6 border-b border-border">
+      <header className="flex h-14 flex-shrink-0 items-center px-[var(--page-px)] border-b border-border">
         <Link
           href="/"
           className="text-sm text-text-muted hover:text-text transition-colors"
@@ -12,7 +12,7 @@ export default function AboutPage() {
         </Link>
       </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+      <main className="flex flex-1 flex-col items-center justify-center px-[var(--page-px)] py-16 text-center">
         <h1 className="text-3xl font-bold tracking-tight">About Narval</h1>
 
         <p className="mt-6 max-w-md text-text-muted leading-relaxed">

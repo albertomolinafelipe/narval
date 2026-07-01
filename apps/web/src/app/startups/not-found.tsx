@@ -7,7 +7,7 @@ export default function StartupNotFound() {
     <div className="flex h-screen flex-col bg-bg">
       <AppHeader />
 
-      <main className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
+      <main className="flex flex-1 flex-col items-center justify-center px-[var(--page-px)] py-12 text-center">
         <div className="mb-6 rounded-full bg-bg-subtle p-4">
           <AlertCircle size={32} className="text-text-muted" />
         </div>

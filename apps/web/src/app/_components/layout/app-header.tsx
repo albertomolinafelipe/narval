@@ -72,7 +72,7 @@ export default function AppHeader({ customTab }: AppHeaderProps = {}) {
       : "/startups";
 
   return (
-    <header className="relative flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-6">
+    <header className="relative flex h-14 flex-shrink-0 items-center justify-between border-b border-border px-[var(--page-px)]">
       {/* Left: logo + nav tabs (desktop) / breadcrumb (mobile) */}
       <nav className="flex min-w-0 items-center gap-3">
         <Link

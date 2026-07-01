@@ -258,7 +258,7 @@ export default function AwardsPage() {
           {/* Top: sector pills + Podium */}
           <div className="flex h-2/3 flex-col border-b border-border">
             {/* Sector pills */}
-            <div className="flex flex-wrap gap-2 border-b border-border px-6 py-3">
+            <div className="flex flex-wrap gap-2 border-b border-border px-[var(--page-px)] py-3">
               {activeSectors.map((sector) => (
                 <button
                   key={sector}
@@ -275,7 +275,7 @@ export default function AwardsPage() {
             </div>
 
             {/* Podium container */}
-            <div ref={podiumContainerRef} className="flex min-h-0 flex-1 items-end gap-3 px-6 pb-6">
+            <div ref={podiumContainerRef} className="flex min-h-0 flex-1 items-end gap-3 px-[var(--page-px)] pb-6">
               {isLoading ? (
                 <p className="text-sm text-text-muted">Loading...</p>
               ) : podiumPositions.first.length === 0 ? (
@@ -312,7 +312,7 @@ export default function AwardsPage() {
           </div>
 
           {/* Bottom: Rank List (scrollable) */}
-          <div className="flex flex-1 flex-col overflow-y-auto px-6 py-4">
+          <div className="flex flex-1 flex-col overflow-y-auto px-[var(--page-px)] py-4">
             {isLoading ? (
               <p className="text-sm text-text-muted">Loading...</p>
             ) : rankList.length === 0 ? (

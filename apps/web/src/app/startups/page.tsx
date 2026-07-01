@@ -19,7 +19,7 @@ export default async function StartupsPage({
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <AppHeader />
-      <div className="flex-1 overflow-hidden px-6 py-4 max-md:px-3">
+      <div className="flex-1 overflow-hidden px-[var(--page-px)] py-4">
         <StartupsClient
           showFavoritedOnly={favoritedOnly}
           initialView={initialView}

@@ -311,7 +311,7 @@ export default function StartupPageClient({
 
   return (
     <ProfileEditProvider startupId={startup.id} isOwner={canEdit}>
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <div className="mx-auto max-w-7xl px-[var(--page-px)] py-8">
       {/*  Setup invitation (owner, profile not yet published)  */}
       {isOwner && !startup.profile_setup && <SetupBanner />}
 

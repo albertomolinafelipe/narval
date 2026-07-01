@@ -4,7 +4,7 @@ export default function InvestorsPage() {
   return (
     <div className="flex h-screen flex-col">
       <AppHeader />
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 text-center px-6">
+      <main className="flex flex-1 flex-col items-center justify-center gap-3 text-center px-[var(--page-px)]">
         <h1 className="text-2xl font-semibold text-text">Investors</h1>
         <p className="text-text-muted max-w-sm">
           Investor profiles are coming soon. Stay tuned.
