@@ -228,6 +228,21 @@ type Startup struct {
 	Website  *string `json:"website,omitempty"`
 }
 
+// Stats defines model for Stats.
+type Stats struct {
+	// PublishedStartups Startups with a completed (published) profile.
+	PublishedStartups int `json:"published_startups"`
+
+	// TotalStartups Total startups, including unpublished drafts.
+	TotalStartups int `json:"total_startups"`
+
+	// TotalUsers Total registered users.
+	TotalUsers int `json:"total_users"`
+
+	// VerifiedStartups Domain-verified startups.
+	VerifiedStartups int `json:"verified_startups"`
+}
+
 // TokenResponse defines model for TokenResponse.
 type TokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -413,6 +428,9 @@ type ServerInterface interface {
 	// Upload a logo image for the startup
 	// (POST /startups/{id}/logo)
 	UploadStartupLogo(c *gin.Context, id openapi_types.UUID)
+	// Aggregate directory counts (startups + users)
+	// (GET /stats)
+	GetStats(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -812,6 +830,19 @@ func (siw *ServerInterfaceWrapper) UploadStartupLogo(c *gin.Context) {
 	siw.Handler.UploadStartupLogo(c, id)
 }
 
+// GetStats operation middleware
+func (siw *ServerInterfaceWrapper) GetStats(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetStats(c)
+}
+
 // GinServerOptions provides options for the Gin server.
 type GinServerOptions struct {
 	BaseURL      string
@@ -858,4 +889,5 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/startups/:id/boost", wrapper.BoostStartup)
 	router.DELETE(options.BaseURL+"/startups/:id/logo", wrapper.DeleteStartupLogo)
 	router.POST(options.BaseURL+"/startups/:id/logo", wrapper.UploadStartupLogo)
+	router.GET(options.BaseURL+"/stats", wrapper.GetStats)
 }

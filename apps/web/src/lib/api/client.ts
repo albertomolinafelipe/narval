@@ -97,6 +97,23 @@ export async function fetchStartups(
   return response.json();
 }
 
+export type Stats = components["schemas"]["Stats"];
+
+/** Fetch aggregate directory counts (startups + users). Public, no auth. */
+export async function fetchStats(): Promise<Stats> {
+  const url = new URL("/api/proxy/stats", window.location.origin);
+  const response = await fetch(url.toString(), {
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch stats: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
 /**
  * Fetch a single startup by ID.
  * For use with React Query on the client side.

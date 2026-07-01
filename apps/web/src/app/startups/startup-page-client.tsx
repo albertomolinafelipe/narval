@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/user";
 import { useEffect, useState } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -11,19 +10,12 @@ import {
   Share2,
   Check,
   Mail,
-  Globe,
   X,
   Maximize2,
   BadgeCheck,
+  Pencil,
+  Eye,
 } from "lucide-react";
-import {
-  SiLinkedin,
-  SiGithub,
-  SiX,
-  SiInstagram,
-  SiAppstore,
-  SiGoogleplay,
-} from "react-icons/si";
 import { MdLocationOn, MdGroups } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -36,7 +28,8 @@ import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
-import { startupPath } from "@/lib/startup-url";
+import { startupPath, startupEditPath } from "@/lib/startup-url";
+import { getStartupSocials, getStartupProductLinks } from "@/lib/startup/links";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
@@ -45,12 +38,15 @@ import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
 import { SetupBanner } from "./_profile/setup-banner";
 import { Section, SocialLink } from "./_profile/ui";
+import { StartupLinks } from "./_profile/startup-links";
 
 type Startup = components["schemas"]["Startup"];
 
 interface Props {
   startup: Startup;
   compact?: boolean;
+  /** Full-page edit mode — renders inline edit affordances for the owner. */
+  editable?: boolean;
   onClose?: () => void;
 }
 
@@ -58,9 +54,9 @@ interface Props {
 export default function StartupPageClient({
   startup: initialStartup,
   compact = false,
+  editable = false,
   onClose,
 }: Props) {
-  const router = useRouter();
   const { user } = useUser();
   const requireAuth = useAuthGuard();
 
@@ -117,14 +113,8 @@ export default function StartupPageClient({
 
   const banner = startup.banner_image ?? null;
 
-  let productLinks: Record<string, string> = {};
-  if (startup.product_links) {
-    try {
-      productLinks = JSON.parse(startup.product_links);
-    } catch {
-      /* ignore */
-    }
-  }
+  const socialLinks = getStartupSocials(startup);
+  const productLinkItems = getStartupProductLinks(startup);
 
   const techTags = parseTechStack(startup.tech_stack);
 
@@ -139,20 +129,23 @@ export default function StartupPageClient({
   if (compact) {
     return (
       <div className="flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        {/* Header — the whole top section links to the full page */}
+        <div className="group relative flex items-start justify-between gap-4 border-b border-border px-6 py-5 transition hover:bg-bg-subtle/40 active:scale-[0.99]">
+          {/* Stretched link: covers the header; interactive children below sit above it via z-10 */}
+          <Link
+            href={startupPath(startup)}
+            aria-label={`View ${startup.name} full page`}
+            className="absolute inset-0"
+          />
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => router.push(startupPath(startup))}
-              className="shrink-0 transition hover:opacity-80"
-              aria-label="View full startup page"
-            >
-              <Avatar entity={startup} size={16} />
-            </button>
+            <Avatar entity={startup} size={16} />
             <div>
-              <h2 className="text-lg font-semibold text-text">
+              <h2 className="flex items-center gap-1.5 text-lg font-semibold text-text">
                 {startup.name}
+                <Maximize2
+                  size={14}
+                  className="text-text-subtle opacity-0 transition group-hover:opacity-100"
+                />
               </h2>
               {startup.tagline && (
                 <p className="mt-0.5 text-sm text-text-muted">
@@ -164,7 +157,7 @@ export default function StartupPageClient({
                   href={`https://${startup.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-block text-xs text-brand hover:underline"
+                  className="relative z-10 mt-1 inline-block text-xs text-brand hover:underline"
                 >
                   {startup.website.replace(/^https?:\/\//, "")}
                 </a>
@@ -173,12 +166,7 @@ export default function StartupPageClient({
           </div>
 
           {/* Action icons */}
-          <div className="flex items-center gap-1">
-            <Link href={startupPath(startup)}>
-              <IconButton label="Expand to full page">
-                <Maximize2 size={16} />
-              </IconButton>
-            </Link>
+          <div className="relative z-10 flex items-center gap-1">
             <IconButton
               label={
                 startup.is_favorited
@@ -226,51 +214,17 @@ export default function StartupPageClient({
           </div>
 
           {/* About */}
-          {(startup.description || startup.website || startup.contact_general || startup.linkedin || startup.twitter || startup.github || startup.instagram) && (
+          {(startup.description || socialLinks.length > 0) && (
             <Section title="About">
               {startup.description && (
                 <p className="text-sm leading-relaxed text-text-muted">
                   {startup.description}
                 </p>
               )}
-              <div className={`flex flex-wrap gap-3 ${startup.description ? "mt-4" : ""}`}>
-                {startup.website && (
-                  <SocialLink
-                    href={startup.website}
-                    label={startup.website.replace(/^https?:\/\//, "")}
-                  >
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {startup.contact_general && (
-                  <SocialLink
-                    href={`mailto:${startup.contact_general}`}
-                    label={startup.contact_general}
-                  >
-                    <Mail size={14} />
-                  </SocialLink>
-                )}
-                {startup.linkedin && (
-                  <SocialLink href={startup.linkedin} label="LinkedIn">
-                    <SiLinkedin size={14} />
-                  </SocialLink>
-                )}
-                {startup.twitter && (
-                  <SocialLink href={startup.twitter} label="X / Twitter">
-                    <SiX size={14} />
-                  </SocialLink>
-                )}
-                {startup.github && (
-                  <SocialLink href={startup.github} label="GitHub">
-                    <SiGithub size={14} />
-                  </SocialLink>
-                )}
-                {startup.instagram && (
-                  <SocialLink href={startup.instagram} label="Instagram">
-                    <SiInstagram size={14} />
-                  </SocialLink>
-                )}
-              </div>
+              <StartupLinks
+                links={socialLinks}
+                className={startup.description ? "mt-4" : undefined}
+              />
             </Section>
           )}
 
@@ -341,25 +295,9 @@ export default function StartupPageClient({
           )}
 
           {/* Product links */}
-          {Object.keys(productLinks).length > 0 && (
+          {productLinkItems.length > 0 && (
             <Section title="Product">
-              <div className="flex flex-wrap gap-3">
-                {productLinks.web && (
-                  <SocialLink href={productLinks.web} label="Try it online">
-                    <Globe size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.ios && (
-                  <SocialLink href={productLinks.ios} label="App Store">
-                    <SiAppstore size={14} />
-                  </SocialLink>
-                )}
-                {productLinks.android && (
-                  <SocialLink href={productLinks.android} label="Google Play">
-                    <SiGoogleplay size={14} />
-                  </SocialLink>
-                )}
-              </div>
+              <StartupLinks links={productLinkItems} />
             </Section>
           )}
         </div>
@@ -367,10 +305,13 @@ export default function StartupPageClient({
     );
   }
 
-  // Full page mode
+  // Full page mode. Editing is gated on both real ownership AND the edit route
+  // (`editable`) — the public page renders read-only even for the owner.
+  const canEdit = isOwner && editable;
+
   return (
-    <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
-    <div className="mx-auto max-w-7xl px-6 py-8">
+    <ProfileEditProvider startupId={startup.id} isOwner={canEdit}>
+    <div className="mx-auto max-w-7xl px-[var(--page-px)] py-8">
       {/*  Setup invitation (owner, profile not yet published)  */}
       {isOwner && !startup.profile_setup && <SetupBanner />}
 
@@ -448,6 +389,22 @@ export default function StartupPageClient({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2 max-md:ml-auto">
+          {isOwner &&
+            (editable ? (
+              <Button asChild variant="soft" size="sm">
+                <Link href={startupPath(startup)}>
+                  <Eye size={16} />
+                  Done
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link href={startupEditPath(startup)}>
+                  <Pencil size={16} />
+                  Edit
+                </Link>
+              </Button>
+            ))}
           <Button
             variant="ghost"
             size="icon"

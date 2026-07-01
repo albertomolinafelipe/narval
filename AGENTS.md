@@ -4,28 +4,25 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Verified startup slugs
+## 🚧 Currently working on: Prettify & maintain the frontend
 
-Goal: verified startups get a clean public URL at `/startups/<domain>` (e.g. `/startups/acme.com`); everything else lives at `/startups/in/<uuid>` (`in` = internal canonical).
+Branch `prettify-home-page`. The theme of this branch is **polishing and maintaining the web frontend** — not new features. Concretely:
 
-Design decisions (locked):
-- **Slug is canonical.** `/startups/<domain>` stays in the address bar — no redirect away from it. The redirect only goes **uuid → domain**: hitting `/startups/in/<uuid>` for a *verified* startup 301s up to `/startups/<domain>`. Non-verified uuid routes stay as-is.
-- **Dotted, not underscored.** The URL segment *is* the verified domain verbatim — no encode/decode.
-- **UUID stays the only internal identity** (DB, mutations, analytics). The domain is purely a public URL alias derived from `verified` + `verified_domain`; nothing new is stored.
-- **Clean break** on old `/startups/<uuid>` links — no legacy redirect.
-- **No DB index** for now (early; app-level `DOMAIN_TAKEN` check is enough).
-- Backend: overload `GET /startups/{id}` to resolve by UUID *or* domain (branch on UUID-parse), rather than adding a second endpoint.
-- Frontend: one `startupPath(startup)` helper is the single source of truth for building startup links.
+- **Responsiveness** — make pages behave well across mobile/tablet/desktop breakpoints.
+- **Component consistency** — unify spacing, colors, and interaction patterns around the existing design tokens + shadcn primitives; replace hand-rolled elements with shared components.
+- **Refactoring** — break up large page/client files, extract reusable pieces, tidy structure.
+- **Visual polish** — landing/home page and the `/startups` pages.
 
-Progress:
-- [x] Backend: overload startup lookup to accept uuid-or-domain (`GetStartup` branches on `uuid.Parse`)
-- [x] `make generate` (regen Go + web client) — server builds
-- [x] Restructure web routes: shared `_profile`/client up; `startups/in/[id]` (uuid) + `startups/[slug]` (domain)
-- [x] Canonical redirect (uuid → domain) for verified, in `in/[id]/page.tsx`
-- [x] `startupPath()` helper (`@/lib/startup-url`) applied at all link sites (awards, startups-client, profile client share/expand, header/menu/banner self-links)
-- [x] Verify: `tsc --noEmit`, Go short tests, web tests, `next build` all pass
+Keep changes focused and non-behavioral where possible; this is cleanup, not a rewrite.
 
-Status: **complete, ready for review.** Not yet committed.
+### Progress
+
+- [x] **Stale image cache fix (logo + banner)** — logo/banner were stored at a fixed object key (`logos/<id>/logo.jpg`) and overwritten in place, so the URL never changed and MinIO's missing `Cache-Control` header served stale bytes. `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys (matching screenshots/founders) for a unique URL per upload. Orphan cleanup left as a separate TODO.
+- [x] **Startups view/edit split** — the public startup page (`/startups/[slug]` and `/startups/in/[id]`) is now read-only for everyone, including the owner. Owners get an **Edit** button routing to `/startups/in/[id]/edit`, which renders the same page with inline editing on. An `editable` prop gates `ProfileEditProvider` (`editable && isOwner`); `startupEditPath()` is the single source for the edit URL.
+- [x] **Rendering pattern applied to startup links** — `lib/startup/` selector layer (`parseProductLinks`, `getStartupSocials`, `getStartupProductLinks`) + `lib/view-variant.ts` (`ViewVariant`). The compact panel's socials/product links are selector-driven via a read-only `<StartupLinks>`, styled with the new shadcn `Badge`. **Follow-up:** the editable `SocialsColumn` still has its own link registry — unify it onto `lib/startup/links.ts`.
+- [x] **`startups-client.tsx` refactor (730 → ~350 lines)** — extracted `startups/_components/` (`StartupsToolbar`, `StartupListRow`, `StartupResultsList` [merged the two near-duplicate map lists], `StartupDetailPlaceholder`), a shared `useMediaQuery` hook (`useSyncExternalStore`-based), and shadcn primitives (`Input`, `Toggle`, `ToggleGroup`; the hand-rolled `Segmented` was removed).
+- [x] **Startups detail panel** — persistent right-hand panel: the list stays a fixed width and the panel is always shown, rendering `StartupDetailPlaceholder` until a startup is clicked, then swapping to its details. The compact panel header is a full click-target (stretched link) that opens the full page.
+- [~] **Home page polish** — in progress. First up: shrink the animated background blobs on mobile.
 
 ---
 
@@ -48,6 +45,8 @@ narval/
 │   └── seed/            # Standalone Go module — seeds the database via MinIO + Postgres
 ├── docker-compose.yml   # Full local stack (postgres, redis, minio, supertokens, umami)
 ├── go.work              # Go workspace linking apps/server and scripts/seed
+├── flake.nix / flake.lock  # Nix dev environment — pins toolchain (Go, Node, etc.)
+├── .envrc               # direnv hook that loads the Nix dev shell on `cd`
 ├── Makefile             # Primary developer interface — see `make help`
 └── AGENTS.md            # This file
 ```
@@ -128,6 +127,8 @@ The generated files are:
 - `apps/server/internal/api/generated.go` — Go server interface + types
 - `apps/web/src/lib/api/generated.ts` — TypeScript types for the frontend
 
+These generated files are now **tracked in git** (committed, not gitignored) so the repo builds without a generate step and diffs are reviewable. Don't hand-edit them — change the OpenAPI source and re-run `make generate`, then commit the regenerated output alongside your change.
+
 **Any time you add, remove, or change an API endpoint or schema, run `make generate`.**
 
 ### Auth flow
@@ -167,11 +168,30 @@ apps/web/src/
     └── supertokens.ts     # SuperTokens client config
 ```
 
+### Rendering pattern — one entity, many views
+
+We render the same entities (`Startup`, `User`, …) in many places: list rows, the preview panel, the full page. **Derived display logic must be defined once and shared across all of them** — never duplicate "which fields are socials / how a URL is built / how a field is formatted" per screen. When two views drift, that's the bug this pattern prevents.
+
+Three layers, each with a single job:
+
+1. **Type — one source of truth.** Use the generated types (`components["schemas"]["Startup"]`). Never hand-write a parallel interface for an entity that already has a generated type.
+
+2. **Selectors — pure functions that derive display data from the entity.** Anything that turns raw fields into something renderable (parsing `product_links`, building a social-link list, formatting team size) lives in a pure, JSX-free helper under `lib/<entity>/` — e.g. `lib/startup/socials.ts` exporting `getStartupSocials(startup): StartupLink[]` and `parseProductLinks()`. Registries (the canonical list of social platforms with their icon/label/prefix) live here, **once**. Adding a new link/field means editing exactly one file.
+
+3. **Presentational components parameterized by a `variant`, not duplicated per screen.** One component renders a given piece of an entity and takes a prop for density/layout: `<StartupSocials startup={s} variant="compact" | "full" />`. Views differ in *layout*, never in *which data exists*. Compose these per view (list vs preview vs full page) instead of re-implementing the block.
+
+**Read-only vs editable.** When a block is editable in one place (owner editing their profile) but read-only elsewhere (preview, list, other users' pages), split it: the **registry/selector is shared**, and the read-only renderer and the editable renderer both consume it. Don't hand-roll a second read-only copy alongside an editable one — they will drift.
+
+> Concrete reference target: `Startup` socials/product-links. The `LINKS` registry currently lives inside `_profile/socials.tsx` (editable, coupled to `useProfileEdit`) while the compact panel in `startup-page-client.tsx` hand-rolls the same list — the canonical case this pattern exists to eliminate.
+
 ---
 
 ## Infrastructure
 
 ### Local development
+
+**Dev environment (Nix flake).** The toolchain (Go, Node, and friends) is pinned by `flake.nix` / `flake.lock`. With Nix + direnv installed, `cd` into the repo and `.envrc` loads the dev shell automatically (`direnv allow` on first entry); otherwise run `nix develop`. This replaces manually installing language runtimes — use the flake so everyone builds against the same versions.
+
 All services are defined in `docker-compose.yml`. The `server` and `web` services require `--profile full` (or `make dev`). Infrastructure services (postgres, redis, minio, supertokens, umami) start without a profile.
 
 Copy `.env.example` to `.env` and fill in `SMTP_PASSWORD` (Zoho mail password for `contact@gonarval.com`).
@@ -275,5 +295,6 @@ make deploy-seed     # Seed production DB (builds binary, SSHes to droplet, runs
 - **No comments unless the WHY is non-obvious.** Identifiers should be self-documenting.
 - **Tailwind classes** use a custom design token set (CSS variables like `--color-brand`, `--color-bg-raised`). Follow existing patterns.
 - **Use shadcn/ui whenever possible** for frontend components (buttons, inputs, selects, dialogs, etc.). The web app uses shadcn manually token-mapped (`cn` util, `components/ui/`), not `shadcn init`. Reach for an existing or new shadcn primitive before hand-rolling raw `<button>`/`<input>`/`<select>` elements.
+- **Render an entity the same way everywhere.** Derived display logic (parsing, formatting, link registries) goes in a pure selector under `lib/<entity>/`; presentational components take a `variant` prop instead of being copied per screen. See [Rendering pattern — one entity, many views](#rendering-pattern--one-entity-many-views). Never duplicate the same field-rendering logic across list/preview/full views.
 - **Seed data** lives in `scripts/seed/main.go` as hardcoded Go structs. Logos are fetched from Clearbit; placeholder fallback is in `scripts/seed/assets/`.
 - **Integration tests** are in `apps/server/integration/` and require a real Postgres + MinIO. Unit tests are co-located with the code they test (`_test.go` files).

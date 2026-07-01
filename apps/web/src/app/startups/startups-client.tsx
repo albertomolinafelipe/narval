@@ -3,15 +3,17 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck } from "lucide-react";
-import { SiAppstore, SiGoogleplay } from "react-icons/si";
+import { Loader2 } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
-import { Avatar } from "@/app/_components/shared/list-panel";
-import { BoostCounter } from "@/app/_components/shared/boost-counter";
+import { useMediaQuery } from "@/lib/use-media-query";
 import StartupPageClient from "./startup-page-client";
+import { StartupsToolbar, type View, type SortMode } from "./_components/startups-toolbar";
+import { StartupListRow } from "./_components/startup-list-row";
+import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
+import { StartupResultsList } from "./_components/startup-results-list";
 import { startupPath } from "@/lib/startup-url";
 import type { LocationGroup } from "./startups-map";
 
@@ -21,16 +23,13 @@ const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 
 interface Props {
   showFavoritedOnly?: boolean;
+  initialView?: View;
 }
 
-type View = "list" | "map";
-
-function parseProductLinks(raw?: string): { web?: string; ios?: string; android?: string } {
-  if (!raw) return {};
-  try { return JSON.parse(raw); } catch { return {}; }
-}
-
-export default function StartupsClient({ showFavoritedOnly = false }: Props) {
+export default function StartupsClient({
+  showFavoritedOnly = false,
+  initialView = "list",
+}: Props) {
   const router = useRouter();
   const requireAuth = useAuthGuard();
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -40,8 +39,8 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const [previousContext, setPreviousContext] = useState<
     "all" | "location" | null
   >(null);
-  const [view, setView] = useState<View>("list");
-  const [sort, setSort] = useState<"recent" | "trending">("recent");
+  const [view, setView] = useState<View>(initialView);
+  const [sort, setSort] = useState<SortMode>("recent");
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showFavorites, setShowFavorites] = useState(showFavoritedOnly);
@@ -164,122 +163,31 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     return <p className="text-sm text-text-muted">No startups yet.</p>;
   }
 
-  const toggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setView("list")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          view === "list"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <List size={13} />
-        List
-      </button>
-      <button
-        type="button"
-        onClick={() => setView("map")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          view === "map"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Map size={13} />
-        Map
-      </button>
-    </div>
+  const toolbar = (
+    <StartupsToolbar
+      view={view}
+      onViewChange={setView}
+      showFavorites={showFavorites}
+      onFavoritesToggle={handleFavoritedToggle}
+      sort={sort}
+      onSortChange={setSort}
+      expanded={expanded}
+      onExpandedChange={setExpanded}
+      query={query}
+      onQueryChange={setQuery}
+    />
   );
 
-  const favoritesToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={handleFavoritedToggle}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          showFavorites
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Star size={13} fill={showFavorites ? "currentColor" : "none"} />
-        Favorites
-      </button>
-    </div>
-  );
-
-  const sortToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm">
-      <button
-        type="button"
-        onClick={() => setSort("recent")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          sort === "recent"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <Clock size={13} />
-        Recent
-      </button>
-      <button
-        type="button"
-        onClick={() => setSort("trending")}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          sort === "trending"
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <TrendingUp size={13} />
-        Trending
-      </button>
-    </div>
-  );
-
-  const expandToggle = (
-    <div className="inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm max-md:hidden">
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-          expanded
-            ? "bg-bg-subtle text-text shadow-sm"
-            : "text-text-muted hover:text-text"
-        }`}
-      >
-        <LayoutList size={13} />
-        Details
-      </button>
-    </div>
-  );
+  const allStartupsSubtitle = `${filtered.length} startup${filtered.length !== 1 ? "s" : ""}`;
+  const locationSubtitle = selectedLocation
+    ? `${selectedLocation.startups.length} startup${selectedLocation.startups.length !== 1 ? "s" : ""} at this location`
+    : "";
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {view === "list" ? (
         <>
-          {/* Toolbar - fixed on left */}
-          <div className="flex items-center gap-2 pb-3">
-            {toggle}
-            {favoritesToggle}
-            {sortToggle}
-            {expandToggle}
-            <div className="relative w-56">
-              <Search
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter startups…"
-                className="h-8 w-full rounded-lg border border-border bg-bg-raised pl-8 pr-3 text-xs text-text placeholder:text-text-subtle outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20"
-              />
-            </div>
-          </div>
+          {toolbar}
 
           {/* Content: list + panel */}
           <div className="flex w-full flex-1 gap-4 overflow-hidden">
@@ -289,10 +197,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
               style={
                 isMobile
                   ? { width: "100%", marginLeft: "0" }
-                  : {
-                      width: selected ? "66.666%" : "50%",
-                      marginLeft: selected ? "0%" : "25%",
-                    }
+                  : { width: "66.666%", marginLeft: "0%" }
               }
             >
               {/* List */}
@@ -309,85 +214,24 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                   </li>
                 ) : (
                   filtered.map((s) => (
-                    <li
+                    <StartupListRow
                       key={s.id}
-                      className="border-b border-border last:border-b-0"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleStartupClick(s)}
-                        className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition hover:bg-bg-subtle ${
-                          s.has_boosted
-                            ? "border-l-brand bg-brand-subtle/10"
-                            : "border-l-transparent"
-                        } ${selected?.id === s.id ? "bg-bg-subtle" : ""}`}
-                      >
-                        <div className="shrink-0">
-                          <BoostCounter startup={s} />
-                        </div>
-                        <Avatar entity={s} size={12} />
-
-                        {/* Name + email — fixed width when expanded so columns align */}
-                        <div className={`min-w-0 ${expanded ? "w-44 shrink-0" : "flex-1"}`}>
-                          <p className="flex items-center gap-1 text-sm font-medium text-text">
-                            <span className="truncate">{s.name}</span>
-                            {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
-                          </p>
-                          {s.verified
-                            ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>
-                            : s.contact_general && <p className="truncate text-xs text-text-muted">{s.contact_general}</p>
-                          }
-                          {!expanded && (s.tagline || s.description) && (
-                            <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
-                              {s.tagline ?? s.description}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Metadata columns — only when expanded */}
-                        {expanded && (
-                          <>
-                            <span className="w-14 shrink-0 text-xs tabular-nums text-text-muted">
-                              {s.founded_year ?? "—"}
-                            </span>
-                            <span className="w-16 shrink-0 text-xs text-text-muted">
-                              {s.team_size ? `${s.team_size} ppl` : "—"}
-                            </span>
-                            <span className="w-24 shrink-0 truncate text-xs capitalize text-text-muted">
-                              {s.stage ?? "—"}
-                            </span>
-                            <span className="w-32 shrink-0 truncate text-xs text-text-muted">
-                              {s.industry ?? "—"}
-                            </span>
-                          </>
-                        )}
-
-                        {/* Platform icons — only in detailed view */}
-                        {expanded && (() => {
-                          const links = parseProductLinks(s.product_links ?? undefined);
-                          const hasAny = links.web || links.ios || links.android;
-                          if (!hasAny) return null;
-                          return (
-                            <div className="flex shrink-0 items-center gap-2 text-text-subtle">
-                              {links.web && <Globe size={15} />}
-                              {links.ios && <SiAppstore size={15} />}
-                              {links.android && <SiGoogleplay size={15} />}
-                            </div>
-                          );
-                        })()}
-                      </button>
-                    </li>
+                      startup={s}
+                      expanded={expanded}
+                      selected={selected?.id === s.id}
+                      onClick={() => handleStartupClick(s)}
+                    />
                   ))
                 )}
               </ul>
             </div>
 
-            {/* Right: detail panel — hidden on mobile */}
+            {/* Right: detail panel — always present on desktop, hidden on mobile */}
             <div
               className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
               style={{
-                width: isMobile ? "0%" : selected ? "33.333%" : "0%",
-                opacity: isMobile ? 0 : selected ? 1 : 0,
+                width: isMobile ? "0%" : "33.333%",
+                opacity: isMobile ? 0 : 1,
               }}
             >
               <div
@@ -397,13 +241,15 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                     : "border-border"
                 }`}
               >
-                {selected && (
+                {selected ? (
                   <StartupPageClient
                     key={selected.id}
                     startup={selected}
                     compact={true}
                     onClose={() => setSelected(null)}
                   />
+                ) : (
+                  <StartupDetailPlaceholder />
                 )}
               </div>
             </div>
@@ -411,24 +257,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
         </>
       ) : (
         <>
-          {/* Toolbar - static above map */}
-          <div className="flex items-center gap-2 pb-3">
-            {toggle}
-            {favoritesToggle}
-            <div className="relative w-56">
-              <Search
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-              />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Filter startups…"
-                className="h-8 w-full rounded-lg border border-border bg-bg-raised pl-8 pr-3 text-xs text-text placeholder:text-text-subtle outline-none focus:border-brand/50 focus:ring-1 focus:ring-brand/20"
-              />
-            </div>
-          </div>
+          {toolbar}
 
           {/* Map view */}
           <div className={`flex flex-1 overflow-hidden ${isMobile ? "flex-col" : "w-full gap-4"}`}>
@@ -457,15 +286,20 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
             {isMobile ? (
               <div className="flex-1 min-h-0 overflow-hidden border-t border-border">
                 {selectedLocation ? (
-                  <LocationStartupsList
-                    locationGroup={selectedLocation}
+                  <StartupResultsList
+                    startups={selectedLocation.startups}
+                    title={selectedLocation.location}
+                    subtitle={locationSubtitle}
                     onStartupClick={handleStartupClick}
                     onClose={handleCloseLocationList}
                   />
                 ) : (
-                  <AllStartupsList
+                  <StartupResultsList
                     startups={filtered}
+                    title="All Startups"
+                    subtitle={allStartupsSubtitle}
                     onStartupClick={handleStartupClick}
+                    showLocation
                   />
                 )}
               </div>
@@ -489,8 +323,10 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                       onClose={handleCloseStartupDetail}
                     />
                   ) : selectedLocation ? (
-                    <LocationStartupsList
-                      locationGroup={selectedLocation}
+                    <StartupResultsList
+                      startups={selectedLocation.startups}
+                      title={selectedLocation.location}
+                      subtitle={locationSubtitle}
                       onStartupClick={(s) => {
                         handleStartupClick(s);
                         setPreviousContext("location");
@@ -498,12 +334,15 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                       onClose={handleCloseLocationList}
                     />
                   ) : (
-                    <AllStartupsList
+                    <StartupResultsList
                       startups={filtered}
+                      title="All Startups"
+                      subtitle={allStartupsSubtitle}
                       onStartupClick={(s) => {
                         handleStartupClick(s);
                         setPreviousContext("all");
                       }}
+                      showLocation
                     />
                   )}
                 </div>
@@ -514,168 +353,4 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
       )}
     </div>
   );
-}
-
-// ── All Startups List Component ──────────────────────────────────────────────
-
-function AllStartupsList({
-  startups,
-  onStartupClick,
-}: {
-  startups: Startup[];
-  onStartupClick: (startup: Startup) => void;
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-border px-6 py-5">
-        <h2 className="text-lg font-semibold text-text">All Startups</h2>
-        <p className="mt-0.5 text-sm text-text-muted">
-          {startups.length} startup{startups.length !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      {/* Body - scrollable list of startups */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {startups.length === 0 ? (
-          <p className="text-center text-sm text-text-muted py-8">
-            No startups found
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {startups.map((startup) => (
-              <li key={startup.id}>
-                <button
-                  type="button"
-                  onClick={() => onStartupClick(startup)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-border bg-bg p-3 text-left transition hover:border-brand hover:bg-bg-subtle"
-                >
-                  {/* Boost counter */}
-                  <div className="shrink-0">
-                    <BoostCounter startup={startup} />
-                  </div>
-
-                  {/* Avatar and content */}
-                  <Avatar entity={startup} size={12} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text">
-                      {startup.name}
-                    </p>
-                    {(startup.tagline || startup.description) && (
-                      <p className="mt-1 line-clamp-2 text-xs text-text-muted">
-                        {startup.tagline ?? startup.description}
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-1 text-xs text-text-subtle">
-                      {startup.industry && <span>{startup.industry}</span>}
-                      {startup.location && startup.industry && <span>•</span>}
-                      {startup.location && <span>{startup.location}</span>}
-                    </div>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Location Startups List Component ─────────────────────────────────────────
-
-function LocationStartupsList({
-  locationGroup,
-  onStartupClick,
-  onClose,
-}: {
-  locationGroup: LocationGroup;
-  onStartupClick: (startup: Startup) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
-        <div>
-          <h2 className="text-lg font-semibold text-text">
-            {locationGroup.location}
-          </h2>
-          <p className="mt-0.5 text-sm text-text-muted">
-            {locationGroup.startups.length} startup
-            {locationGroup.startups.length !== 1 ? "s" : ""} at this location
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg p-2 text-text-muted transition hover:bg-bg-subtle hover:text-text"
-          aria-label="Back to all startups"
-          title="Back to all startups"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M2 2l12 12M14 2L2 14" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Body - scrollable list of startups */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <ul className="flex flex-col gap-2">
-          {locationGroup.startups.map((startup) => (
-            <li key={startup.id}>
-              <button
-                type="button"
-                onClick={() => onStartupClick(startup)}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-bg p-3 text-left transition hover:border-brand hover:bg-bg-subtle"
-              >
-                {/* Boost counter */}
-                <div className="shrink-0">
-                  <BoostCounter startup={startup} />
-                </div>
-
-                {/* Avatar and content */}
-                <Avatar entity={startup} size={12} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-text">
-                    {startup.name}
-                  </p>
-                  {(startup.tagline || startup.description) && (
-                    <p className="mt-1 line-clamp-2 text-xs text-text-muted">
-                      {startup.tagline ?? startup.description}
-                    </p>
-                  )}
-                  {startup.industry && (
-                    <p className="mt-1 text-xs text-text-subtle">
-                      {startup.industry}
-                    </p>
-                  )}
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    setMatches(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [query]);
-  return matches;
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/narval/server/internal/api/auth"
 	"github.com/narval/server/internal/api/health"
 	"github.com/narval/server/internal/api/startups"
+	"github.com/narval/server/internal/api/stats"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
@@ -30,6 +31,7 @@ type server struct {
 	auth     *auth.Handler
 	health   *health.Handler
 	startups *startups.Handler
+	stats    *stats.Handler
 }
 
 func (s *server) Login(c *gin.Context)        { s.auth.Login(c) }
@@ -39,6 +41,7 @@ func (s *server) Logout(c *gin.Context)       { s.auth.Logout(c) }
 func (s *server) RefreshToken(c *gin.Context) { s.auth.Refresh(c) }
 func (s *server) GetMe(c *gin.Context)        { s.auth.GetMe(c) }
 func (s *server) GetHealth(c *gin.Context)    { s.health.GetHealth(c) }
+func (s *server) GetStats(c *gin.Context)     { s.stats.GetStats(c) }
 
 func (s *server) ListStartups(c *gin.Context)  { s.startups.ListStartups(c) }
 func (s *server) CreateStartup(c *gin.Context) { s.startups.CreateStartup(c) }
@@ -107,6 +110,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 		auth:     auth.NewHandler(cfg, db, rdb),
 		health:   &health.Handler{},
 		startups: startups.NewHandler(db, store),
+		stats:    stats.NewHandler(db),
 	}
 
 	RegisterHandlersWithOptions(v1, srv, GinServerOptions{

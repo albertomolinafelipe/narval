@@ -15,3 +15,11 @@ export function startupPath(startup: {
   }
   return `/startups/in/${startup.id}`;
 }
+
+/**
+ * Owner-only edit route. Editing is an internal action, always addressed by
+ * UUID regardless of whether the startup has a verified public URL.
+ */
+export function startupEditPath(startup: { id: string }): string {
+  return `/startups/in/${startup.id}/edit`;
+}

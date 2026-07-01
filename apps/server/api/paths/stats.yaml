@@ -1,0 +1,10 @@
+get:
+  operationId: getStats
+  summary: Aggregate directory counts (startups + users)
+  responses:
+    '200':
+      description: Directory counts
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Stats.yaml

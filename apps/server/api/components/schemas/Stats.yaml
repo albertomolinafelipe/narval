@@ -1,0 +1,19 @@
+type: object
+required:
+  - total_startups
+  - published_startups
+  - verified_startups
+  - total_users
+properties:
+  total_startups:
+    type: integer
+    description: Total startups, including unpublished drafts.
+  published_startups:
+    type: integer
+    description: Startups with a completed (published) profile.
+  verified_startups:
+    type: integer
+    description: Domain-verified startups.
+  total_users:
+    type: integer
+    description: Total registered users.
