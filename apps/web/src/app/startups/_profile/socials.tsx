@@ -4,17 +4,13 @@ import { useState, type ComponentType } from "react";
 import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { SiLinkedin, SiX, SiInstagram, SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
+import { parseProductLinks } from "@/lib/startup/product-links";
 import PrefixInput from "@/app/_components/shared/prefix-input";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
 
 type Startup = components["schemas"]["Startup"];
 type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
-
-function parseProductLinks(raw?: string | null): Record<string, string> {
-  if (!raw) return {};
-  try { return JSON.parse(raw); } catch { return {}; }
-}
 
 interface LinkDef {
   id: string;

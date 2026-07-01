@@ -165,6 +165,22 @@ apps/web/src/
     └── supertokens.ts     # SuperTokens client config
 ```
 
+### Rendering pattern — one entity, many views
+
+We render the same entities (`Startup`, `User`, …) in many places: list rows, the preview panel, the full page. **Derived display logic must be defined once and shared across all of them** — never duplicate "which fields are socials / how a URL is built / how a field is formatted" per screen. When two views drift, that's the bug this pattern prevents.
+
+Three layers, each with a single job:
+
+1. **Type — one source of truth.** Use the generated types (`components["schemas"]["Startup"]`). Never hand-write a parallel interface for an entity that already has a generated type.
+
+2. **Selectors — pure functions that derive display data from the entity.** Anything that turns raw fields into something renderable (parsing `product_links`, building a social-link list, formatting team size) lives in a pure, JSX-free helper under `lib/<entity>/` — e.g. `lib/startup/socials.ts` exporting `getStartupSocials(startup): StartupLink[]` and `parseProductLinks()`. Registries (the canonical list of social platforms with their icon/label/prefix) live here, **once**. Adding a new link/field means editing exactly one file.
+
+3. **Presentational components parameterized by a `variant`, not duplicated per screen.** One component renders a given piece of an entity and takes a prop for density/layout: `<StartupSocials startup={s} variant="compact" | "full" />`. Views differ in *layout*, never in *which data exists*. Compose these per view (list vs preview vs full page) instead of re-implementing the block.
+
+**Read-only vs editable.** When a block is editable in one place (owner editing their profile) but read-only elsewhere (preview, list, other users' pages), split it: the **registry/selector is shared**, and the read-only renderer and the editable renderer both consume it. Don't hand-roll a second read-only copy alongside an editable one — they will drift.
+
+> Concrete reference target: `Startup` socials/product-links. The `LINKS` registry currently lives inside `_profile/socials.tsx` (editable, coupled to `useProfileEdit`) while the compact panel in `startup-page-client.tsx` hand-rolls the same list — the canonical case this pattern exists to eliminate.
+
 ---
 
 ## Infrastructure
@@ -276,5 +292,6 @@ make deploy-seed     # Seed production DB (builds binary, SSHes to droplet, runs
 - **No comments unless the WHY is non-obvious.** Identifiers should be self-documenting.
 - **Tailwind classes** use a custom design token set (CSS variables like `--color-brand`, `--color-bg-raised`). Follow existing patterns.
 - **Use shadcn/ui whenever possible** for frontend components (buttons, inputs, selects, dialogs, etc.). The web app uses shadcn manually token-mapped (`cn` util, `components/ui/`), not `shadcn init`. Reach for an existing or new shadcn primitive before hand-rolling raw `<button>`/`<input>`/`<select>` elements.
+- **Render an entity the same way everywhere.** Derived display logic (parsing, formatting, link registries) goes in a pure selector under `lib/<entity>/`; presentational components take a `variant` prop instead of being copied per screen. See [Rendering pattern — one entity, many views](#rendering-pattern--one-entity-many-views). Never duplicate the same field-rendering logic across list/preview/full views.
 - **Seed data** lives in `scripts/seed/main.go` as hardcoded Go structs. Logos are fetched from Clearbit; placeholder fallback is in `scripts/seed/assets/`.
 - **Integration tests** are in `apps/server/integration/` and require a real Postgres + MinIO. Unit tests are co-located with the code they test (`_test.go` files).

@@ -39,6 +39,7 @@ import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { startupPath, startupEditPath } from "@/lib/startup-url";
+import { parseProductLinks } from "@/lib/startup/product-links";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
@@ -122,14 +123,7 @@ export default function StartupPageClient({
 
   const banner = startup.banner_image ?? null;
 
-  let productLinks: Record<string, string> = {};
-  if (startup.product_links) {
-    try {
-      productLinks = JSON.parse(startup.product_links);
-    } catch {
-      /* ignore */
-    }
-  }
+  const productLinks = parseProductLinks(startup.product_links);
 
   const techTags = parseTechStack(startup.tech_stack);
 

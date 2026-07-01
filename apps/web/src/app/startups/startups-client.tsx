@@ -13,6 +13,7 @@ import { Avatar } from "@/app/_components/shared/list-panel";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import StartupPageClient from "./startup-page-client";
 import { startupPath } from "@/lib/startup-url";
+import { parseProductLinks } from "@/lib/startup/product-links";
 import type { LocationGroup } from "./startups-map";
 
 type Startup = components["schemas"]["Startup"];
@@ -24,11 +25,6 @@ interface Props {
 }
 
 type View = "list" | "map";
-
-function parseProductLinks(raw?: string): { web?: string; ios?: string; android?: string } {
-  if (!raw) return {};
-  try { return JSON.parse(raw); } catch { return {}; }
-}
 
 export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const router = useRouter();
