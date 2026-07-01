@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck } from "lucide-react";
+import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck, Rocket, MousePointerClick } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -289,10 +289,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
               style={
                 isMobile
                   ? { width: "100%", marginLeft: "0" }
-                  : {
-                      width: selected ? "66.666%" : "50%",
-                      marginLeft: selected ? "0%" : "25%",
-                    }
+                  : { width: "66.666%", marginLeft: "0%" }
               }
             >
               {/* List */}
@@ -382,12 +379,12 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
               </ul>
             </div>
 
-            {/* Right: detail panel — hidden on mobile */}
+            {/* Right: detail panel — always present on desktop, hidden on mobile */}
             <div
               className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
               style={{
-                width: isMobile ? "0%" : selected ? "33.333%" : "0%",
-                opacity: isMobile ? 0 : selected ? 1 : 0,
+                width: isMobile ? "0%" : "33.333%",
+                opacity: isMobile ? 0 : 1,
               }}
             >
               <div
@@ -397,13 +394,15 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                     : "border-border"
                 }`}
               >
-                {selected && (
+                {selected ? (
                   <StartupPageClient
                     key={selected.id}
                     startup={selected}
                     compact={true}
                     onClose={() => setSelected(null)}
                   />
+                ) : (
+                  <StartupDetailPlaceholder />
                 )}
               </div>
             </div>
@@ -512,6 +511,60 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ── Detail Panel Placeholder ─────────────────────────────────────────────────
+// Shown in the persistent right panel when no startup is selected.
+
+function StartupDetailPlaceholder() {
+  return (
+    <div className="flex h-full flex-col">
+      {/* Header */}
+      <div className="border-b border-border px-6 py-5">
+        <div className="flex items-center gap-2">
+          <Rocket size={18} className="text-brand" />
+          <h2 className="text-lg font-semibold text-text">Startup details</h2>
+        </div>
+        <p className="mt-0.5 text-sm text-text-muted">
+          Select a startup from the list to see its profile here.
+        </p>
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-bg-subtle text-text-muted">
+          <MousePointerClick size={24} />
+        </div>
+        <div className="max-w-xs">
+          <p className="text-sm font-medium text-text">Nothing selected yet</p>
+          <p className="mt-1 text-sm text-text-muted">
+            Click any startup on the left to preview its details. Click it again
+            to open the full page.
+          </p>
+        </div>
+
+        {/* Static info cards */}
+        <dl className="mt-4 grid w-full max-w-xs grid-cols-2 gap-3 text-left">
+          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
+            <dt className="text-xs text-text-subtle">Directory</dt>
+            <dd className="text-sm font-medium text-text">Community startups</dd>
+          </div>
+          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
+            <dt className="text-xs text-text-subtle">Sorted by</dt>
+            <dd className="text-sm font-medium text-text">Boosts &amp; recency</dd>
+          </div>
+          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
+            <dt className="text-xs text-text-subtle">View</dt>
+            <dd className="text-sm font-medium text-text">List &amp; map</dd>
+          </div>
+          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
+            <dt className="text-xs text-text-subtle">Tip</dt>
+            <dd className="text-sm font-medium text-text">Star to favorite</dd>
+          </div>
+        </dl>
+      </div>
     </div>
   );
 }
