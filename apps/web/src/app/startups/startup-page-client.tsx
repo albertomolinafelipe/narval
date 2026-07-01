@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useUser } from "@/lib/user";
 import { useEffect, useState } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
@@ -58,7 +57,6 @@ export default function StartupPageClient({
   editable = false,
   onClose,
 }: Props) {
-  const router = useRouter();
   const { user } = useUser();
   const requireAuth = useAuthGuard();
 
@@ -131,20 +129,23 @@ export default function StartupPageClient({
   if (compact) {
     return (
       <div className="flex flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
+        {/* Header — the whole top section links to the full page */}
+        <div className="group relative flex items-start justify-between gap-4 border-b border-border px-6 py-5 transition hover:bg-bg-subtle/40 active:scale-[0.99]">
+          {/* Stretched link: covers the header; interactive children below sit above it via z-10 */}
+          <Link
+            href={startupPath(startup)}
+            aria-label={`View ${startup.name} full page`}
+            className="absolute inset-0"
+          />
           <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => router.push(startupPath(startup))}
-              className="shrink-0 transition hover:opacity-80"
-              aria-label="View full startup page"
-            >
-              <Avatar entity={startup} size={16} />
-            </button>
+            <Avatar entity={startup} size={16} />
             <div>
-              <h2 className="text-lg font-semibold text-text">
+              <h2 className="flex items-center gap-1.5 text-lg font-semibold text-text">
                 {startup.name}
+                <Maximize2
+                  size={14}
+                  className="text-text-subtle opacity-0 transition group-hover:opacity-100"
+                />
               </h2>
               {startup.tagline && (
                 <p className="mt-0.5 text-sm text-text-muted">
@@ -156,7 +157,7 @@ export default function StartupPageClient({
                   href={`https://${startup.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-block text-xs text-brand hover:underline"
+                  className="relative z-10 mt-1 inline-block text-xs text-brand hover:underline"
                 >
                   {startup.website.replace(/^https?:\/\//, "")}
                 </a>
@@ -165,12 +166,7 @@ export default function StartupPageClient({
           </div>
 
           {/* Action icons */}
-          <div className="flex items-center gap-1">
-            <Link href={startupPath(startup)}>
-              <IconButton label="Expand to full page">
-                <Maximize2 size={16} />
-              </IconButton>
-            </Link>
+          <div className="relative z-10 flex items-center gap-1">
             <IconButton
               label={
                 startup.is_favorited

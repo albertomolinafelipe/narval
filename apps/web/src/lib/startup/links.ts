@@ -47,10 +47,10 @@ export function getStartupSocials(s: Startup): StartupLink[] {
     links.push({ id: "linkedin", label: "LinkedIn", href: s.linkedin, Icon: SiLinkedin });
   if (s.twitter)
     links.push({ id: "twitter", label: "X / Twitter", href: s.twitter, Icon: SiX });
-  if (s.github)
-    links.push({ id: "github", label: "GitHub", href: s.github, Icon: SiGithub });
   if (s.instagram)
     links.push({ id: "instagram", label: "Instagram", href: s.instagram, Icon: SiInstagram });
+  if (s.github)
+    links.push({ id: "github", label: "GitHub", href: s.github, Icon: SiGithub });
   return links;
 }
 
