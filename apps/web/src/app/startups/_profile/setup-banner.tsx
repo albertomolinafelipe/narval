@@ -40,8 +40,10 @@ export function SetupBanner() {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-xl font-bold tracking-tight">Hello 👋</p>
         <p className="max-w-2xl text-sm leading-relaxed text-white/90">
-          Your profile is still a draft — it won&apos;t appear in public listings
-          until you publish it. Want ideas first? Take a look at{" "}
+          Your profile is still a draft, it won&apos;t appear in public listings
+          until you publish it.
+          <br />
+          Want ideas first? Take a look at{" "}
           <Link
             href="/startups/gonarval.com"
             className="font-semibold text-white underline decoration-white/60 underline-offset-2 transition hover:decoration-white"
