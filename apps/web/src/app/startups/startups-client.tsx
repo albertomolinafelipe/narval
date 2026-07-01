@@ -3,15 +3,18 @@
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck, Rocket, MousePointerClick } from "lucide-react";
+import { List, Map, Star, Search, Loader2, TrendingUp, Clock, LayoutList, Globe, BadgeCheck } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
+import { useMediaQuery } from "@/lib/use-media-query";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import StartupPageClient from "./startup-page-client";
+import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
+import { StartupResultsList } from "./_components/startup-results-list";
 import { startupPath } from "@/lib/startup-url";
 import { parseProductLinks } from "@/lib/startup/product-links";
 import type { LocationGroup } from "./startups-map";
@@ -252,6 +255,11 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
     </div>
   );
 
+  const allStartupsSubtitle = `${filtered.length} startup${filtered.length !== 1 ? "s" : ""}`;
+  const locationSubtitle = selectedLocation
+    ? `${selectedLocation.startups.length} startup${selectedLocation.startups.length !== 1 ? "s" : ""} at this location`
+    : "";
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {view === "list" ? (
@@ -452,15 +460,20 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
             {isMobile ? (
               <div className="flex-1 min-h-0 overflow-hidden border-t border-border">
                 {selectedLocation ? (
-                  <LocationStartupsList
-                    locationGroup={selectedLocation}
+                  <StartupResultsList
+                    startups={selectedLocation.startups}
+                    title={selectedLocation.location}
+                    subtitle={locationSubtitle}
                     onStartupClick={handleStartupClick}
                     onClose={handleCloseLocationList}
                   />
                 ) : (
-                  <AllStartupsList
+                  <StartupResultsList
                     startups={filtered}
+                    title="All Startups"
+                    subtitle={allStartupsSubtitle}
                     onStartupClick={handleStartupClick}
+                    showLocation
                   />
                 )}
               </div>
@@ -484,8 +497,10 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                       onClose={handleCloseStartupDetail}
                     />
                   ) : selectedLocation ? (
-                    <LocationStartupsList
-                      locationGroup={selectedLocation}
+                    <StartupResultsList
+                      startups={selectedLocation.startups}
+                      title={selectedLocation.location}
+                      subtitle={locationSubtitle}
                       onStartupClick={(s) => {
                         handleStartupClick(s);
                         setPreviousContext("location");
@@ -493,12 +508,15 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
                       onClose={handleCloseLocationList}
                     />
                   ) : (
-                    <AllStartupsList
+                    <StartupResultsList
                       startups={filtered}
+                      title="All Startups"
+                      subtitle={allStartupsSubtitle}
                       onStartupClick={(s) => {
                         handleStartupClick(s);
                         setPreviousContext("all");
                       }}
+                      showLocation
                     />
                   )}
                 </div>
@@ -509,222 +527,4 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
       )}
     </div>
   );
-}
-
-// ── Detail Panel Placeholder ─────────────────────────────────────────────────
-// Shown in the persistent right panel when no startup is selected.
-
-function StartupDetailPlaceholder() {
-  return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-b border-border px-6 py-5">
-        <div className="flex items-center gap-2">
-          <Rocket size={18} className="text-brand" />
-          <h2 className="text-lg font-semibold text-text">Startup details</h2>
-        </div>
-        <p className="mt-0.5 text-sm text-text-muted">
-          Select a startup from the list to see its profile here.
-        </p>
-      </div>
-
-      {/* Body */}
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-bg-subtle text-text-muted">
-          <MousePointerClick size={24} />
-        </div>
-        <div className="max-w-xs">
-          <p className="text-sm font-medium text-text">Nothing selected yet</p>
-          <p className="mt-1 text-sm text-text-muted">
-            Click any startup on the left to preview its details. Click it again
-            to open the full page.
-          </p>
-        </div>
-
-        {/* Static info cards */}
-        <dl className="mt-4 grid w-full max-w-xs grid-cols-2 gap-3 text-left">
-          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
-            <dt className="text-xs text-text-subtle">Directory</dt>
-            <dd className="text-sm font-medium text-text">Community startups</dd>
-          </div>
-          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
-            <dt className="text-xs text-text-subtle">Sorted by</dt>
-            <dd className="text-sm font-medium text-text">Boosts &amp; recency</dd>
-          </div>
-          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
-            <dt className="text-xs text-text-subtle">View</dt>
-            <dd className="text-sm font-medium text-text">List &amp; map</dd>
-          </div>
-          <div className="rounded-lg border border-border bg-bg-subtle/40 px-3 py-2">
-            <dt className="text-xs text-text-subtle">Tip</dt>
-            <dd className="text-sm font-medium text-text">Star to favorite</dd>
-          </div>
-        </dl>
-      </div>
-    </div>
-  );
-}
-
-// ── All Startups List Component ──────────────────────────────────────────────
-
-function AllStartupsList({
-  startups,
-  onStartupClick,
-}: {
-  startups: Startup[];
-  onStartupClick: (startup: Startup) => void;
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="border-b border-border px-6 py-5">
-        <h2 className="text-lg font-semibold text-text">All Startups</h2>
-        <p className="mt-0.5 text-sm text-text-muted">
-          {startups.length} startup{startups.length !== 1 ? "s" : ""}
-        </p>
-      </div>
-
-      {/* Body - scrollable list of startups */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {startups.length === 0 ? (
-          <p className="text-center text-sm text-text-muted py-8">
-            No startups found
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {startups.map((startup) => (
-              <li key={startup.id}>
-                <button
-                  type="button"
-                  onClick={() => onStartupClick(startup)}
-                  className="flex w-full items-center gap-3 rounded-lg border border-border bg-bg p-3 text-left transition hover:border-brand hover:bg-bg-subtle"
-                >
-                  {/* Boost counter */}
-                  <div className="shrink-0">
-                    <BoostCounter startup={startup} />
-                  </div>
-
-                  {/* Avatar and content */}
-                  <Avatar entity={startup} size={12} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-text">
-                      {startup.name}
-                    </p>
-                    {(startup.tagline || startup.description) && (
-                      <p className="mt-1 line-clamp-2 text-xs text-text-muted">
-                        {startup.tagline ?? startup.description}
-                      </p>
-                    )}
-                    <div className="mt-1 flex flex-wrap gap-1 text-xs text-text-subtle">
-                      {startup.industry && <span>{startup.industry}</span>}
-                      {startup.location && startup.industry && <span>•</span>}
-                      {startup.location && <span>{startup.location}</span>}
-                    </div>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Location Startups List Component ─────────────────────────────────────────
-
-function LocationStartupsList({
-  locationGroup,
-  onStartupClick,
-  onClose,
-}: {
-  locationGroup: LocationGroup;
-  onStartupClick: (startup: Startup) => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-5">
-        <div>
-          <h2 className="text-lg font-semibold text-text">
-            {locationGroup.location}
-          </h2>
-          <p className="mt-0.5 text-sm text-text-muted">
-            {locationGroup.startups.length} startup
-            {locationGroup.startups.length !== 1 ? "s" : ""} at this location
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg p-2 text-text-muted transition hover:bg-bg-subtle hover:text-text"
-          aria-label="Back to all startups"
-          title="Back to all startups"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M2 2l12 12M14 2L2 14" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Body - scrollable list of startups */}
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        <ul className="flex flex-col gap-2">
-          {locationGroup.startups.map((startup) => (
-            <li key={startup.id}>
-              <button
-                type="button"
-                onClick={() => onStartupClick(startup)}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-bg p-3 text-left transition hover:border-brand hover:bg-bg-subtle"
-              >
-                {/* Boost counter */}
-                <div className="shrink-0">
-                  <BoostCounter startup={startup} />
-                </div>
-
-                {/* Avatar and content */}
-                <Avatar entity={startup} size={12} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-text">
-                    {startup.name}
-                  </p>
-                  {(startup.tagline || startup.description) && (
-                    <p className="mt-1 line-clamp-2 text-xs text-text-muted">
-                      {startup.tagline ?? startup.description}
-                    </p>
-                  )}
-                  {startup.industry && (
-                    <p className="mt-1 text-xs text-text-subtle">
-                      {startup.industry}
-                    </p>
-                  )}
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    setMatches(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, [query]);
-  return matches;
 }
