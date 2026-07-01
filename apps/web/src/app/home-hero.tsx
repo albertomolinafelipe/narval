@@ -40,14 +40,15 @@ export function HomeHero() {
         {slogans[index]}
       </p>
 
-      <div className="mt-12 flex flex-col gap-5 sm:flex-row">
-        <Button asChild className="h-auto w-full px-10 py-4 text-lg sm:w-auto">
+      <div className="pointer-events-auto mt-10 flex flex-col gap-3 sm:flex-row">
+        <Button asChild size="lg" className="w-full text-base sm:w-auto">
           <Link href="/startups">Browse Startups</Link>
         </Button>
         <Button
           asChild
           variant="outline"
-          className="h-auto w-full border-text-muted px-10 py-4 text-lg text-text sm:w-auto"
+          size="lg"
+          className="w-full border-text-muted text-base text-text sm:w-auto"
         >
           <Link href="/investors">Meet Investors</Link>
         </Button>

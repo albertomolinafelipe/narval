@@ -249,3 +249,13 @@ input[type="range"]::-moz-range-thumb:hover {
   33%       { transform: translate(80px, 120px) scale(1.3); }
   66%       { transform: translate(-100px, -80px) scale(0.8); }
 }
+
+/* Home page floating windows — gentle 2D drift, no rotation */
+@keyframes window-float-1 {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(-8px, -24px); }
+}
+@keyframes window-float-2 {
+  0%, 100% { transform: translate(0, 0); }
+  50%       { transform: translate(8px, 22px); }
+}

@@ -18,8 +18,11 @@ Keep changes focused and non-behavioral where possible; this is cleanup, not a r
 ### Progress
 
 - [x] **Stale image cache fix (logo + banner)** — logo/banner were stored at a fixed object key (`logos/<id>/logo.jpg`) and overwritten in place, so the URL never changed and MinIO's missing `Cache-Control` header served stale bytes. `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys (matching screenshots/founders) for a unique URL per upload. Orphan cleanup left as a separate TODO.
-- [~] **Home page polish** — in progress.
-- [~] **Startups list page** — `/startups` list view now uses a **persistent right-hand detail panel**: the list stays a fixed width and the panel is always shown, rendering a static placeholder (`StartupDetailPlaceholder`) until a startup is clicked, then swapping to its details. Clicking the already-selected startup opens its full page. (`startups-client.tsx`)
+- [x] **Startups view/edit split** — the public startup page (`/startups/[slug]` and `/startups/in/[id]`) is now read-only for everyone, including the owner. Owners get an **Edit** button routing to `/startups/in/[id]/edit`, which renders the same page with inline editing on. An `editable` prop gates `ProfileEditProvider` (`editable && isOwner`); `startupEditPath()` is the single source for the edit URL.
+- [x] **Rendering pattern applied to startup links** — `lib/startup/` selector layer (`parseProductLinks`, `getStartupSocials`, `getStartupProductLinks`) + `lib/view-variant.ts` (`ViewVariant`). The compact panel's socials/product links are selector-driven via a read-only `<StartupLinks>`, styled with the new shadcn `Badge`. **Follow-up:** the editable `SocialsColumn` still has its own link registry — unify it onto `lib/startup/links.ts`.
+- [x] **`startups-client.tsx` refactor (730 → ~350 lines)** — extracted `startups/_components/` (`StartupsToolbar`, `StartupListRow`, `StartupResultsList` [merged the two near-duplicate map lists], `StartupDetailPlaceholder`), a shared `useMediaQuery` hook (`useSyncExternalStore`-based), and shadcn primitives (`Input`, `Toggle`, `ToggleGroup`; the hand-rolled `Segmented` was removed).
+- [x] **Startups detail panel** — persistent right-hand panel: the list stays a fixed width and the panel is always shown, rendering `StartupDetailPlaceholder` until a startup is clicked, then swapping to its details. The compact panel header is a full click-target (stretched link) that opens the full page.
+- [~] **Home page polish** — in progress. First up: shrink the animated background blobs on mobile.
 
 ---
 

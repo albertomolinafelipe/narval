@@ -23,9 +23,13 @@ const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 
 interface Props {
   showFavoritedOnly?: boolean;
+  initialView?: View;
 }
 
-export default function StartupsClient({ showFavoritedOnly = false }: Props) {
+export default function StartupsClient({
+  showFavoritedOnly = false,
+  initialView = "list",
+}: Props) {
   const router = useRouter();
   const requireAuth = useAuthGuard();
   const isMobile = useMediaQuery("(max-width: 767px)");
@@ -35,7 +39,7 @@ export default function StartupsClient({ showFavoritedOnly = false }: Props) {
   const [previousContext, setPreviousContext] = useState<
     "all" | "location" | null
   >(null);
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>(initialView);
   const [sort, setSort] = useState<SortMode>("recent");
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
