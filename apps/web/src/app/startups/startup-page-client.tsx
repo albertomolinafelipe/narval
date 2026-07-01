@@ -15,6 +15,8 @@ import {
   X,
   Maximize2,
   BadgeCheck,
+  Pencil,
+  Eye,
 } from "lucide-react";
 import {
   SiLinkedin,
@@ -36,7 +38,7 @@ import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
-import { startupPath } from "@/lib/startup-url";
+import { startupPath, startupEditPath } from "@/lib/startup-url";
 import { ProfileTabs } from "./_profile/profile-tabs";
 import { ProfileEditProvider } from "./_profile/edit-context";
 import { EditableText } from "./_profile/editable";
@@ -51,6 +53,8 @@ type Startup = components["schemas"]["Startup"];
 interface Props {
   startup: Startup;
   compact?: boolean;
+  /** Full-page edit mode — renders inline edit affordances for the owner. */
+  editable?: boolean;
   onClose?: () => void;
 }
 
@@ -58,6 +62,7 @@ interface Props {
 export default function StartupPageClient({
   startup: initialStartup,
   compact = false,
+  editable = false,
   onClose,
 }: Props) {
   const router = useRouter();
@@ -367,9 +372,12 @@ export default function StartupPageClient({
     );
   }
 
-  // Full page mode
+  // Full page mode. Editing is gated on both real ownership AND the edit route
+  // (`editable`) — the public page renders read-only even for the owner.
+  const canEdit = isOwner && editable;
+
   return (
-    <ProfileEditProvider startupId={startup.id} isOwner={isOwner}>
+    <ProfileEditProvider startupId={startup.id} isOwner={canEdit}>
     <div className="mx-auto max-w-7xl px-6 py-8">
       {/*  Setup invitation (owner, profile not yet published)  */}
       {isOwner && !startup.profile_setup && <SetupBanner />}
@@ -448,6 +456,22 @@ export default function StartupPageClient({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2 max-md:ml-auto">
+          {isOwner &&
+            (editable ? (
+              <Button asChild variant="soft" size="sm">
+                <Link href={startupPath(startup)}>
+                  <Eye size={16} />
+                  Done
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link href={startupEditPath(startup)}>
+                  <Pencil size={16} />
+                  Edit
+                </Link>
+              </Button>
+            ))}
           <Button
             variant="ghost"
             size="icon"
