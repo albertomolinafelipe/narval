@@ -4,6 +4,12 @@ import { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogClose,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ImageCropperModalProps {
   imageSrc: string;
@@ -100,18 +106,21 @@ export default function ImageCropperModal({
   }, [imageSrc, croppedAreaPixels, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-      <div className="relative w-full max-w-4xl bg-bg rounded-lg shadow-2xl overflow-hidden">
+    <Dialog open onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent
+        showClose={false}
+        aria-describedby={undefined}
+        className="max-w-4xl overflow-hidden rounded-lg p-0"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-text">{title}</h2>
-          <button
-            onClick={onCancel}
-            className="text-text-muted hover:text-text transition-colors"
+          <DialogTitle>{title}</DialogTitle>
+          <DialogClose
             aria-label="Close"
+            className="text-text-muted transition-colors hover:text-text"
           >
             <X size={20} />
-          </button>
+          </DialogClose>
         </div>
 
         {/* Cropper Area */}
@@ -167,7 +176,7 @@ export default function ImageCropperModal({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
