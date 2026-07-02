@@ -14,8 +14,14 @@ import { StartupsToolbar, type View, type SortMode } from "./_components/startup
 import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
 import { StartupResultsList } from "./_components/startup-results-list";
+import { ConstraintChips } from "./_components/constraint-chips";
 import { startupPath } from "@/lib/startup-url";
-import type { LocationGroup } from "./startups-map";
+import {
+  type Constraint,
+  applyConstraints,
+  toggleConstraint,
+  locationConstraint,
+} from "@/lib/startup/constraints";
 
 type Startup = components["schemas"]["Startup"];
 
@@ -34,11 +40,7 @@ export default function StartupsClient({
   const requireAuth = useAuthGuard();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [selected, setSelected] = useState<Startup | null>(null);
-  const [selectedLocation, setSelectedLocation] =
-    useState<LocationGroup | null>(null);
-  const [previousContext, setPreviousContext] = useState<
-    "all" | "location" | null
-  >(null);
+  const [constraints, setConstraints] = useState<Constraint[]>([]);
   const [showMap, setShowMap] = useState(initialView === "map");
   const [sort, setSort] = useState<SortMode>("recent");
   const [expanded, setExpanded] = useState(false);
@@ -66,9 +68,10 @@ export default function StartupsClient({
   const { coordsMap } = useGeocode(locations);
 
   const filtered = useMemo(() => {
+    const constrained = applyConstraints(startups, constraints);
     const q = query.trim().toLowerCase();
-    if (!q) return startups;
-    return startups.filter(
+    if (!q) return constrained;
+    return constrained.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         (s.tagline ?? "").toLowerCase().includes(q) ||
@@ -76,7 +79,15 @@ export default function StartupsClient({
         (s.industry ?? "").toLowerCase().includes(q) ||
         (s.location ?? "").toLowerCase().includes(q),
     );
-  }, [startups, query]);
+  }, [startups, constraints, query]);
+
+  const activeLocations = useMemo(
+    () =>
+      constraints
+        .filter((c) => c.id.startsWith("location:"))
+        .map((c) => c.label),
+    [constraints],
+  );
 
   // Auto-deselect if the selected item is filtered out.
   const visibleIds = useMemo(
@@ -109,29 +120,12 @@ export default function StartupsClient({
     }
   }
 
-  function handleLocationSelect(locationGroup: LocationGroup) {
-    // Clear startup selection and show location group
-    setSelected(null);
-    setSelectedLocation(locationGroup);
-    setPreviousContext("all"); // Remember we came from 'all' view
+  function handleToggleLocation(location: string) {
+    setConstraints((cs) => toggleConstraint(cs, locationConstraint(location)));
   }
 
-  function handleCloseStartupDetail() {
-    setSelected(null);
-    // If we have a previous context (we're in map view), restore it
-    if (showMap) {
-      if (previousContext === "all" || !selectedLocation) {
-        // Show all startups list
-        setSelectedLocation(null);
-        setPreviousContext(null);
-      }
-      // If previousContext === 'location', keep selectedLocation as is
-    }
-  }
-
-  function handleCloseLocationList() {
-    setSelectedLocation(null);
-    setPreviousContext(null);
+  function handleRemoveConstraint(id: string) {
+    setConstraints((cs) => cs.filter((c) => c.id !== id));
   }
 
   function handleFavoritedToggle() {
@@ -179,9 +173,13 @@ export default function StartupsClient({
   );
 
   const allStartupsSubtitle = `${filtered.length} startup${filtered.length !== 1 ? "s" : ""}`;
-  const locationSubtitle = selectedLocation
-    ? `${selectedLocation.startups.length} startup${selectedLocation.startups.length !== 1 ? "s" : ""} at this location`
-    : "";
+
+  const chips = (
+    <ConstraintChips
+      constraints={constraints}
+      onRemove={handleRemoveConstraint}
+    />
+  );
 
   const listEl = (
     <ul
@@ -212,44 +210,29 @@ export default function StartupsClient({
     <StartupsMap
       startups={filtered}
       coordsMap={coordsMap}
-      selected={selected}
-      onSelect={(s) => {
-        handleStartupClick(s);
-        if (!isMobile) {
-          if (selectedLocation) setPreviousContext("location");
-          else setPreviousContext("all");
-        }
-      }}
-      onLocationSelect={handleLocationSelect}
+      activeLocations={activeLocations}
+      onToggleLocation={handleToggleLocation}
     />
   );
 
   // On mobile there's no side panel, so the map takes over the whole area with
-  // the results list stacked below it.
+  // the (constraint-filtered) results list stacked below it. Tapping a pin adds
+  // a location constraint, narrowing that list.
   if (isMobile && showMap) {
     return (
       <div className="flex h-full flex-col overflow-hidden">
         {toolbar}
+        {chips}
         <div className="flex flex-1 flex-col overflow-hidden">
           <div className="flex-1 overflow-hidden">{mapEl}</div>
           <div className="min-h-0 flex-1 overflow-hidden border-t border-border">
-            {selectedLocation ? (
-              <StartupResultsList
-                startups={selectedLocation.startups}
-                title={selectedLocation.location}
-                subtitle={locationSubtitle}
-                onStartupClick={handleStartupClick}
-                onClose={handleCloseLocationList}
-              />
-            ) : (
-              <StartupResultsList
-                startups={filtered}
-                title="All Startups"
-                subtitle={allStartupsSubtitle}
-                onStartupClick={handleStartupClick}
-                showLocation
-              />
-            )}
+            <StartupResultsList
+              startups={filtered}
+              title="All Startups"
+              subtitle={allStartupsSubtitle}
+              onStartupClick={handleStartupClick}
+              showLocation
+            />
           </div>
         </div>
       </div>
@@ -259,6 +242,7 @@ export default function StartupsClient({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {toolbar}
+      {chips}
 
       {/* Left: list (always). Right panel: map when toggled on, else detail. */}
       <div className="flex w-full flex-1 gap-4 overflow-hidden">
@@ -288,7 +272,7 @@ export default function StartupsClient({
                   key={selected.id}
                   startup={selected}
                   compact={true}
-                  onClose={handleCloseStartupDetail}
+                  onClose={() => setSelected(null)}
                 />
               ) : (
                 <StartupDetailPlaceholder />

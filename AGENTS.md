@@ -8,27 +8,66 @@ This document is the entry point for any AI agent or developer working on this c
 
 Branch `search-ui`. This branch is **UI/UX only** — building out the search *experience and layout*, not the logic behind it. **No backend work** (server-side `?q=`, full-text search, ranking are out of scope, deferred to a later branch). Any advanced field whose filtering isn't wired up yet ships **disabled or marked WIP** — build the visual affordance, don't fake the behavior.
 
-### Target design — expandable search
+### Search constraints — the core model
 
-A single search control with two states:
+All filtering funnels through one abstraction: a **constraint** is a predicate over a
+`Startup` plus a display label. The visible list is every startup passing **all**
+active constraints (AND). Map-pin clicks, field filters ("Founded ≥ 2020"), and future
+advanced filters are all just constraints — adding a filter type means writing one more
+factory, nothing else changes.
 
-- **Collapsed (default):** a simple, polished text input. Typing filters the list, exactly as today (client-side over the already-fetched startups). This is the common case and should feel clean and responsive across mobile/tablet/desktop breakpoints. The existing **Details** toggle stays alongside it.
-- **Expanded:** an expand affordance grows the control to roughly **3× its height**, revealing an advanced-filter panel with structured fields — **geolocation** (location filter), **people** (founders/team), and room for more (industry, stage) later. Collapsing hides the panel again; text search keeps working in both states.
+Lives in the selector layer: **`lib/startup/constraints.ts`** (per the [rendering
+pattern](#rendering-pattern--one-entity-many-views)).
 
-Keep it simple: plain text search is the primary path; the advanced panel is progressive disclosure, not a required step.
+```ts
+interface Constraint { id: string; label: string; test: (s: Startup) => boolean; }
+applyConstraints(startups, constraints)   // startups passing every constraint
+toggleConstraint(constraints, next)       // add if absent, remove if id present
+locationConstraint(loc)                   // factory — one per filter type
+```
+
+How it composes today:
+
+- **Free-text search** stays a **live filter** (not a constraint): the list is
+  `textMatch(query) ∩ applyConstraints(constraints)`. Combined in the `filtered`
+  `useMemo` in `startups-client.tsx`.
+- **Map pins** — clicking a pin toggles a `locationConstraint` for that location
+  (desktop **and** mobile). Clicking the same pin, or its chip, removes it. Constrained
+  locations render highlighted on the map (`activeLocations`).
+- **Constraint chips** render in a wrap-row **below the toolbar** (`ConstraintChips`);
+  clicking a chip removes that constraint by `id`.
+
+### Map as a toggle (not a separate view)
+
+Map is an **on/off toggle** (`showMap`), not a list-vs-map view swap. The list stays put
+on the left; the right panel shows the **map when on**, else the detail/placeholder. On
+mobile (no side panel) map-on takes over full-width with the results list stacked below.
+
+### Target design — expandable advanced search
+
+Beyond text + pins, the search control expands (~**3× height**) into an advanced-filter
+panel with structured fields — **geolocation**, **people** (founders/team), and room for
+industry/stage later. Each field just pushes its constraint via a factory; **fields not
+yet filterable client-side ship disabled or visibly WIP** — build the affordance, don't
+fake the behavior.
 
 ### Ground rules for this branch
 
-- **Component consistency** — build on the existing design tokens + shadcn primitives (`Input`, `Toggle`, `ToggleGroup`, `components/ui/`); don't hand-roll raw elements.
-- **Responsiveness** — collapsed and expanded states must both behave across breakpoints.
-- **Only wire up what works client-side** — text search reuses/extends the existing `filtered` `useMemo` in `startups-client.tsx`. Any advanced field that can't be filtered from the in-memory list yet ships **disabled or visibly WIP** (present the UI, gray it out / label it, don't wire fake logic). No API params, no backend.
-- **Where the code lives** — the control is `startups/_components/startups-toolbar.tsx` today; extract the search piece into its own component if it grows.
+- **UI/UX only, no backend** — server-side `?q=`, full-text search, ranking are out of
+  scope. Filtering is client-side over the already-fetched list.
+- **Everything filterable goes through a constraint factory** in `lib/startup/constraints.ts` — don't scatter ad-hoc `.filter()` predicates across components.
+- **Component consistency** — build on design tokens + shadcn primitives (`Input`,
+  `SlideSwitch`, `ToggleGroup`, `Badge`, `components/ui/`); don't hand-roll raw elements.
+- **Responsiveness** — every state must behave across breakpoints.
 
 ### Progress
 
-- [ ] **Collapsed search polish** — refine the inline input (focus/clear states, sizing, mobile behavior).
-- [ ] **Expandable panel** — expand toggle + ~3× height advanced panel scaffold.
-- [ ] **Advanced fields (UI)** — geolocation, people, etc. rendered as controls; wire up the ones filterable client-side, leave the rest disabled/WIP.
+- [x] **Toolbar restyle** — pill sort toggle; `SlideSwitch` for Map/Favorites/Details; search bar matched to the pill aesthetic; order: search, map, sort, favorite, detail.
+- [x] **Map → on/off toggle** — right panel becomes the map; `reuseMaps` fixes the mapbox teardown race.
+- [x] **Constraint model** — `lib/startup/constraints.ts`, chips below the toolbar, map pins toggle location constraints (desktop + mobile).
+- [ ] **Expandable panel** — expand affordance + ~3× height advanced panel scaffold.
+- [ ] **Advanced fields (UI)** — geolocation, people, etc. as controls feeding constraint factories; leave the rest disabled/WIP.
+- [ ] **Loose end — pin click vs. detail panel** — when map occupies the right panel, decide where/whether a selected startup's detail shows on desktop.
 
 ---
 
