@@ -69,7 +69,7 @@ function DetailsStep({
 
       <fieldset
         disabled={submitting || name.trim().length < 2}
-        className="flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
+        className="mt-2 flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
       >
         {emailMode && (
           <div className="flex flex-col gap-1">
