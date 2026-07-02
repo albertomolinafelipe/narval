@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronLeft, User } from "lucide-react";
 import { GiUnicorn } from "react-icons/gi";
 import RegisterCompanyForm from "./register-company-form";
 import { Button } from "@/components/ui/button";
+import { GoogleButton, OrDivider } from "../auth/google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 type AccountType = "user" | "startup";
@@ -164,6 +164,12 @@ function UserDetailsStep({
       <Button type="submit" disabled={loading} className="w-full">
         {loading ? "Sending code…" : "Continue"}
       </Button>
+
+      <OrDivider />
+      <GoogleButton
+        intent={{ account_type: "user", name: nickname.trim() }}
+        disabled={nickname.trim().length < 2}
+      />
     </form>
   );
 }
@@ -179,7 +185,6 @@ function UserVerifyStep({
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const submitted = useRef(false);
 
   async function verify(c: string) {

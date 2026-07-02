@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter as useNextRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { GoogleButton, OrDivider } from "../auth/google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 const apiBase = "/api/proxy";
@@ -79,6 +80,16 @@ function DetailsStep({
       <Button type="submit" disabled={submitting} className="w-full">
         {submitting ? "Sending code…" : "Continue"}
       </Button>
+
+      {accountType === "startup" && (
+        <>
+          <OrDivider />
+          <GoogleButton
+            intent={{ account_type: "startup", name: name.trim() }}
+            disabled={submitting || name.trim().length < 2}
+          />
+        </>
+      )}
     </form>
   );
 }

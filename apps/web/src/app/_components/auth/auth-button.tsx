@@ -5,6 +5,7 @@ import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import RegisterForm from "../forms/register-form";
 import { Button } from "@/components/ui/button";
+import { GoogleButton, OrDivider } from "./google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 type View = "login" | "register";
@@ -154,36 +155,40 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
 
   if (!codeSent) {
     return (
-      <form onSubmit={handleSendCode} className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="auth-email"
-            className="text-xs font-medium text-text-muted"
+      <div className="flex flex-col gap-3">
+        <GoogleButton />
+        <OrDivider />
+        <form onSubmit={handleSendCode} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="auth-email"
+              className="text-xs font-medium text-text-muted"
+            >
+              Email
+            </label>
+            <input
+              id="auth-email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              className="input"
+            />
+          </div>
+          {error && <p className="text-xs text-danger">{error}</p>}
+          <Button
+            type="submit"
+            disabled={loading}
+            className="w-full"
+            data-umami-event="auth-submit"
+            data-umami-event-type="login-send-code"
           >
-            Email
-          </label>
-          <input
-            id="auth-email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="input"
-          />
-        </div>
-        {error && <p className="text-xs text-danger">{error}</p>}
-        <Button
-          type="submit"
-          disabled={loading}
-          className="w-full"
-          data-umami-event="auth-submit"
-          data-umami-event-type="login-send-code"
-        >
-          {loading ? "Sending code…" : "Send code"}
-        </Button>
-      </form>
+            {loading ? "Sending code…" : "Send code"}
+          </Button>
+        </form>
+      </div>
     );
   }
 
