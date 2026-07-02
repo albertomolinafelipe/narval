@@ -58,7 +58,9 @@ export function BoostCounter({ startup }: BoostCounterProps) {
             className="rounded-lg border border-border bg-bg-raised px-3 py-2 text-xs text-text shadow-md"
             sideOffset={5}
           >
-            {boosted ? "You've boosted this" : "Click to boost"}
+            {boosted
+              ? "You've boosted this startup"
+              : "Boost this startup to give it visibility for 30 days"}
             <Tooltip.Arrow className="fill-border" />
           </Tooltip.Content>
         </Tooltip.Portal>
