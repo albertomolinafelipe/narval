@@ -1,6 +1,7 @@
 import { List, Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SlideSwitch } from "@/components/ui/slide-switch";
 import { Input } from "@/components/ui/input";
 
 export type View = "list" | "map";
@@ -77,24 +78,29 @@ export function StartupsToolbar({
           <ToggleGroup
             type="single"
             value={sort}
+            className={viewToggleBox}
             onValueChange={(v) => v && onSortChange(v as SortMode)}
           >
-            <ToggleGroupItem value="recent">
+            <ToggleGroupItem value="recent" className={viewToggleItem}>
               <Clock size={13} />
               Recent
             </ToggleGroupItem>
-            <ToggleGroupItem value="trending">
+            <ToggleGroupItem value="trending" className={viewToggleItem}>
               <TrendingUp size={13} />
               Trending
             </ToggleGroupItem>
           </ToggleGroup>
 
-          <div className={`${singleToggleBox} max-md:hidden`}>
-            <Toggle pressed={expanded} onPressedChange={onExpandedChange}>
+          <label className="flex items-center gap-2 max-md:hidden">
+            <span className="text-xs font-medium text-text-muted">Details</span>
+            <SlideSwitch
+              checked={expanded}
+              onCheckedChange={onExpandedChange}
+              aria-label="Toggle detailed view"
+            >
               <LayoutList size={13} />
-              Details
-            </Toggle>
-          </div>
+            </SlideSwitch>
+          </label>
         </>
       )}
 
