@@ -65,27 +65,29 @@ function DetailsStep({
         {nameError && <p className="text-xs text-danger">{nameError}</p>}
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="rc-email" className="text-xs font-medium text-text-muted">Email <span className="text-danger">*</span></label>
-        <input id="rc-email" type="email" placeholder="you@example.com" value={email}
-          onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-          required autoComplete="email" disabled={submitting} className="input" />
-        {emailError && <p className="text-xs text-danger">{emailError}</p>}
-      </div>
+      <fieldset
+        disabled={submitting || name.trim().length < 2}
+        className="flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
+      >
+        <div className="flex flex-col gap-1">
+          <label htmlFor="rc-email" className="text-xs font-medium text-text-muted">Email <span className="text-danger">*</span></label>
+          <input id="rc-email" type="email" placeholder="you@example.com" value={email}
+            onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+            required autoComplete="email" className="input" />
+          {emailError && <p className="text-xs text-danger">{emailError}</p>}
+        </div>
 
-      <Button type="submit" disabled={submitting || name.trim().length < 2} className="w-full">
-        {submitting ? "Sending code…" : "Continue with email"}
-      </Button>
+        <Button type="submit" className="w-full">
+          {submitting ? "Sending code…" : "Continue with email"}
+        </Button>
 
-      {accountType === "startup" && (
-        <>
-          <OrDivider />
-          <GoogleButton
-            intent={{ account_type: "startup", name: name.trim() }}
-            disabled={submitting || name.trim().length < 2}
-          />
-        </>
-      )}
+        {accountType === "startup" && (
+          <>
+            <OrDivider />
+            <GoogleButton intent={{ account_type: "startup", name: name.trim() }} />
+          </>
+        )}
+      </fieldset>
     </form>
   );
 }

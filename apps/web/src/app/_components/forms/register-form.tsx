@@ -140,41 +140,39 @@ function UserDetailsStep({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="reg-email"
-          className="text-xs font-medium text-text-muted"
-        >
-          Email <span className="text-danger">*</span>
-        </label>
-        <input
-          id="reg-email"
-          type="text"
-          inputMode="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-          className="input"
-        />
-      </div>
-
-      {error && <p className="text-xs text-danger">{error}</p>}
-
-      <Button
-        type="submit"
+      <fieldset
         disabled={loading || nickname.trim().length < 2}
-        className="w-full"
+        className="flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
       >
-        {loading ? "Sending code…" : "Continue with email"}
-      </Button>
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="reg-email"
+            className="text-xs font-medium text-text-muted"
+          >
+            Email <span className="text-danger">*</span>
+          </label>
+          <input
+            id="reg-email"
+            type="text"
+            inputMode="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            className="input"
+          />
+        </div>
 
-      <OrDivider />
-      <GoogleButton
-        intent={{ account_type: "user", name: nickname.trim() }}
-        disabled={nickname.trim().length < 2}
-      />
+        {error && <p className="text-xs text-danger">{error}</p>}
+
+        <Button type="submit" className="w-full">
+          {loading ? "Sending code…" : "Continue with email"}
+        </Button>
+
+        <OrDivider />
+        <GoogleButton intent={{ account_type: "user", name: nickname.trim() }} />
+      </fieldset>
     </form>
   );
 }
