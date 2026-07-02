@@ -36,8 +36,8 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
         </div>
         <Avatar entity={s} size={12} />
 
-        {/* Name + email — fixed width when expanded so columns align */}
-        <div className={`min-w-0 ${expanded ? "w-44 shrink-0" : "flex-1"}`}>
+        {/* Name + tagline — fills the space, pushing detail columns to the right */}
+        <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 text-sm font-medium text-text">
             <span className="truncate">{s.name}</span>
             {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
@@ -46,8 +46,12 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
             ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>
             : s.contact_general && <p className="truncate text-xs text-text-muted">{s.contact_general}</p>
           }
-          {!expanded && (s.tagline || s.description) && (
-            <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
+          {(s.tagline || s.description) && (
+            <p
+              className={`mt-1 text-xs text-text-subtle ${
+                expanded ? "truncate" : "line-clamp-2"
+              }`}
+            >
               {s.tagline ?? s.description}
             </p>
           )}
