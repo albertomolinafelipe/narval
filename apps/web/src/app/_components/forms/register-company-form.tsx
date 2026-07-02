@@ -63,27 +63,7 @@ function DetailsStep({
           onChange={(e) => { setName(e.target.value); setNameError(""); }}
           required minLength={2} maxLength={100} disabled={submitting} autoFocus className="input" />
         {nameError && <p className="text-xs text-danger">{nameError}</p>}
-        <p className="text-xs text-text-muted">
-          Your {accountType === "startup" ? "startup" : "fund"} name. Pick this
-          first, then continue with email{accountType === "startup" ? " or Google" : ""}.
-        </p>
       </div>
-
-      {accountType === "startup" && (
-        <>
-          {name.trim().length < 2 ? (
-            <p className="text-center text-xs text-text-muted">
-              Enter your startup name above to continue.
-            </p>
-          ) : (
-            <GoogleButton
-              intent={{ account_type: "startup", name: name.trim() }}
-              disabled={submitting}
-            />
-          )}
-          <OrDivider />
-        </>
-      )}
 
       <div className="flex flex-col gap-1">
         <label htmlFor="rc-email" className="text-xs font-medium text-text-muted">Email <span className="text-danger">*</span></label>
@@ -93,15 +73,19 @@ function DetailsStep({
         {emailError && <p className="text-xs text-danger">{emailError}</p>}
       </div>
 
-      {accountType === "startup" && (
-        <p className="text-xs text-text-muted">
-          Once you&apos;re in, you can verify your domain from your profile to earn a verified badge.
-        </p>
-      )}
-
       <Button type="submit" disabled={submitting || name.trim().length < 2} className="w-full">
         {submitting ? "Sending code…" : "Continue with email"}
       </Button>
+
+      {accountType === "startup" && (
+        <>
+          <OrDivider />
+          <GoogleButton
+            intent={{ account_type: "startup", name: name.trim() }}
+            disabled={submitting || name.trim().length < 2}
+          />
+        </>
+      )}
     </form>
   );
 }

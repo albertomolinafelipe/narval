@@ -138,28 +138,14 @@ function UserDetailsStep({
           autoFocus
           className="input"
         />
-        <p className="text-xs text-text-muted">
-          How you&apos;ll appear on Narval. Pick this first, then continue with
-          email or Google.
-        </p>
       </div>
-
-      {nickname.trim().length < 2 ? (
-        <p className="text-center text-xs text-text-muted">
-          Enter a nickname above to continue.
-        </p>
-      ) : (
-        <GoogleButton intent={{ account_type: "user", name: nickname.trim() }} />
-      )}
-
-      <OrDivider />
 
       <div className="flex flex-col gap-1">
         <label
           htmlFor="reg-email"
           className="text-xs font-medium text-text-muted"
         >
-          Email
+          Email <span className="text-danger">*</span>
         </label>
         <input
           id="reg-email"
@@ -183,6 +169,12 @@ function UserDetailsStep({
       >
         {loading ? "Sending code…" : "Continue with email"}
       </Button>
+
+      <OrDivider />
+      <GoogleButton
+        intent={{ account_type: "user", name: nickname.trim() }}
+        disabled={nickname.trim().length < 2}
+      />
     </form>
   );
 }
