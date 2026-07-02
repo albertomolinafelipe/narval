@@ -19,6 +19,7 @@ import {
 import { MdLocationOn, MdGroups } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
+import { useMediaQuery } from "@/lib/use-media-query";
 import {
   useStartupQuery,
   useFavoriteMutation,
@@ -48,6 +49,8 @@ interface Props {
   compact?: boolean;
   /** Full-page edit mode — renders inline edit affordances for the owner. */
   editable?: boolean;
+  /** Hide the share action (used by the inline "tall row" in the list). */
+  hideShare?: boolean;
   onClose?: () => void;
 }
 
@@ -56,10 +59,15 @@ export default function StartupPageClient({
   startup: initialStartup,
   compact = false,
   editable = false,
+  hideShare = false,
   onClose,
 }: Props) {
   const { user } = useUser();
   const requireAuth = useAuthGuard();
+  // The compact card is the only thing shown on mobile (the inline "tall row"),
+  // where desktop-sized text/icons feel oversized — scale them down there.
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const iconSize = isMobile ? 14 : 16;
 
   // Use React Query with server data as placeholder while fetching
   // Note: We know initialStartup is non-null (checked by server page), so we can safely fallback
@@ -138,21 +146,19 @@ export default function StartupPageClient({
             aria-label={`View ${startup.name} full page`}
             className="absolute inset-0"
           />
-          <div className="flex items-center gap-4">
-            <Avatar entity={startup} size={16} />
-            <div>
-              <h2 className="flex items-center gap-1.5 text-lg font-semibold text-text">
-                {startup.name}
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar entity={startup} size={12} />
+            <div className="min-w-0">
+              <h2 className="flex items-center gap-1.5 text-base font-semibold text-text md:text-lg">
+                <span className="truncate">{startup.name}</span>
+                {startup.verified && (
+                  <BadgeCheck size={iconSize} className="shrink-0 text-brand" />
+                )}
                 <Maximize2
-                  size={14}
-                  className="text-text-subtle opacity-0 transition group-hover:opacity-100"
+                  size={isMobile ? 12 : 14}
+                  className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100"
                 />
               </h2>
-              {startup.tagline && (
-                <p className="mt-0.5 text-sm text-text-muted">
-                  {startup.tagline}
-                </p>
-              )}
               {startup.website && (
                 <a
                   href={`https://${startup.website}`}
@@ -167,7 +173,7 @@ export default function StartupPageClient({
           </div>
 
           {/* Action icons */}
-          <div className="relative z-10 flex items-center gap-1">
+          <div className="relative z-10 flex shrink-0 items-center gap-1">
             <IconButton
               label={
                 startup.is_favorited
@@ -178,19 +184,25 @@ export default function StartupPageClient({
               disabled={favoriteMutation.isPending}
             >
               <Star
-                size={16}
+                size={iconSize}
                 fill={startup.is_favorited ? "currentColor" : "none"}
               />
             </IconButton>
-            <BoostButton startup={startup} showCount={true} size="large" />
-            <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
-              {copied ? <Check size={16} /> : <Share2 size={16} />}
-            </IconButton>
+            <BoostButton
+              startup={startup}
+              showCount={true}
+              size={isMobile ? "default" : "large"}
+            />
+            {!hideShare && (
+              <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
+                {copied ? <Check size={iconSize} /> : <Share2 size={iconSize} />}
+              </IconButton>
+            )}
             {onClose && (
               <>
                 <div className="mx-1 h-4 w-px bg-border" />
                 <IconButton label="Close" onClick={onClose}>
-                  <X size={16} />
+                  <X size={iconSize} />
                 </IconButton>
               </>
             )}
@@ -199,19 +211,24 @@ export default function StartupPageClient({
 
         {/* Body */}
         <div className="flex flex-col gap-6 px-6 py-5">
-          {/* Metadata pills */}
-          <div className="flex flex-wrap gap-2">
-            {startup.stage && <Pill label={startup.stage} />}
-            {startup.industry && <Pill label={startup.industry} />}
-            {startup.location && (
-              <Pill icon={<MdLocationOn size={14} />} label={startup.location} />
+          {/* Tagline + metadata pills */}
+          <div className="flex flex-col gap-3">
+            {startup.tagline && (
+              <p className="text-sm text-text-muted">{startup.tagline}</p>
             )}
-            {startup.team_size != null && startup.team_size > 0 && (
-              <Pill
-                icon={<MdGroups size={14} />}
-                label={`${startup.team_size} people`}
-              />
-            )}
+            <div className="flex flex-wrap gap-2">
+              {startup.stage && <Pill label={startup.stage} />}
+              {startup.industry && <Pill label={startup.industry} />}
+              {startup.location && (
+                <Pill icon={<MdLocationOn size={14} />} label={startup.location} />
+              )}
+              {startup.team_size != null && startup.team_size > 0 && (
+                <Pill
+                  icon={<MdGroups size={14} />}
+                  label={`${startup.team_size} people`}
+                />
+              )}
+            </div>
           </div>
 
           {/* About */}

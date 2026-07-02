@@ -67,7 +67,7 @@ fake the behavior.
 - [x] **Constraint model** — `lib/startup/constraints.ts`, chips below the toolbar, map pins toggle location constraints (desktop + mobile).
 - [ ] **Expandable panel** — expand affordance + ~3× height advanced panel scaffold.
 - [ ] **Advanced fields (UI)** — geolocation, people, etc. as controls feeding constraint factories; leave the rest disabled/WIP.
-- [ ] **Loose end — pin click vs. detail panel** — when map occupies the right panel, decide where/whether a selected startup's detail shows on desktop.
+- [x] **Detail when no side panel** — when the map occupies the right panel (or on mobile), selecting a row expands it **inline** into the compact `StartupPageClient` card instead of navigating; the card's X collapses it, its header still links to the full page. Covers both list renderers (`StartupListRow` list and `StartupResultsList`).
 
 ---
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { Avatar } from "@/app/_components/shared/list-panel";
@@ -15,6 +16,10 @@ interface Props {
   /** Show the location alongside the industry in each row. */
   showLocation?: boolean;
   emptyLabel?: string;
+  /** Id of the row to render expanded (via `renderExpanded`) instead of a card. */
+  selectedId?: string;
+  /** Inline detail rendered in place of the selected row's card. */
+  renderExpanded?: (startup: Startup) => ReactNode;
 }
 
 /**
@@ -29,6 +34,8 @@ export function StartupResultsList({
   onClose,
   showLocation = false,
   emptyLabel = "No startups found",
+  selectedId,
+  renderExpanded,
 }: Props) {
   return (
     <div className="flex h-full flex-col">
@@ -57,7 +64,15 @@ export function StartupResultsList({
           <p className="py-8 text-center text-sm text-text-muted">{emptyLabel}</p>
         ) : (
           <ul className="flex flex-col gap-2">
-            {startups.map((startup) => (
+            {startups.map((startup) =>
+              selectedId === startup.id && renderExpanded ? (
+                <li
+                  key={startup.id}
+                  className="overflow-hidden rounded-lg border border-brand bg-bg"
+                >
+                  {renderExpanded(startup)}
+                </li>
+              ) : (
               <li key={startup.id}>
                 <button
                   type="button"
@@ -89,7 +104,8 @@ export function StartupResultsList({
                   </div>
                 </button>
               </li>
-            ))}
+              ),
+            )}
           </ul>
         )}
       </div>

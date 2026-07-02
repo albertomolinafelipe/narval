@@ -109,8 +109,10 @@ export default function StartupsClient({
   }, [selected]);
 
   function handleStartupClick(startup: Startup) {
-    if (isMobile) {
-      router.push(startupPath(startup));
+    // No side detail panel (map occupies it, or mobile) → expand the row inline
+    // to the detail card instead of navigating to the full profile.
+    if (showMap || isMobile) {
+      setSelected((prev) => (prev?.id === startup.id ? null : startup));
       return;
     }
     if (selected?.id === startup.id) {
@@ -181,6 +183,19 @@ export default function StartupsClient({
     />
   );
 
+  // When the map occupies the side panel (or on mobile) there's nowhere to show a
+  // startup's details, so the selected row expands inline into the detail card.
+  const detailInList = showMap || isMobile;
+
+  const inlineDetail = (s: Startup) => (
+    <StartupPageClient
+      startup={s}
+      compact={true}
+      hideShare={true}
+      onClose={() => setSelected(null)}
+    />
+  );
+
   const listEl = (
     <ul
       role="list"
@@ -193,15 +208,26 @@ export default function StartupsClient({
             : `No results for "${query}"`}
         </li>
       ) : (
-        filtered.map((s) => (
-          <StartupListRow
-            key={s.id}
-            startup={s}
-            expanded={expanded}
-            selected={selected?.id === s.id}
-            onClick={() => handleStartupClick(s)}
-          />
-        ))
+        filtered.map((s) =>
+          detailInList && selected?.id === s.id ? (
+            <li
+              key={s.id}
+              className={`border-b border-l-4 border-border last:border-b-0 ${
+                s.has_boosted ? "border-l-brand" : "border-l-transparent"
+              }`}
+            >
+              {inlineDetail(s)}
+            </li>
+          ) : (
+            <StartupListRow
+              key={s.id}
+              startup={s}
+              expanded={expanded && !isMobile}
+              selected={selected?.id === s.id}
+              onClick={() => handleStartupClick(s)}
+            />
+          ),
+        )
       )}
     </ul>
   );
@@ -231,6 +257,8 @@ export default function StartupsClient({
               title="All Startups"
               subtitle={allStartupsSubtitle}
               onStartupClick={handleStartupClick}
+              selectedId={selected?.id}
+              renderExpanded={inlineDetail}
               showLocation
             />
           </div>
