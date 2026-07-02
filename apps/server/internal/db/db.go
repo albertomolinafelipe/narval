@@ -30,5 +30,6 @@ func Migrate(db *gorm.DB) error {
 		&models.RegistrationDraft{},
 		&models.StartupFavorite{},
 		&models.StartupBoost{},
+		&models.DomainVerification{},
 	)
 }

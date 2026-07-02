@@ -1,0 +1,49 @@
+post:
+  operationId: confirmDomainVerification
+  summary: Confirm domain verification with the one-time code
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ConfirmDomainVerificationRequest.yaml
+  responses:
+    '200':
+      description: Domain verified; returns the updated startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Startup.yaml
+    '400':
+      description: Missing code or no verification in progress
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Incorrect, expired, or too many attempts
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Not the owner of this startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

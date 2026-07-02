@@ -324,6 +324,65 @@ export async function boostStartup(
 }
 
 /**
+ * Start domain verification: emails a one-time code to <emailPrefix>@<domain>.
+ * SuperTokens session cookies are automatically included.
+ */
+export async function startDomainVerification(
+  id: string,
+  website: string,
+  emailPrefix: string,
+): Promise<{ email: string }> {
+  const response = await fetch(`/api/proxy/startups/${id}/verify-domain`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ website, email_prefix: emailPrefix }),
+  });
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as {
+      message?: string;
+      code?: string;
+    };
+    if (body.code === "SUBDOMAIN_NOT_ALLOWED")
+      throw new Error("Use your root domain (e.g. example.com, not app.example.com).");
+    if (body.code === "PUBLIC_DOMAIN")
+      throw new Error("That's a personal email provider. Use your company domain.");
+    if (response.status === 409)
+      throw new Error(body.message ?? "This domain is already verified by another startup.");
+    throw new Error(body.message ?? "Failed to start verification.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Confirm domain verification with the emailed code. Returns the updated,
+ * now-verified startup. SuperTokens session cookies are automatically included.
+ */
+export async function confirmDomainVerification(
+  id: string,
+  code: string,
+): Promise<Startup> {
+  const response = await fetch(
+    `/api/proxy/startups/${id}/verify-domain/confirm`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ code }),
+    },
+  );
+
+  if (!response.ok) {
+    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    throw new Error(body.message ?? "Verification failed.");
+  }
+
+  return response.json();
+}
+
+/**
  * Partially update a startup. Only the fields present in `patch` are changed;
  * the server leaves omitted fields untouched. Returns the updated startup.
  * SuperTokens session cookies are automatically included.

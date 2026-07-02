@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/narval/server/internal/api/common"
+	"github.com/narval/server/internal/email"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
 	"github.com/narval/server/models"
@@ -49,16 +50,19 @@ var validIndustries = map[string]bool{
 // Handler handles all /startups routes.
 type Handler struct {
 	*common.BaseHandler
+	Mailer email.Sender
 }
 
 // NewHandler creates a new startups handler.
-func NewHandler(db *gorm.DB, s storage.Interface) *Handler {
+func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender) *Handler {
 	return &Handler{
 		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),
+		Mailer:      mailer,
 	}
 }
 
 // NewHandlerWithStorage is an alias used in tests to pass a fake storage client.
+// Mailer is nil; email-sending endpoints are not exercised by these tests.
 func NewHandlerWithStorage(db *gorm.DB, s storage.Interface) *Handler {
 	return &Handler{
 		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),

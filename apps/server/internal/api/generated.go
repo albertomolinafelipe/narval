@@ -65,6 +65,12 @@ const (
 // AccountType defines model for AccountType.
 type AccountType string
 
+// ConfirmDomainVerificationRequest defines model for ConfirmDomainVerificationRequest.
+type ConfirmDomainVerificationRequest struct {
+	// Code The one-time code delivered to the work email.
+	Code string `json:"code"`
+}
+
 // CreateStartupRequest defines model for CreateStartupRequest.
 type CreateStartupRequest struct {
 	ContactFunding *string       `json:"contact_funding,omitempty"`
@@ -131,22 +137,25 @@ type RegisterRequest struct {
 	// Email Required when account_type is "user"
 	Email *openapi_types.Email `json:"email,omitempty"`
 
-	// EmailPrefix Required when account_type is "startup" or "investor". The local part of the email (before @). The domain is derived from the website.
-	EmailPrefix *string `json:"email_prefix,omitempty"`
-
-	// Name Required when account_type is "startup" or "investor"
+	// Name Required when account_type is "startup". Startups register with a plain email and verify their domain later from the profile.
 	Name *string `json:"name,omitempty"`
 
 	// Nickname Required when account_type is "user"
 	Nickname *string `json:"nickname,omitempty"`
 	Password string  `json:"password"`
-
-	// Website Required when account_type is "startup" or "investor"
-	Website *string `json:"website,omitempty"`
 }
 
 // Stage defines model for Stage.
 type Stage string
+
+// StartDomainVerificationRequest defines model for StartDomainVerificationRequest.
+type StartDomainVerificationRequest struct {
+	// EmailPrefix Local part (before @) of an address at the domain the code is sent to, e.g. "you" for you@acme.com.
+	EmailPrefix string `json:"email_prefix"`
+
+	// Website The company website/domain to verify (e.g. acme.com).
+	Website string `json:"website"`
+}
 
 // Startup defines model for Startup.
 type Startup struct {
@@ -369,6 +378,12 @@ type UploadStartupBannerMultipartRequestBody UploadStartupBannerMultipartBody
 // UploadStartupLogoMultipartRequestBody defines body for UploadStartupLogo for multipart/form-data ContentType.
 type UploadStartupLogoMultipartRequestBody UploadStartupLogoMultipartBody
 
+// StartDomainVerificationJSONRequestBody defines body for StartDomainVerification for application/json ContentType.
+type StartDomainVerificationJSONRequestBody = StartDomainVerificationRequest
+
+// ConfirmDomainVerificationJSONRequestBody defines body for ConfirmDomainVerification for application/json ContentType.
+type ConfirmDomainVerificationJSONRequestBody = ConfirmDomainVerificationRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Login with username and password
@@ -428,6 +443,12 @@ type ServerInterface interface {
 	// Upload a logo image for the startup
 	// (POST /startups/{id}/logo)
 	UploadStartupLogo(c *gin.Context, id openapi_types.UUID)
+	// Start domain verification for a startup — emails a one-time code
+	// (POST /startups/{id}/verify-domain)
+	StartDomainVerification(c *gin.Context, id openapi_types.UUID)
+	// Confirm domain verification with the one-time code
+	// (POST /startups/{id}/verify-domain/confirm)
+	ConfirmDomainVerification(c *gin.Context, id openapi_types.UUID)
 	// Aggregate directory counts (startups + users)
 	// (GET /stats)
 	GetStats(c *gin.Context)
@@ -830,6 +851,58 @@ func (siw *ServerInterfaceWrapper) UploadStartupLogo(c *gin.Context) {
 	siw.Handler.UploadStartupLogo(c, id)
 }
 
+// StartDomainVerification operation middleware
+func (siw *ServerInterfaceWrapper) StartDomainVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.StartDomainVerification(c, id)
+}
+
+// ConfirmDomainVerification operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmDomainVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ConfirmDomainVerification(c, id)
+}
+
 // GetStats operation middleware
 func (siw *ServerInterfaceWrapper) GetStats(c *gin.Context) {
 
@@ -889,5 +962,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/startups/:id/boost", wrapper.BoostStartup)
 	router.DELETE(options.BaseURL+"/startups/:id/logo", wrapper.DeleteStartupLogo)
 	router.POST(options.BaseURL+"/startups/:id/logo", wrapper.UploadStartupLogo)
+	router.POST(options.BaseURL+"/startups/:id/verify-domain", wrapper.StartDomainVerification)
+	router.POST(options.BaseURL+"/startups/:id/verify-domain/confirm", wrapper.ConfirmDomainVerification)
 	router.GET(options.BaseURL+"/stats", wrapper.GetStats)
 }

@@ -22,6 +22,10 @@ type Config struct {
 	ResendAPIKey             string
 	EmailFrom                string
 	EmailFromName            string
+	// Google OAuth. When both are empty the third-party recipe is not enabled,
+	// so local dev works without configuring Google.
+	GoogleClientID     string
+	GoogleClientSecret string
 	// CORSOrigins is a comma-separated list of allowed origins, e.g.
 	// "http://localhost:3000,https://app.example.com"
 	CORSOrigins []string
@@ -56,6 +60,8 @@ func Load() *Config {
 		ResendAPIKey:             getEnv("RESEND_API_KEY", ""),
 		EmailFrom:                getEnv("EMAIL_FROM", "noreply@gonarval.com"),
 		EmailFromName:            getEnv("EMAIL_FROM_NAME", "Narval"),
+		GoogleClientID:           getEnv("GOOGLE_CLIENT_ID", ""),
+		GoogleClientSecret:       getEnv("GOOGLE_CLIENT_SECRET", ""),
 		CORSOrigins:              splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")),
 	}
 }

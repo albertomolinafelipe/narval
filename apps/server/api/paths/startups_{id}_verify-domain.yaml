@@ -1,0 +1,51 @@
+post:
+  operationId: startDomainVerification
+  summary: Start domain verification for a startup — emails a one-time code
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StartDomainVerificationRequest.yaml
+  responses:
+    '202':
+      description: Verification code sent to the work email
+    '400':
+      description: Validation error (invalid domain, subdomain, or public email domain)
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Not the owner of this startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Domain already verified by another startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

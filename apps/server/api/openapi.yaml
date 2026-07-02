@@ -44,4 +44,8 @@ paths:
     $ref: paths/startups_{id}_bookmark.yaml
   /startups/{id}/boost:
     $ref: paths/startups_{id}_boost.yaml
+  /startups/{id}/verify-domain:
+    $ref: paths/startups_{id}_verify-domain.yaml
+  /startups/{id}/verify-domain/confirm:
+    $ref: paths/startups_{id}_verify-domain_confirm.yaml
 

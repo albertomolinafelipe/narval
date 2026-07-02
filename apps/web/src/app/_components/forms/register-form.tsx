@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { ChevronLeft, User } from "lucide-react";
 import { GiUnicorn } from "react-icons/gi";
 import RegisterCompanyForm from "./register-company-form";
 import { Button } from "@/components/ui/button";
+import { GoogleButton, OrDivider } from "../auth/google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
 
 type AccountType = "user" | "startup";
@@ -57,12 +57,19 @@ function UserDetailsStep({
 }) {
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
+  const [emailMode, setEmailMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+
+    // First click reveals the email field; the next one sends the code.
+    if (!emailMode) {
+      setEmailMode(true);
+      return;
+    }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
@@ -119,32 +126,12 @@ function UserDetailsStep({
         </span>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="reg-email"
-          className="text-xs font-medium text-text-muted"
-        >
-          Email
-        </label>
-        <input
-          id="reg-email"
-          type="text"
-          inputMode="email"
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoComplete="email"
-          className="input"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 px-4">
         <label
           htmlFor="reg-nickname"
           className="text-xs font-medium text-text-muted"
         >
-          Nickname
+          Nickname <span className="text-danger">*</span>
         </label>
         <input
           id="reg-nickname"
@@ -155,15 +142,51 @@ function UserDetailsStep({
           required
           minLength={2}
           maxLength={50}
+          autoFocus
           className="input"
         />
       </div>
 
-      {error && <p className="text-xs text-danger">{error}</p>}
+      <fieldset
+        disabled={loading || nickname.trim().length < 2}
+        className="mt-2 flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
+      >
+        {emailMode && (
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="reg-email"
+              className="text-xs font-medium text-text-muted"
+            >
+              Email <span className="text-danger">*</span>
+            </label>
+            <input
+              id="reg-email"
+              type="text"
+              inputMode="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              autoFocus
+              className="input"
+            />
+          </div>
+        )}
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Sending code…" : "Continue"}
-      </Button>
+        {error && <p className="text-xs text-danger">{error}</p>}
+
+        <Button type="submit" className="w-full">
+          {!emailMode
+            ? "Continue with email"
+            : loading
+              ? "Sending code…"
+              : "Send code"}
+        </Button>
+
+        <OrDivider />
+        <GoogleButton intent={{ account_type: "user", name: nickname.trim() }} />
+      </fieldset>
     </form>
   );
 }
@@ -179,7 +202,6 @@ function UserVerifyStep({
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const submitted = useRef(false);
 
   async function verify(c: string) {

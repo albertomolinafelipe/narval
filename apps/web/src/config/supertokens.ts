@@ -1,4 +1,5 @@
 import Passwordless from "supertokens-auth-react/recipe/passwordless";
+import ThirdParty from "supertokens-auth-react/recipe/thirdparty";
 import Session from "supertokens-auth-react/recipe/session";
 
 export const superTokensConfig = {
@@ -12,7 +13,7 @@ export const superTokensConfig = {
   recipeList: [
     Passwordless.init({
       contactMethod: "EMAIL",
-      
+
       // Override default UI to match our custom flow
       override: {
         functions: (originalImplementation) => {
@@ -20,6 +21,13 @@ export const superTokensConfig = {
             ...originalImplementation,
           };
         },
+      },
+    }),
+    // Enables the Google sign-in helpers (custom UI — we drive the flow from our
+    // own buttons and callback page). The provider list is still required.
+    ThirdParty.init({
+      signInAndUpFeature: {
+        providers: [ThirdParty.Google.init()],
       },
     }),
     Session.init({

@@ -3,9 +3,7 @@ package auth
 import (
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -14,7 +12,7 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"gorm.io/gorm"
 
-	"github.com/narval/server/internal/api/common"
+	"github.com/narval/server/internal/accounts"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
@@ -26,19 +24,6 @@ var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-
 
 func isValidEmail(email string) bool {
 	return emailRegex.MatchString(email)
-}
-
-func extractDomain(websiteURL string) string {
-	if !strings.Contains(websiteURL, "://") {
-		websiteURL = "https://" + websiteURL
-	}
-	parsed, err := url.Parse(websiteURL)
-	if err != nil {
-		return ""
-	}
-	host := parsed.Hostname()
-	host = strings.TrimPrefix(host, "www.")
-	return host
 }
 
 type Handler struct {
@@ -61,12 +46,9 @@ func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
 func (h *Handler) Register(c *gin.Context) {
 	var req struct {
 		AccountType string  `json:"account_type" binding:"required,oneof=user startup"`
-		Email       string  `json:"email"`        // user + startup open path
-		Nickname    string  `json:"nickname"`     // user path
-		Name        *string `json:"name"`         // startup (both paths)
-		Website     *string `json:"website"`      // startup verified path
-		EmailPrefix *string `json:"email_prefix"` // startup verified path
-		Verified    bool    `json:"verified"`     // true = domain path, false = open path
+		Email       string  `json:"email"`    // required for both account types
+		Nickname    string  `json:"nickname"` // user path
+		Name        *string `json:"name"`     // startup path
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
@@ -75,7 +57,9 @@ func (h *Handler) Register(c *gin.Context) {
 
 	var email, nickname string
 
-	// Handle different registration flows
+	// Handle different registration flows. Domain verification is no longer part
+	// of signup — every account starts unverified and verifies its domain later
+	// from the profile.
 	if req.AccountType == "user" {
 		// User registration: email + nickname required
 		if req.Email == "" || req.Nickname == "" {
@@ -85,54 +69,17 @@ func (h *Handler) Register(c *gin.Context) {
 		email = req.Email
 		nickname = req.Nickname
 	} else {
-		// Startup: name always required
+		// Startup registration: name + email required
 		if req.Name == nil || *req.Name == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "name is required for startup registration"})
 			return
 		}
-		nickname = *req.Name
-
-		if req.Verified {
-			// Verified path: domain + work email required
-			if req.Website == nil || req.EmailPrefix == nil {
-				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "website and email_prefix required for verified registration"})
-				return
-			}
-
-			domain := extractDomain(*req.Website)
-			if domain == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "invalid website URL"})
-				return
-			}
-
-			normalizedDomain := strings.ToLower(strings.TrimPrefix(domain, "www."))
-
-			if !common.IsRootDomain(normalizedDomain) {
-				c.JSON(http.StatusBadRequest, gin.H{"code": "SUBDOMAIN_NOT_ALLOWED", "message": "please use your root domain (e.g. example.com, not app.example.com)"})
-				return
-			}
-
-			if isPublicEmailDomain(normalizedDomain) {
-				c.JSON(http.StatusBadRequest, gin.H{"code": "PUBLIC_DOMAIN", "message": "use your company domain, not a personal email provider"})
-				return
-			}
-
-			var domainCount int64
-			h.db.Model(&models.Startup{}).Where("verified_domain = ?", normalizedDomain).Count(&domainCount)
-			if domainCount > 0 {
-				c.JSON(http.StatusConflict, gin.H{"code": "DOMAIN_TAKEN", "message": "a startup with this domain is already registered"})
-				return
-			}
-
-			email = *req.EmailPrefix + "@" + domain
-		} else {
-			// Open path: any email accepted
-			if req.Email == "" {
-				c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email is required"})
-				return
-			}
-			email = req.Email
+		if req.Email == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email is required"})
+			return
 		}
+		email = req.Email
+		nickname = *req.Name
 	}
 
 	// Validate email format
@@ -167,10 +114,6 @@ func (h *Handler) Register(c *gin.Context) {
 	}
 	if req.AccountType == "startup" {
 		draft.Name = *req.Name
-		draft.Verified = req.Verified
-		if req.Verified && req.Website != nil {
-			draft.Website = strings.ToLower(strings.TrimPrefix(extractDomain(*req.Website), "www."))
-		}
 	}
 
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
@@ -257,57 +200,30 @@ func (h *Handler) Verify(c *gin.Context) {
 
 	authUserID := resp.OK.User.ID
 
-	// Create or update user
-	var user models.User
-	result := h.db.Where("email = ?", req.Email).First(&user)
-	if result.Error != nil {
-		// Create new user (registration flow)
-		user = models.User{
-			AuthUserID:  authUserID,
-			Email:       req.Email,
-			Nickname:    draft.Nickname,
+	// Reconcile the local user. A draft is present for both registration (new
+	// user, uses the draft's account type/name) and login (existing user, draft
+	// is ignored). Same helper the third-party flow uses.
+	var intent *accounts.Intent
+	if draftErr == nil {
+		intent = &accounts.Intent{
 			AccountType: draft.AccountType,
+			Nickname:    draft.Nickname,
+			Name:        draft.Name,
 		}
-		if err := h.db.Create(&user).Error; err != nil {
-			h.logger.Printf("failed to create user: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
-			return
-		}
-
-		// Auto-create startup profile if applicable
-		if draft.AccountType == models.AccountTypeStartup {
-			startup := models.Startup{
-				Name:    draft.Name,
-				Website: draft.Website,
-				// Lock in the verified domain; the editable Website is seeded
-				// to the same value but the owner can change it later.
-				VerifiedDomain: draft.Website,
-				Verified:       draft.Verified,
-				OwnerID:        user.ID,
-				OwnerEmail:     user.Email,
-			}
-			if err := h.db.Create(&startup).Error; err != nil {
-				h.logger.Printf("failed to create startup profile: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "startup profile creation failed"})
-				return
-			}
-		}
-
+	}
+	user, err := accounts.LinkOrCreate(h.db, req.Email, authUserID, intent)
+	if err != nil {
+		h.logger.Printf("failed to reconcile user: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
+		return
+	}
+	if draftErr == nil {
 		h.db.Delete(&draft)
-	} else {
-		// Update existing user (login flow)
-		user.AuthUserID = authUserID
-		h.db.Save(&user)
 	}
 
 	// Create SuperTokens session with user metadata in access token payload
 	tenantIDForSession := "public"
-	accessTokenPayload := map[string]interface{}{
-		"email":        user.Email,
-		"account_type": user.AccountType,
-		"user_id":      user.ID, // Our internal user ID (not auth_user_id)
-	}
-	_, err = session.CreateNewSession(c.Request, c.Writer, tenantIDForSession, authUserID, accessTokenPayload, nil)
+	_, err = session.CreateNewSession(c.Request, c.Writer, tenantIDForSession, authUserID, accounts.SessionPayload(user), nil)
 	if err != nil {
 		h.logger.Printf("failed to create session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "session creation failed"})

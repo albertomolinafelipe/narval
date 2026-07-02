@@ -16,6 +16,7 @@ import (
 	"github.com/narval/server/internal/api/startups"
 	"github.com/narval/server/internal/api/stats"
 	"github.com/narval/server/internal/config"
+	"github.com/narval/server/internal/email"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
 )
@@ -75,6 +76,12 @@ func (s *server) UnfavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 func (s *server) BoostStartup(c *gin.Context, id openapi_types.UUID) {
 	s.startups.BoostStartup(c, id)
 }
+func (s *server) StartDomainVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.StartDomainVerification(c, id)
+}
+func (s *server) ConfirmDomainVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.ConfirmDomainVerification(c, id)
+}
 
 func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.Client) *gin.Engine {
 	if cfg.Env == "production" {
@@ -109,7 +116,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 	srv := &server{
 		auth:     auth.NewHandler(cfg, db, rdb),
 		health:   &health.Handler{},
-		startups: startups.NewHandler(db, store),
+		startups: startups.NewHandler(db, store, email.New(cfg)),
 		stats:    stats.NewHandler(db),
 	}
 

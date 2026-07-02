@@ -17,10 +17,8 @@ type RegistrationDraft struct {
 	PreAuthSessionID string      `gorm:"not null"                json:"pre_auth_session_id"`
 	DeviceID         string      `gorm:"not null"                json:"device_id"`
 
-	// Optional fields for startup/investor registrations
-	Name     string `json:"name"`     // Required for startup/investor, empty for plain users
-	Website  string `json:"website"`  // Required for startup/investor, empty for plain users
-	Verified bool   `json:"verified"` // True when registered via domain+work-email path
+	// Name is required for startup registration, empty for plain users.
+	Name string `json:"name"`
 
 	CreatedAt time.Time `json:"created_at"`
 }
