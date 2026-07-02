@@ -10,6 +10,13 @@ export type SortMode = "recent" | "trending";
 const singleToggleBox =
   "inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm";
 
+// The primary list/map switch gets a distinct pill treatment: fully rounded,
+// softer border, and a brand-filled active segment so it reads as the main view
+// control rather than blending in with the sort/filter toggles.
+const viewToggleBox = "rounded-full border-border/60 bg-bg-subtle p-1 shadow-none";
+const viewToggleItem =
+  "rounded-full px-3 py-1 data-[state=on]:bg-brand data-[state=on]:text-brand-fg data-[state=on]:shadow-sm";
+
 interface Props {
   view: View;
   onViewChange: (view: View) => void;
@@ -44,14 +51,15 @@ export function StartupsToolbar({
       <ToggleGroup
         type="single"
         value={view}
+        className={viewToggleBox}
         // Single-select must always keep a value — ignore deselection (empty).
         onValueChange={(v) => v && onViewChange(v as View)}
       >
-        <ToggleGroupItem value="list">
+        <ToggleGroupItem value="list" className={viewToggleItem}>
           <List size={13} />
           List
         </ToggleGroupItem>
-        <ToggleGroupItem value="map">
+        <ToggleGroupItem value="map" className={viewToggleItem}>
           <Map size={13} />
           Map
         </ToggleGroupItem>

@@ -89,6 +89,11 @@ export default function StartupsMap({
     <div className="relative h-full w-full overflow-hidden rounded-xl border border-border">
       <Map
         ref={mapRef}
+        // Pool and reuse the underlying mapbox instance across mounts instead of
+        // destroying it on every list<->map switch. Prevents mapbox's teardown
+        // race ("this.errorCb is not a function") when a style/tile request
+        // resolves after the map has been unmounted.
+        reuseMaps
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         initialViewState={{
           longitude: -3.7,

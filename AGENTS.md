@@ -4,25 +4,31 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Prettify & maintain the frontend
+## 🚧 Currently working on: Startups search UI/UX
 
-Branch `prettify-home-page`. The theme of this branch is **polishing and maintaining the web frontend** — not new features. Concretely:
+Branch `search-ui`. This branch is **UI/UX only** — building out the search *experience and layout*, not the logic behind it. **No backend work** (server-side `?q=`, full-text search, ranking are out of scope, deferred to a later branch). Any advanced field whose filtering isn't wired up yet ships **disabled or marked WIP** — build the visual affordance, don't fake the behavior.
 
-- **Responsiveness** — make pages behave well across mobile/tablet/desktop breakpoints.
-- **Component consistency** — unify spacing, colors, and interaction patterns around the existing design tokens + shadcn primitives; replace hand-rolled elements with shared components.
-- **Refactoring** — break up large page/client files, extract reusable pieces, tidy structure.
-- **Visual polish** — landing/home page and the `/startups` pages.
+### Target design — expandable search
 
-Keep changes focused and non-behavioral where possible; this is cleanup, not a rewrite.
+A single search control with two states:
+
+- **Collapsed (default):** a simple, polished text input. Typing filters the list, exactly as today (client-side over the already-fetched startups). This is the common case and should feel clean and responsive across mobile/tablet/desktop breakpoints. The existing **Details** toggle stays alongside it.
+- **Expanded:** an expand affordance grows the control to roughly **3× its height**, revealing an advanced-filter panel with structured fields — **geolocation** (location filter), **people** (founders/team), and room for more (industry, stage) later. Collapsing hides the panel again; text search keeps working in both states.
+
+Keep it simple: plain text search is the primary path; the advanced panel is progressive disclosure, not a required step.
+
+### Ground rules for this branch
+
+- **Component consistency** — build on the existing design tokens + shadcn primitives (`Input`, `Toggle`, `ToggleGroup`, `components/ui/`); don't hand-roll raw elements.
+- **Responsiveness** — collapsed and expanded states must both behave across breakpoints.
+- **Only wire up what works client-side** — text search reuses/extends the existing `filtered` `useMemo` in `startups-client.tsx`. Any advanced field that can't be filtered from the in-memory list yet ships **disabled or visibly WIP** (present the UI, gray it out / label it, don't wire fake logic). No API params, no backend.
+- **Where the code lives** — the control is `startups/_components/startups-toolbar.tsx` today; extract the search piece into its own component if it grows.
 
 ### Progress
 
-- [x] **Stale image cache fix (logo + banner)** — logo/banner were stored at a fixed object key (`logos/<id>/logo.jpg`) and overwritten in place, so the URL never changed and MinIO's missing `Cache-Control` header served stale bytes. `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys (matching screenshots/founders) for a unique URL per upload. Orphan cleanup left as a separate TODO.
-- [x] **Startups view/edit split** — the public startup page (`/startups/[slug]` and `/startups/in/[id]`) is now read-only for everyone, including the owner. Owners get an **Edit** button routing to `/startups/in/[id]/edit`, which renders the same page with inline editing on. An `editable` prop gates `ProfileEditProvider` (`editable && isOwner`); `startupEditPath()` is the single source for the edit URL.
-- [x] **Rendering pattern applied to startup links** — `lib/startup/` selector layer (`parseProductLinks`, `getStartupSocials`, `getStartupProductLinks`) + `lib/view-variant.ts` (`ViewVariant`). The compact panel's socials/product links are selector-driven via a read-only `<StartupLinks>`, styled with the new shadcn `Badge`. **Follow-up:** the editable `SocialsColumn` still has its own link registry — unify it onto `lib/startup/links.ts`.
-- [x] **`startups-client.tsx` refactor (730 → ~350 lines)** — extracted `startups/_components/` (`StartupsToolbar`, `StartupListRow`, `StartupResultsList` [merged the two near-duplicate map lists], `StartupDetailPlaceholder`), a shared `useMediaQuery` hook (`useSyncExternalStore`-based), and shadcn primitives (`Input`, `Toggle`, `ToggleGroup`; the hand-rolled `Segmented` was removed).
-- [x] **Startups detail panel** — persistent right-hand panel: the list stays a fixed width and the panel is always shown, rendering `StartupDetailPlaceholder` until a startup is clicked, then swapping to its details. The compact panel header is a full click-target (stretched link) that opens the full page.
-- [~] **Home page polish** — in progress. First up: shrink the animated background blobs on mobile.
+- [ ] **Collapsed search polish** — refine the inline input (focus/clear states, sizing, mobile behavior).
+- [ ] **Expandable panel** — expand toggle + ~3× height advanced panel scaffold.
+- [ ] **Advanced fields (UI)** — geolocation, people, etc. rendered as controls; wire up the ones filterable client-side, leave the rest disabled/WIP.
 
 ---
 
