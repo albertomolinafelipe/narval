@@ -126,7 +126,7 @@ function UserDetailsStep({
         </span>
       </div>
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 px-4">
         <label
           htmlFor="reg-nickname"
           className="text-xs font-medium text-text-muted"

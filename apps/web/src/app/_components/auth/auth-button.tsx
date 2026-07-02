@@ -156,8 +156,6 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   if (!codeSent) {
     return (
       <div className="flex flex-col gap-3">
-        <GoogleButton />
-        <OrDivider />
         <form onSubmit={handleSendCode} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label
@@ -188,6 +186,8 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
             {loading ? "Sending code…" : "Send code"}
           </Button>
         </form>
+        <OrDivider />
+        <GoogleButton />
       </div>
     );
   }

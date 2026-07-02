@@ -59,7 +59,7 @@ function DetailsStep({
 
       {submitError && <p className="text-xs text-danger">{submitError}</p>}
 
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 px-4">
         <label htmlFor="rc-name" className="text-xs font-medium text-text-muted">{label} <span className="text-danger">*</span></label>
         <input id="rc-name" type="text" placeholder="Acme Inc" value={name}
           onChange={(e) => { setName(e.target.value); setNameError(""); }}
