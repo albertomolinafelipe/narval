@@ -1,4 +1,4 @@
-import { List, Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
+import { Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SlideSwitch } from "@/components/ui/slide-switch";
 import { Input } from "@/components/ui/input";
@@ -9,16 +9,15 @@ export type SortMode = "recent" | "trending";
 // Brand-filled active state shared by the on/off SlideSwitch toggles.
 const activeSwitch = "border-brand bg-brand hover:bg-brand-hover";
 
-// The primary list/map switch gets a distinct pill treatment: fully rounded,
-// softer border, and a brand-filled active segment so it reads as the main view
-// control rather than blending in with the sort/filter toggles.
+// Pill treatment for the segmented sort control: fully rounded, softer border,
+// and a brand-filled active segment.
 const viewToggleBox = "rounded-full border-border/60 bg-bg-subtle p-1 shadow-none";
 const viewToggleItem =
   "rounded-full px-3 py-1 data-[state=on]:bg-brand data-[state=on]:text-brand-fg data-[state=on]:shadow-sm";
 
 interface Props {
-  view: View;
-  onViewChange: (view: View) => void;
+  showMap: boolean;
+  onShowMapChange: (showMap: boolean) => void;
   showFavorites: boolean;
   onFavoritesToggle: () => void;
   sort: SortMode;
@@ -30,12 +29,12 @@ interface Props {
 }
 
 /**
- * Controls above the startups list/map. The detailed-view toggle only applies to
- * the list, so it's hidden in map view.
+ * Controls above the startups list. Map is an on/off toggle that swaps the right
+ * panel for a map; the detailed-view toggle only affects the list rows.
  */
 export function StartupsToolbar({
-  view,
-  onViewChange,
+  showMap,
+  onShowMapChange,
   showFavorites,
   onFavoritesToggle,
   sort,
@@ -61,22 +60,17 @@ export function StartupsToolbar({
         />
       </div>
 
-      <ToggleGroup
-        type="single"
-        value={view}
-        className={viewToggleBox}
-        // Single-select must always keep a value — ignore deselection (empty).
-        onValueChange={(v) => v && onViewChange(v as View)}
-      >
-        <ToggleGroupItem value="list" className={viewToggleItem}>
-          <List size={13} />
-          List
-        </ToggleGroupItem>
-        <ToggleGroupItem value="map" className={viewToggleItem}>
+      <label className="flex items-center gap-2">
+        <span className="text-xs font-medium text-text-muted">Map</span>
+        <SlideSwitch
+          checked={showMap}
+          onCheckedChange={onShowMapChange}
+          checkedClassName={activeSwitch}
+          aria-label="Toggle map"
+        >
           <Map size={13} />
-          Map
-        </ToggleGroupItem>
-      </ToggleGroup>
+        </SlideSwitch>
+      </label>
 
       <ToggleGroup
         type="single"
@@ -106,19 +100,17 @@ export function StartupsToolbar({
         </SlideSwitch>
       </label>
 
-      {view === "list" && (
-        <label className="flex items-center gap-2 max-md:hidden">
-          <span className="text-xs font-medium text-text-muted">Details</span>
-          <SlideSwitch
-            checked={expanded}
-            onCheckedChange={onExpandedChange}
-            checkedClassName={activeSwitch}
-            aria-label="Toggle detailed view"
-          >
-            <LayoutList size={13} />
-          </SlideSwitch>
-        </label>
-      )}
+      <label className="flex items-center gap-2 max-md:hidden">
+        <span className="text-xs font-medium text-text-muted">Details</span>
+        <SlideSwitch
+          checked={expanded}
+          onCheckedChange={onExpandedChange}
+          checkedClassName={activeSwitch}
+          aria-label="Toggle detailed view"
+        >
+          <LayoutList size={13} />
+        </SlideSwitch>
+      </label>
     </div>
   );
 }
