@@ -13,7 +13,6 @@ import StartupPageClient from "./startup-page-client";
 import { StartupsToolbar, type View, type SortMode } from "./_components/startups-toolbar";
 import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
-import { StartupResultsList } from "./_components/startup-results-list";
 import { ConstraintChips } from "./_components/constraint-chips";
 import { startupPath } from "@/lib/startup-url";
 import {
@@ -174,8 +173,6 @@ export default function StartupsClient({
     />
   );
 
-  const allStartupsSubtitle = `${filtered.length} startup${filtered.length !== 1 ? "s" : ""}`;
-
   const chips = (
     <ConstraintChips
       constraints={constraints}
@@ -241,27 +238,17 @@ export default function StartupsClient({
     />
   );
 
-  // On mobile there's no side panel, so the map takes over the whole area with
-  // the (constraint-filtered) results list stacked below it. Tapping a pin adds
-  // a location constraint, narrowing that list.
+  // On mobile there's no side panel, so a shortened map sits above the same
+  // scrollable list used in list view. Tapping a pin adds a location constraint,
+  // narrowing that list.
   if (isMobile && showMap) {
     return (
       <div className="flex h-full flex-col overflow-hidden">
         {toolbar}
         {chips}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-hidden">{mapEl}</div>
-          <div className="min-h-0 flex-1 overflow-hidden border-t border-border">
-            <StartupResultsList
-              startups={filtered}
-              title="All Startups"
-              subtitle={allStartupsSubtitle}
-              onStartupClick={handleStartupClick}
-              selectedId={selected?.id}
-              renderExpanded={inlineDetail}
-              showLocation
-            />
-          </div>
+        <div className="flex flex-1 flex-col gap-3 overflow-hidden">
+          <div className="h-64 shrink-0 overflow-hidden">{mapEl}</div>
+          {listEl}
         </div>
       </div>
     );
