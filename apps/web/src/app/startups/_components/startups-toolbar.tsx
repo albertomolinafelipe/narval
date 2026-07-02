@@ -1,5 +1,4 @@
 import { List, Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SlideSwitch } from "@/components/ui/slide-switch";
 import { Input } from "@/components/ui/input";
@@ -7,9 +6,8 @@ import { Input } from "@/components/ui/input";
 export type View = "list" | "map";
 export type SortMode = "recent" | "trending";
 
-// Matches the ToggleGroup container so standalone (single) toggles look the same.
-const singleToggleBox =
-  "inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm";
+// Brand-filled active state shared by the on/off SlideSwitch toggles.
+const activeSwitch = "border-brand bg-brand hover:bg-brand-hover";
 
 // The primary list/map switch gets a distinct pill treatment: fully rounded,
 // softer border, and a brand-filled active segment so it reads as the main view
@@ -32,8 +30,8 @@ interface Props {
 }
 
 /**
- * Controls above the startups list/map. Sort and the detailed-view toggle only
- * apply to the list, so they're hidden in map view.
+ * Controls above the startups list/map. The detailed-view toggle only applies to
+ * the list, so it's hidden in map view.
  */
 export function StartupsToolbar({
   view,
@@ -49,6 +47,20 @@ export function StartupsToolbar({
 }: Props) {
   return (
     <div className="flex items-center gap-2 pb-3">
+      <div className="relative w-56">
+        <Search
+          size={13}
+          className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
+        />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          placeholder="Filter startups…"
+          className="h-8 rounded-full border-border/60 bg-bg-subtle pl-9 pr-4 text-xs"
+        />
+      </div>
+
       <ToggleGroup
         type="single"
         value={view}
@@ -66,57 +78,47 @@ export function StartupsToolbar({
         </ToggleGroupItem>
       </ToggleGroup>
 
-      <div className={singleToggleBox}>
-        <Toggle pressed={showFavorites} onPressedChange={onFavoritesToggle}>
+      <ToggleGroup
+        type="single"
+        value={sort}
+        className={viewToggleBox}
+        onValueChange={(v) => v && onSortChange(v as SortMode)}
+      >
+        <ToggleGroupItem value="recent" className={viewToggleItem}>
+          <Clock size={13} />
+          Recent
+        </ToggleGroupItem>
+        <ToggleGroupItem value="trending" className={viewToggleItem}>
+          <TrendingUp size={13} />
+          Trending
+        </ToggleGroupItem>
+      </ToggleGroup>
+
+      <label className="flex items-center gap-2">
+        <span className="text-xs font-medium text-text-muted">Favorites</span>
+        <SlideSwitch
+          checked={showFavorites}
+          onCheckedChange={onFavoritesToggle}
+          checkedClassName={activeSwitch}
+          aria-label="Toggle favorites only"
+        >
           <Star size={13} fill={showFavorites ? "currentColor" : "none"} />
-          Favorites
-        </Toggle>
-      </div>
+        </SlideSwitch>
+      </label>
 
       {view === "list" && (
-        <>
-          <ToggleGroup
-            type="single"
-            value={sort}
-            className={viewToggleBox}
-            onValueChange={(v) => v && onSortChange(v as SortMode)}
+        <label className="flex items-center gap-2 max-md:hidden">
+          <span className="text-xs font-medium text-text-muted">Details</span>
+          <SlideSwitch
+            checked={expanded}
+            onCheckedChange={onExpandedChange}
+            checkedClassName={activeSwitch}
+            aria-label="Toggle detailed view"
           >
-            <ToggleGroupItem value="recent" className={viewToggleItem}>
-              <Clock size={13} />
-              Recent
-            </ToggleGroupItem>
-            <ToggleGroupItem value="trending" className={viewToggleItem}>
-              <TrendingUp size={13} />
-              Trending
-            </ToggleGroupItem>
-          </ToggleGroup>
-
-          <label className="flex items-center gap-2 max-md:hidden">
-            <span className="text-xs font-medium text-text-muted">Details</span>
-            <SlideSwitch
-              checked={expanded}
-              onCheckedChange={onExpandedChange}
-              aria-label="Toggle detailed view"
-            >
-              <LayoutList size={13} />
-            </SlideSwitch>
-          </label>
-        </>
+            <LayoutList size={13} />
+          </SlideSwitch>
+        </label>
       )}
-
-      <div className="relative w-56">
-        <Search
-          size={13}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-        />
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Filter startups…"
-          className="h-8 pl-8 pr-3 text-xs"
-        />
-      </div>
     </div>
   );
 }

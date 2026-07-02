@@ -10,6 +10,8 @@ interface SlideSwitchProps {
   children: React.ReactNode;
   "aria-label": string;
   className?: string;
+  /** Extra track classes applied only in the on state (e.g. a brand fill). */
+  checkedClassName?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export function SlideSwitch({
   onCheckedChange,
   children,
   className,
+  checkedClassName,
   ...props
 }: SlideSwitchProps) {
   return (
@@ -32,6 +35,7 @@ export function SlideSwitch({
       className={cn(
         "relative inline-flex h-8 w-14 items-center rounded-full border border-border bg-bg-subtle p-1 shadow-sm transition-colors hover:bg-bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
         className,
+        checked && checkedClassName,
       )}
       {...props}
     >
