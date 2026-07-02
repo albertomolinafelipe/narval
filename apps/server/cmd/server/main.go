@@ -28,14 +28,15 @@ func main() {
 		log.Fatalf("configuration error: %v", err)
 	}
 
-	// Initialize SuperTokens
-	if err := supertokens.Init(cfg); err != nil {
-		log.Fatalf("failed to initialize SuperTokens: %v", err)
-	}
-
 	database, err := db.Connect(cfg)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
+	}
+
+	// Initialize SuperTokens (needs the DB so third-party sign-in can reconcile
+	// local accounts).
+	if err := supertokens.Init(cfg, database); err != nil {
+		log.Fatalf("failed to initialize SuperTokens: %v", err)
 	}
 
 	if err := db.Migrate(database); err != nil {

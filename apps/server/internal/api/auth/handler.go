@@ -12,6 +12,7 @@ import (
 	"github.com/supertokens/supertokens-golang/recipe/session"
 	"gorm.io/gorm"
 
+	"github.com/narval/server/internal/accounts"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
@@ -199,53 +200,30 @@ func (h *Handler) Verify(c *gin.Context) {
 
 	authUserID := resp.OK.User.ID
 
-	// Create or update user
-	var user models.User
-	result := h.db.Where("email = ?", req.Email).First(&user)
-	if result.Error != nil {
-		// Create new user (registration flow)
-		user = models.User{
-			AuthUserID:  authUserID,
-			Email:       req.Email,
-			Nickname:    draft.Nickname,
+	// Reconcile the local user. A draft is present for both registration (new
+	// user, uses the draft's account type/name) and login (existing user, draft
+	// is ignored). Same helper the third-party flow uses.
+	var intent *accounts.Intent
+	if draftErr == nil {
+		intent = &accounts.Intent{
 			AccountType: draft.AccountType,
+			Nickname:    draft.Nickname,
+			Name:        draft.Name,
 		}
-		if err := h.db.Create(&user).Error; err != nil {
-			h.logger.Printf("failed to create user: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
-			return
-		}
-
-		// Auto-create startup profile if applicable. Profiles start unverified;
-		// the owner verifies their domain later from the profile.
-		if draft.AccountType == models.AccountTypeStartup {
-			startup := models.Startup{
-				Name:       draft.Name,
-				OwnerID:    user.ID,
-				OwnerEmail: user.Email,
-			}
-			if err := h.db.Create(&startup).Error; err != nil {
-				h.logger.Printf("failed to create startup profile: %v", err)
-				c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "startup profile creation failed"})
-				return
-			}
-		}
-
+	}
+	user, err := accounts.LinkOrCreate(h.db, req.Email, authUserID, intent)
+	if err != nil {
+		h.logger.Printf("failed to reconcile user: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
+		return
+	}
+	if draftErr == nil {
 		h.db.Delete(&draft)
-	} else {
-		// Update existing user (login flow)
-		user.AuthUserID = authUserID
-		h.db.Save(&user)
 	}
 
 	// Create SuperTokens session with user metadata in access token payload
 	tenantIDForSession := "public"
-	accessTokenPayload := map[string]interface{}{
-		"email":        user.Email,
-		"account_type": user.AccountType,
-		"user_id":      user.ID, // Our internal user ID (not auth_user_id)
-	}
-	_, err = session.CreateNewSession(c.Request, c.Writer, tenantIDForSession, authUserID, accessTokenPayload, nil)
+	_, err = session.CreateNewSession(c.Request, c.Writer, tenantIDForSession, authUserID, accounts.SessionPayload(user), nil)
 	if err != nil {
 		h.logger.Printf("failed to create session: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "session creation failed"})
