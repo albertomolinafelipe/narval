@@ -1,7 +1,7 @@
-package auth
+package common
 
 // publicEmailDomains lists common free/personal email providers.
-// Used to block non-company domains from the verified registration path.
+// Used to block non-company domains from the domain verification flow.
 var publicEmailDomains = map[string]bool{
 	"gmail.com": true, "googlemail.com": true,
 	"yahoo.com": true, "yahoo.co.uk": true, "yahoo.es": true, "yahoo.fr": true, "yahoo.de": true,
@@ -23,6 +23,8 @@ var publicEmailDomains = map[string]bool{
 	"inbox.com":    true,
 }
 
-func isPublicEmailDomain(domain string) bool {
+// IsPublicEmailDomain reports whether domain is a common free/personal email
+// provider (and therefore not usable to prove ownership of a company domain).
+func IsPublicEmailDomain(domain string) bool {
 	return publicEmailDomains[domain]
 }

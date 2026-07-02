@@ -65,13 +65,12 @@ func TestRegisterVerify_PlainUser(t *testing.T) {
 func TestRegisterVerify_Startup(t *testing.T) {
 	truncateTables(t)
 
-	// 1. Register startup with minimal fields.
+	// 1. Register startup with name + email. Domain verification is no longer
+	// part of signup — it happens later from the profile.
 	draftPayload := `{
 		"account_type":  "startup",
 		"name":          "Draft Corp",
-		"website":       "https://draftcorp.io",
-		"email_prefix":  "hello",
-		"password":      "password123"
+		"email":         "hello@draftcorp.io"
 	}`
 	req, _ := http.NewRequest(http.MethodPost, testServer.URL+"/api/v1/auth/register", strings.NewReader(draftPayload))
 	req.Header.Set("Content-Type", "application/json")
@@ -80,7 +79,6 @@ func TestRegisterVerify_Startup(t *testing.T) {
 	defer resp.Body.Close()
 	require.Equal(t, http.StatusAccepted, resp.StatusCode)
 
-	// Email is derived as hello@draftcorp.io.
 	derivedEmail := "hello@draftcorp.io"
 
 	// 2. Fetch code via test-only endpoint.

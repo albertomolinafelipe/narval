@@ -1,0 +1,13 @@
+type: object
+required:
+  - website
+  - email_prefix
+properties:
+  website:
+    type: string
+    description: The company website/domain to verify (e.g. acme.com).
+  email_prefix:
+    type: string
+    description: >-
+      Local part (before @) of an address at the domain the code is sent to,
+      e.g. "you" for you@acme.com.

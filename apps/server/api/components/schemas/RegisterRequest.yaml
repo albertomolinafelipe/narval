@@ -18,17 +18,11 @@ properties:
     minLength: 2
     maxLength: 50
     description: Required when account_type is "user"
-  # For account_type = "startup" or "investor":
+  # For account_type = "startup":
   name:
     type: string
     minLength: 2
     maxLength: 100
-    description: Required when account_type is "startup" or "investor"
-  website:
-    type: string
-    description: Required when account_type is "startup" or "investor"
-  email_prefix:
-    type: string
     description: >-
-      Required when account_type is "startup" or "investor".
-      The local part of the email (before @). The domain is derived from the website.
+      Required when account_type is "startup". Startups register with a plain
+      email and verify their domain later from the profile.

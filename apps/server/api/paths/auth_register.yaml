@@ -3,7 +3,8 @@ post:
   summary: Begin registration for all account types — sends a verification code
   description: >-
     Unified registration endpoint. For account_type="user", provide email and nickname.
-    For account_type="startup" or "investor", provide name, website, and email_prefix.
+    For account_type="startup", provide name and email. Domain verification happens
+    later from the profile, not at signup.
   requestBody:
     required: true
     content:

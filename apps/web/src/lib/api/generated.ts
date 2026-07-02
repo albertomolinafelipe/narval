@@ -66,7 +66,7 @@ export interface paths {
         put?: never;
         /**
          * Begin registration for all account types — sends a verification code
-         * @description Unified registration endpoint. For account_type="user", provide email and nickname. For account_type="startup" or "investor", provide name, website, and email_prefix.
+         * @description Unified registration endpoint. For account_type="user", provide email and nickname. For account_type="startup", provide name and email. Domain verification happens later from the profile, not at signup.
          */
         post: operations["register"];
         delete?: never;
@@ -267,6 +267,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/startups/{id}/verify-domain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start domain verification for a startup — emails a one-time code */
+        post: operations["startDomainVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/startups/{id}/verify-domain/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm domain verification with the one-time code */
+        post: operations["confirmDomainVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -309,12 +343,8 @@ export interface components {
             email?: string;
             /** @description Required when account_type is "user" */
             nickname?: string;
-            /** @description Required when account_type is "startup" or "investor" */
+            /** @description Required when account_type is "startup". Startups register with a plain email and verify their domain later from the profile. */
             name?: string;
-            /** @description Required when account_type is "startup" or "investor" */
-            website?: string;
-            /** @description Required when account_type is "startup" or "investor". The local part of the email (before @). The domain is derived from the website. */
-            email_prefix?: string;
         };
         VerifyRequest: {
             /** Format: email */
@@ -485,6 +515,16 @@ export interface components {
             profile_setup?: boolean;
             /** @description JSON-encoded array of founders ({name, photo_url, linkedin}) */
             founders?: string;
+        };
+        StartDomainVerificationRequest: {
+            /** @description The company website/domain to verify (e.g. acme.com). */
+            website: string;
+            /** @description Local part (before @) of an address at the domain the code is sent to, e.g. "you" for you@acme.com. */
+            email_prefix: string;
+        };
+        ConfirmDomainVerificationRequest: {
+            /** @description The one-time code delivered to the work email. */
+            code: string;
         };
     };
     responses: never;
@@ -1289,6 +1329,137 @@ export interface operations {
             };
             /** @description User has already boosted this startup (active boost exists) */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startDomainVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartDomainVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Verification code sent to the work email */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation error (invalid domain, subdomain, or public email domain) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not the owner of this startup */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Startup not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Domain already verified by another startup */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    confirmDomainVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmDomainVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Domain verified; returns the updated startup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Startup"];
+                };
+            };
+            /** @description Missing code or no verification in progress */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Incorrect, expired, or too many attempts */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not the owner of this startup */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Startup not found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
