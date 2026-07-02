@@ -24,8 +24,12 @@ export const superTokensConfig = {
       },
     }),
     // Enables the Google sign-in helpers (custom UI — we drive the flow from our
-    // own buttons and callback page).
-    ThirdParty.init(),
+    // own buttons and callback page). The provider list is still required.
+    ThirdParty.init({
+      signInAndUpFeature: {
+        providers: [ThirdParty.Google.init()],
+      },
+    }),
     Session.init({
       tokenTransferMethod: "cookie",
     }),

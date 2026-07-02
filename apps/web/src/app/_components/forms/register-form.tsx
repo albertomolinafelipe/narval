@@ -121,6 +121,41 @@ function UserDetailsStep({
 
       <div className="flex flex-col gap-1">
         <label
+          htmlFor="reg-nickname"
+          className="text-xs font-medium text-text-muted"
+        >
+          Nickname <span className="text-danger">*</span>
+        </label>
+        <input
+          id="reg-nickname"
+          type="text"
+          placeholder="yourname"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+          required
+          minLength={2}
+          maxLength={50}
+          autoFocus
+          className="input"
+        />
+        <p className="text-xs text-text-muted">
+          How you&apos;ll appear on Narval. Pick this first, then continue with
+          email or Google.
+        </p>
+      </div>
+
+      {nickname.trim().length < 2 ? (
+        <p className="text-center text-xs text-text-muted">
+          Enter a nickname above to continue.
+        </p>
+      ) : (
+        <GoogleButton intent={{ account_type: "user", name: nickname.trim() }} />
+      )}
+
+      <OrDivider />
+
+      <div className="flex flex-col gap-1">
+        <label
           htmlFor="reg-email"
           className="text-xs font-medium text-text-muted"
         >
@@ -139,37 +174,15 @@ function UserDetailsStep({
         />
       </div>
 
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="reg-nickname"
-          className="text-xs font-medium text-text-muted"
-        >
-          Nickname
-        </label>
-        <input
-          id="reg-nickname"
-          type="text"
-          placeholder="yourname"
-          value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
-          required
-          minLength={2}
-          maxLength={50}
-          className="input"
-        />
-      </div>
-
       {error && <p className="text-xs text-danger">{error}</p>}
 
-      <Button type="submit" disabled={loading} className="w-full">
-        {loading ? "Sending code…" : "Continue"}
+      <Button
+        type="submit"
+        disabled={loading || nickname.trim().length < 2}
+        className="w-full"
+      >
+        {loading ? "Sending code…" : "Continue with email"}
       </Button>
-
-      <OrDivider />
-      <GoogleButton
-        intent={{ account_type: "user", name: nickname.trim() }}
-        disabled={nickname.trim().length < 2}
-      />
     </form>
   );
 }
