@@ -37,6 +37,7 @@ import { EditableImage } from "./_profile/editable-image";
 import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
 import { SetupBanner } from "./_profile/setup-banner";
+import { VerifyDomainButton } from "./_profile/verify-domain-modal";
 import { Section, SocialLink } from "./_profile/ui";
 import { StartupLinks } from "./_profile/startup-links";
 
@@ -389,6 +390,12 @@ export default function StartupPageClient({
           />
         </div>
         <div className="flex shrink-0 items-center gap-2 max-md:ml-auto">
+          {isOwner && !startup.verified && (
+            <VerifyDomainButton
+              startupId={startup.id}
+              defaultWebsite={startup.website ?? undefined}
+            />
+          )}
           {isOwner &&
             (editable ? (
               <Button asChild variant="soft" size="sm">
