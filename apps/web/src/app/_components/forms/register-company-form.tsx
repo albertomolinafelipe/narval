@@ -26,13 +26,15 @@ function DetailsStep({
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [emailMode, setEmailMode] = useState(false);
   const [nameError, setNameError] = useState("");
   const [emailError, setEmailError] = useState("");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || name.trim().length < 2) {
-      setNameError("Name must be at least 2 characters.");
+    // First click reveals the email field; the next one sends the code.
+    if (!emailMode) {
+      setEmailMode(true);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -69,16 +71,22 @@ function DetailsStep({
         disabled={submitting || name.trim().length < 2}
         className="flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
       >
-        <div className="flex flex-col gap-1">
-          <label htmlFor="rc-email" className="text-xs font-medium text-text-muted">Email <span className="text-danger">*</span></label>
-          <input id="rc-email" type="email" placeholder="you@example.com" value={email}
-            onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
-            required autoComplete="email" className="input" />
-          {emailError && <p className="text-xs text-danger">{emailError}</p>}
-        </div>
+        {emailMode && (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="rc-email" className="text-xs font-medium text-text-muted">Email <span className="text-danger">*</span></label>
+            <input id="rc-email" type="email" placeholder="you@example.com" value={email}
+              onChange={(e) => { setEmail(e.target.value); setEmailError(""); }}
+              required autoComplete="email" autoFocus className="input" />
+            {emailError && <p className="text-xs text-danger">{emailError}</p>}
+          </div>
+        )}
 
         <Button type="submit" className="w-full">
-          {submitting ? "Sending code…" : "Continue with email"}
+          {!emailMode
+            ? "Continue with email"
+            : submitting
+              ? "Sending code…"
+              : "Send code"}
         </Button>
 
         {accountType === "startup" && (

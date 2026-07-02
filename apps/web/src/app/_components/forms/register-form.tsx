@@ -57,12 +57,19 @@ function UserDetailsStep({
 }) {
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
+  const [emailMode, setEmailMode] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
+
+    // First click reveals the email field; the next one sends the code.
+    if (!emailMode) {
+      setEmailMode(true);
+      return;
+    }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
@@ -144,30 +151,37 @@ function UserDetailsStep({
         disabled={loading || nickname.trim().length < 2}
         className="flex flex-col gap-3 rounded-xl border border-border p-4 transition disabled:opacity-50"
       >
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="reg-email"
-            className="text-xs font-medium text-text-muted"
-          >
-            Email <span className="text-danger">*</span>
-          </label>
-          <input
-            id="reg-email"
-            type="text"
-            inputMode="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-            className="input"
-          />
-        </div>
+        {emailMode && (
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="reg-email"
+              className="text-xs font-medium text-text-muted"
+            >
+              Email <span className="text-danger">*</span>
+            </label>
+            <input
+              id="reg-email"
+              type="text"
+              inputMode="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              autoFocus
+              className="input"
+            />
+          </div>
+        )}
 
         {error && <p className="text-xs text-danger">{error}</p>}
 
         <Button type="submit" className="w-full">
-          {loading ? "Sending code…" : "Continue with email"}
+          {!emailMode
+            ? "Continue with email"
+            : loading
+              ? "Sending code…"
+              : "Send code"}
         </Button>
 
         <OrDivider />
