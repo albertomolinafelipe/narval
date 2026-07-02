@@ -263,7 +263,6 @@ cd /opt/narval && docker compose -f docker-compose.prod.yml up -d
 **Production make commands:**
 ```bash
 make deploy-logs     # Tail prod logs via SSH (set DROPLET_IP=<ip>)
-make deploy-seed     # Seed production DB (builds binary, SSHes to droplet, runs in Docker network)
 ```
 
 **Umami setup (one-time after first deploy):**

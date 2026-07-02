@@ -1,6 +1,6 @@
 .PHONY: help dev dev-api dev-web down clean umami-setup server-logs web-logs \
         seed seed-reset build test lint generate \
-        deploy deploy-logs deploy-seed
+        deploy deploy-logs
 
 # Project Directories
 SERVER_DIR := apps/server
@@ -117,26 +117,6 @@ deploy: ## Deploy to production — push to main, CI handles the rest
 deploy-logs: ## Tail production logs via SSH (requires DROPLET_IP env var)
 	@test -n "$(DROPLET_IP)" || (echo "Set DROPLET_IP env var" && exit 1)
 	ssh root@$(DROPLET_IP) "cd /opt/narval && docker compose -f docker-compose.prod.yml logs -f server web"
-
-deploy-seed: ## Seed production DB via SSH (requires DROPLET_IP env var)
-	@test -n "$(DROPLET_IP)" || (echo "Set DROPLET_IP env var" && exit 1)
-	@echo "Building seed binary for linux/amd64..."
-	cd scripts/seed && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /tmp/narval-seed .
-	@echo "Copying to droplet..."
-	scp /tmp/narval-seed root@$(DROPLET_IP):/tmp/narval-seed
-	@echo "Running seed inside Docker network..."
-	ssh root@$(DROPLET_IP) "set -a && source /opt/narval/.env && set +a && \
-	  docker run --rm \
-	    --network narval_default \
-	    -e DATABASE_URL=\"postgresql://narval:\$${POSTGRES_PASSWORD}@postgres:5432/narval?sslmode=disable\" \
-	    -e MINIO_ENDPOINT=minio:9000 \
-	    -e MINIO_ACCESS_KEY=narval \
-	    -e MINIO_SECRET_KEY=\"\$${MINIO_ROOT_PASSWORD}\" \
-	    -e MINIO_PUBLIC_URL=https://storage.gonarval.com \
-	    -e MINIO_USE_SSL=false \
-	    -v /tmp/narval-seed:/seed \
-	    alpine /seed"
-	@rm -f /tmp/narval-seed
 
 generate: ## Regenerate code from OpenAPI spec
 	@echo "Bundling OpenAPI spec..."
