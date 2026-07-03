@@ -256,7 +256,7 @@ export default function StartupsClient({
         </div>
 
         <div
-          className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out"
+          className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out max-md:hidden"
           style={{ width: isMobile ? "0%" : "33.333%", opacity: isMobile ? 0 : 1 }}
         >
           {showMap ? (
