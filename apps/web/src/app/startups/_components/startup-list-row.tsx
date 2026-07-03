@@ -25,10 +25,8 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
       <button
         type="button"
         onClick={onClick}
-        className={`flex w-full items-center gap-3 border-l-4 px-4 py-3 text-left transition hover:bg-bg-subtle ${
-          s.has_boosted
-            ? "border-l-brand bg-brand-subtle/10"
-            : "border-l-transparent"
+        className={`flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-bg-subtle ${
+          s.has_boosted ? "bg-brand-subtle/10" : ""
         } ${selected ? "bg-bg-subtle" : ""}`}
       >
         <div className="shrink-0">

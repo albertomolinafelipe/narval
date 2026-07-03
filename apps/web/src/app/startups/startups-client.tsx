@@ -209,9 +209,7 @@ export default function StartupsClient({
           detailInList && selected?.id === s.id ? (
             <li
               key={s.id}
-              className={`border-b border-l-4 border-border last:border-b-0 ${
-                s.has_boosted ? "border-l-brand" : "border-l-transparent"
-              }`}
+              className="border-b border-border last:border-b-0"
             >
               {inlineDetail(s)}
             </li>
