@@ -177,7 +177,6 @@ export default function StartupsClient({
     <StartupPageClient
       startup={s}
       compact={true}
-      hideShare={true}
       onClose={() => setSelected(null)}
     />
   );

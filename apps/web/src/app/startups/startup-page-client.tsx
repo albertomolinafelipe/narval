@@ -10,21 +10,19 @@ import {
   Share2,
   Check,
   Mail,
-  X,
-  Maximize2,
   BadgeCheck,
   Pencil,
   Eye,
+  ArrowUpRight,
 } from "lucide-react";
 import { MdLocationOn, MdGroups } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
-import { useMediaQuery } from "@/lib/use-media-query";
 import {
   useStartupQuery,
   useFavoriteMutation,
 } from "@/lib/api/use-startups-query";
-import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
+import { Avatar, Pill } from "@/app/_components/shared/list-panel";
 import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
@@ -50,8 +48,6 @@ interface Props {
   compact?: boolean;
   /** Full-page edit mode — renders inline edit affordances for the owner. */
   editable?: boolean;
-  /** Hide the share action (used by the inline "tall row" in the list). */
-  hideShare?: boolean;
   onClose?: () => void;
 }
 
@@ -60,15 +56,10 @@ export default function StartupPageClient({
   startup: initialStartup,
   compact = false,
   editable = false,
-  hideShare = false,
   onClose,
 }: Props) {
   const { user } = useUser();
   const requireAuth = useAuthGuard();
-  // The compact card is the only thing shown on mobile (the inline "tall row"),
-  // where desktop-sized text/icons feel oversized — scale them down there.
-  const isMobile = useMediaQuery("(max-width: 767px)");
-  const iconSize = isMobile ? 14 : 16;
 
   // Use React Query with server data as placeholder while fetching
   // Note: We know initialStartup is non-null (checked by server page), so we can safely fallback
@@ -139,74 +130,51 @@ export default function StartupPageClient({
   if (compact) {
     return (
       <div className="flex flex-col">
-        {/* Header — the whole top section links to the full page */}
-        <div className="group relative flex items-start justify-between gap-4 border-b border-border bg-gradient-to-r from-brand/30 to-transparent px-4 py-5 transition">
-          {/* Stretched link: covers the header; interactive children below sit above it via z-10 */}
-          <Link
-            href={startupPath(startup)}
-            aria-label={`View ${startup.name} full page`}
-            className="absolute inset-0"
-          />
-          <div className="flex min-w-0 items-center gap-3">
-            {/* Boost sits far-left, matching its position in the collapsed row */}
-            <div className="relative z-10 shrink-0">
+        {/* Header — mirrors a collapsed list row (accent gradient background).
+            Clicking the row collapses it; the button opens the full profile. */}
+        <div className="flex w-full items-center gap-3 border-b border-border bg-gradient-to-r from-brand/30 to-transparent px-4 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          >
+            <div className="shrink-0">
               <BoostCounter startup={startup} />
             </div>
-            <Avatar entity={startup} size={14} />
-            <div className="min-w-0">
-              <h2 className="flex items-center gap-1.5 text-base font-semibold text-text md:text-lg">
+            <Avatar entity={startup} size={12} />
+
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1 text-sm font-medium text-text">
                 <span className="truncate">{startup.name}</span>
                 {startup.verified && (
-                  <BadgeCheck size={iconSize} className="shrink-0 text-brand" />
+                  <BadgeCheck size={13} className="shrink-0 text-brand" />
                 )}
-                <Maximize2
-                  size={isMobile ? 12 : 14}
-                  className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100"
-                />
-              </h2>
-              {startup.website && (
-                <a
-                  href={`https://${startup.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative z-10 mt-1 inline-block text-xs text-brand hover:underline"
-                >
-                  {startup.website.replace(/^https?:\/\//, "")}
-                </a>
+              </p>
+              {startup.verified
+                ? startup.website && (
+                    <p className="truncate text-xs text-text-muted">
+                      {startup.website}
+                    </p>
+                  )
+                : startup.contact_general && (
+                    <p className="truncate text-xs text-text-muted">
+                      {startup.contact_general}
+                    </p>
+                  )}
+              {(startup.tagline || startup.description) && (
+                <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
+                  {startup.tagline ?? startup.description}
+                </p>
               )}
             </div>
-          </div>
+          </button>
 
-          {/* Action icons */}
-          <div className="relative z-10 flex shrink-0 items-center gap-1 self-center">
-            <IconButton
-              label={
-                startup.is_favorited
-                  ? "Remove from favorites"
-                  : "Add to favorites"
-              }
-              onClick={handleFavorite}
-              disabled={favoriteMutation.isPending}
-            >
-              <Star
-                size={iconSize}
-                fill={startup.is_favorited ? "currentColor" : "none"}
-              />
-            </IconButton>
-            {!hideShare && (
-              <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
-                {copied ? <Check size={iconSize} /> : <Share2 size={iconSize} />}
-              </IconButton>
-            )}
-            {onClose && (
-              <>
-                <div className="mx-1 h-4 w-px bg-border" />
-                <IconButton label="Close" onClick={onClose}>
-                  <X size={iconSize} />
-                </IconButton>
-              </>
-            )}
-          </div>
+          <Button asChild variant="outline" size="lg" className="shrink-0">
+            <Link href={startupPath(startup)}>
+              View profile
+              <ArrowUpRight size={16} />
+            </Link>
+          </Button>
         </div>
 
         {/* Body */}
