@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { useAuthGuard } from "@/lib/use-auth-guard";
@@ -14,7 +13,6 @@ import { StartupsToolbar, type View, type SortMode } from "./_components/startup
 import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
 import { ConstraintChips } from "./_components/constraint-chips";
-import { startupPath } from "@/lib/startup-url";
 import {
   type Constraint,
   applyConstraints,
@@ -35,7 +33,6 @@ export default function StartupsClient({
   showFavoritedOnly = false,
   initialView = "list",
 }: Props) {
-  const router = useRouter();
   const requireAuth = useAuthGuard();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [selected, setSelected] = useState<Startup | null>(null);
@@ -108,17 +105,9 @@ export default function StartupsClient({
   }, [selected]);
 
   function handleStartupClick(startup: Startup) {
-    // No side detail panel (map occupies it, or mobile) → expand the row inline
-    // to the detail card instead of navigating to the full profile.
-    if (showMap || isMobile) {
-      setSelected((prev) => (prev?.id === startup.id ? null : startup));
-      return;
-    }
-    if (selected?.id === startup.id) {
-      router.push(startupPath(startup));
-    } else {
-      setSelected(startup);
-    }
+    // Selecting a startup expands its row inline into the detail card ("tall
+    // row"); clicking it again collapses it.
+    setSelected((prev) => (prev?.id === startup.id ? null : startup));
   }
 
   function handleToggleLocation(location: string) {
@@ -180,9 +169,9 @@ export default function StartupsClient({
     />
   );
 
-  // When the map occupies the side panel (or on mobile) there's nowhere to show a
-  // startup's details, so the selected row expands inline into the detail card.
-  const detailInList = showMap || isMobile;
+  // Selecting a startup expands its row inline into the detail card, regardless
+  // of what the right panel is showing.
+  const detailInList = true;
 
   const inlineDetail = (s: Startup) => (
     <StartupPageClient

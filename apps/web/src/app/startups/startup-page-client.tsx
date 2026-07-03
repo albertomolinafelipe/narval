@@ -27,6 +27,7 @@ import {
 import { Avatar, Pill, IconButton } from "@/app/_components/shared/list-panel";
 import { Button } from "@/components/ui/button";
 import { BoostButton } from "@/app/_components/shared/boost-button";
+import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import { getTechIcon, parseTechStack } from "@/lib/tech-icons";
 import { trackViewDetail, trackFavorite } from "@/lib/analytics";
 import { startupPath, startupEditPath } from "@/lib/startup-url";
@@ -139,7 +140,7 @@ export default function StartupPageClient({
     return (
       <div className="flex flex-col">
         {/* Header — the whole top section links to the full page */}
-        <div className="group relative flex items-start justify-between gap-4 border-b border-border px-6 py-5 transition hover:bg-bg-subtle/40 active:scale-[0.99]">
+        <div className="group relative flex items-start justify-between gap-4 border-b border-border bg-gradient-to-r from-brand/30 to-transparent px-4 py-5 transition">
           {/* Stretched link: covers the header; interactive children below sit above it via z-10 */}
           <Link
             href={startupPath(startup)}
@@ -147,7 +148,11 @@ export default function StartupPageClient({
             className="absolute inset-0"
           />
           <div className="flex min-w-0 items-center gap-3">
-            <Avatar entity={startup} size={12} />
+            {/* Boost sits far-left, matching its position in the collapsed row */}
+            <div className="relative z-10 shrink-0">
+              <BoostCounter startup={startup} />
+            </div>
+            <Avatar entity={startup} size={14} />
             <div className="min-w-0">
               <h2 className="flex items-center gap-1.5 text-base font-semibold text-text md:text-lg">
                 <span className="truncate">{startup.name}</span>
@@ -173,7 +178,7 @@ export default function StartupPageClient({
           </div>
 
           {/* Action icons */}
-          <div className="relative z-10 flex shrink-0 items-center gap-1">
+          <div className="relative z-10 flex shrink-0 items-center gap-1 self-center">
             <IconButton
               label={
                 startup.is_favorited
@@ -188,11 +193,6 @@ export default function StartupPageClient({
                 fill={startup.is_favorited ? "currentColor" : "none"}
               />
             </IconButton>
-            <BoostButton
-              startup={startup}
-              showCount={true}
-              size={isMobile ? "default" : "large"}
-            />
             {!hideShare && (
               <IconButton label={copied ? "Copied!" : "Share"} onClick={handleShare}>
                 {copied ? <Check size={iconSize} /> : <Share2 size={iconSize} />}
