@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
 import { components } from "@/lib/api/generated";
@@ -9,7 +9,11 @@ import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
 import { useMediaQuery } from "@/lib/use-media-query";
 import StartupPageClient from "./startup-page-client";
-import { StartupsToolbar, type View, type SortMode } from "./_components/startups-toolbar";
+import {
+  StartupsToolbar,
+  type View,
+  type SortMode,
+} from "./_components/startups-toolbar";
 import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
 import { ConstraintChips } from "./_components/constraint-chips";
@@ -43,6 +47,9 @@ export default function StartupsClient({
   const [query, setQuery] = useState("");
   const [showFavorites, setShowFavorites] = useState(showFavoritedOnly);
   const [highlight, setHighlight] = useState(false);
+  // Id of the row playing its collapse animation before it unmounts.
+  const [closingId, setClosingId] = useState<Startup["id"] | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Use React Query to fetch startups
   const {
@@ -104,10 +111,42 @@ export default function StartupsClient({
     }
   }, [selected]);
 
+  // Play the collapse animation, then drop the inline card once it finishes.
+  // Keep in sync with the `drop-close` duration in globals.css.
+  const CLOSE_MS = 240;
+  function collapse() {
+    if (!selected) return;
+    setClosingId(selected.id);
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => {
+      setSelected(null);
+      setClosingId(null);
+      closeTimer.current = null;
+    }, CLOSE_MS);
+  }
+
+  // Clear any pending collapse timer on unmount.
+  useEffect(
+    () => () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
   function handleStartupClick(startup: Startup) {
     // Selecting a startup expands its row inline into the detail card ("tall
-    // row"); clicking it again collapses it.
-    setSelected((prev) => (prev?.id === startup.id ? null : startup));
+    // row"); clicking it again collapses it with an animation.
+    if (selected?.id === startup.id) {
+      collapse();
+      return;
+    }
+    // Switching selection: cancel any in-flight collapse and open the new row.
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setClosingId(null);
+    setSelected(startup);
   }
 
   function handleToggleLocation(location: string) {
@@ -177,7 +216,8 @@ export default function StartupsClient({
     <StartupPageClient
       startup={s}
       compact={true}
-      onClose={() => setSelected(null)}
+      closing={closingId === s.id}
+      onClose={collapse}
     />
   );
 
@@ -195,10 +235,7 @@ export default function StartupsClient({
       ) : (
         filtered.map((s) =>
           detailInList && selected?.id === s.id ? (
-            <li
-              key={s.id}
-              className="border-b border-border last:border-b-0"
-            >
+            <li key={s.id} className="border-b border-border last:border-b-0">
               {inlineDetail(s)}
             </li>
           ) : (
@@ -256,7 +293,10 @@ export default function StartupsClient({
 
         <div
           className="flex flex-col overflow-hidden transition-[width,opacity] duration-300 ease-in-out max-md:hidden"
-          style={{ width: isMobile ? "0%" : "33.333%", opacity: isMobile ? 0 : 1 }}
+          style={{
+            width: isMobile ? "0%" : "33.333%",
+            opacity: isMobile ? 0 : 1,
+          }}
         >
           {showMap ? (
             <div className="h-full w-full overflow-hidden">{mapEl}</div>
