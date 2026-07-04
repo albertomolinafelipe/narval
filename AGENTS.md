@@ -4,25 +4,70 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Prettify & maintain the frontend
+## 🚧 Currently working on: Startups search UI/UX
 
-Branch `prettify-home-page`. The theme of this branch is **polishing and maintaining the web frontend** — not new features. Concretely:
+Branch `search-ui`. This branch is **UI/UX only** — building out the search *experience and layout*, not the logic behind it. **No backend work** (server-side `?q=`, full-text search, ranking are out of scope, deferred to a later branch). Any advanced field whose filtering isn't wired up yet ships **disabled or marked WIP** — build the visual affordance, don't fake the behavior.
 
-- **Responsiveness** — make pages behave well across mobile/tablet/desktop breakpoints.
-- **Component consistency** — unify spacing, colors, and interaction patterns around the existing design tokens + shadcn primitives; replace hand-rolled elements with shared components.
-- **Refactoring** — break up large page/client files, extract reusable pieces, tidy structure.
-- **Visual polish** — landing/home page and the `/startups` pages.
+### Search constraints — the core model
 
-Keep changes focused and non-behavioral where possible; this is cleanup, not a rewrite.
+All filtering funnels through one abstraction: a **constraint** is a predicate over a
+`Startup` plus a display label. The visible list is every startup passing **all**
+active constraints (AND). Map-pin clicks, field filters ("Founded ≥ 2020"), and future
+advanced filters are all just constraints — adding a filter type means writing one more
+factory, nothing else changes.
+
+Lives in the selector layer: **`lib/startup/constraints.ts`** (per the [rendering
+pattern](#rendering-pattern--one-entity-many-views)).
+
+```ts
+interface Constraint { id: string; label: string; test: (s: Startup) => boolean; }
+applyConstraints(startups, constraints)   // startups passing every constraint
+toggleConstraint(constraints, next)       // add if absent, remove if id present
+locationConstraint(loc)                   // factory — one per filter type
+```
+
+How it composes today:
+
+- **Free-text search** stays a **live filter** (not a constraint): the list is
+  `textMatch(query) ∩ applyConstraints(constraints)`. Combined in the `filtered`
+  `useMemo` in `startups-client.tsx`.
+- **Map pins** — clicking a pin toggles a `locationConstraint` for that location
+  (desktop **and** mobile). Clicking the same pin, or its chip, removes it. Constrained
+  locations render highlighted on the map (`activeLocations`).
+- **Constraint chips** render in a wrap-row **below the toolbar** (`ConstraintChips`);
+  clicking a chip removes that constraint by `id`.
+
+### Map as a toggle (not a separate view)
+
+Map is an **on/off toggle** (`showMap`), not a list-vs-map view swap. The list stays put
+on the left; the right panel shows the **map when on**, else the detail/placeholder. On
+mobile (no side panel) map-on takes over full-width with the results list stacked below.
+
+### Target design — expandable advanced search
+
+Beyond text + pins, the search control expands (~**3× height**) into an advanced-filter
+panel with structured fields — **geolocation**, **people** (founders/team), and room for
+industry/stage later. Each field just pushes its constraint via a factory; **fields not
+yet filterable client-side ship disabled or visibly WIP** — build the affordance, don't
+fake the behavior.
+
+### Ground rules for this branch
+
+- **UI/UX only, no backend** — server-side `?q=`, full-text search, ranking are out of
+  scope. Filtering is client-side over the already-fetched list.
+- **Everything filterable goes through a constraint factory** in `lib/startup/constraints.ts` — don't scatter ad-hoc `.filter()` predicates across components.
+- **Component consistency** — build on design tokens + shadcn primitives (`Input`,
+  `SlideSwitch`, `ToggleGroup`, `Badge`, `components/ui/`); don't hand-roll raw elements.
+- **Responsiveness** — every state must behave across breakpoints.
 
 ### Progress
 
-- [x] **Stale image cache fix (logo + banner)** — logo/banner were stored at a fixed object key (`logos/<id>/logo.jpg`) and overwritten in place, so the URL never changed and MinIO's missing `Cache-Control` header served stale bytes. `handler.go` now prepends `time.Now().UnixMilli()` to logo/banner object keys (matching screenshots/founders) for a unique URL per upload. Orphan cleanup left as a separate TODO.
-- [x] **Startups view/edit split** — the public startup page (`/startups/[slug]` and `/startups/in/[id]`) is now read-only for everyone, including the owner. Owners get an **Edit** button routing to `/startups/in/[id]/edit`, which renders the same page with inline editing on. An `editable` prop gates `ProfileEditProvider` (`editable && isOwner`); `startupEditPath()` is the single source for the edit URL.
-- [x] **Rendering pattern applied to startup links** — `lib/startup/` selector layer (`parseProductLinks`, `getStartupSocials`, `getStartupProductLinks`) + `lib/view-variant.ts` (`ViewVariant`). The compact panel's socials/product links are selector-driven via a read-only `<StartupLinks>`, styled with the new shadcn `Badge`. **Follow-up:** the editable `SocialsColumn` still has its own link registry — unify it onto `lib/startup/links.ts`.
-- [x] **`startups-client.tsx` refactor (730 → ~350 lines)** — extracted `startups/_components/` (`StartupsToolbar`, `StartupListRow`, `StartupResultsList` [merged the two near-duplicate map lists], `StartupDetailPlaceholder`), a shared `useMediaQuery` hook (`useSyncExternalStore`-based), and shadcn primitives (`Input`, `Toggle`, `ToggleGroup`; the hand-rolled `Segmented` was removed).
-- [x] **Startups detail panel** — persistent right-hand panel: the list stays a fixed width and the panel is always shown, rendering `StartupDetailPlaceholder` until a startup is clicked, then swapping to its details. The compact panel header is a full click-target (stretched link) that opens the full page.
-- [~] **Home page polish** — in progress. First up: shrink the animated background blobs on mobile.
+- [x] **Toolbar restyle** — pill sort toggle; `SlideSwitch` for Map/Favorites/Details; search bar matched to the pill aesthetic; order: search, map, sort, favorite, detail.
+- [x] **Map → on/off toggle** — right panel becomes the map; `reuseMaps` fixes the mapbox teardown race.
+- [x] **Constraint model** — `lib/startup/constraints.ts`, chips below the toolbar, map pins toggle location constraints (desktop + mobile).
+- [ ] **Expandable panel** — expand affordance + ~3× height advanced panel scaffold.
+- [ ] **Advanced fields (UI)** — geolocation, people, etc. as controls feeding constraint factories; leave the rest disabled/WIP.
+- [x] **Detail when no side panel** — when the map occupies the right panel (or on mobile), selecting a row expands it **inline** into the compact `StartupPageClient` card instead of navigating; the card's X collapses it, its header still links to the full page. Covers both list renderers (`StartupListRow` list and `StartupResultsList`).
 
 ---
 

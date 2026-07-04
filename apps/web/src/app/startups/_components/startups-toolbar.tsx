@@ -1,18 +1,33 @@
-import { List, Map, Star, Search, TrendingUp, Clock, LayoutList } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
+import { useState } from "react";
+import {
+  Map,
+  Star,
+  Search,
+  TrendingUp,
+  Clock,
+  LayoutList,
+  SlidersHorizontal,
+} from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SlideSwitch } from "@/components/ui/slide-switch";
+import { ToggleButton } from "@/components/ui/toggle-button";
 import { Input } from "@/components/ui/input";
 
 export type View = "list" | "map";
 export type SortMode = "recent" | "trending";
 
-// Matches the ToggleGroup container so standalone (single) toggles look the same.
-const singleToggleBox =
-  "inline-flex rounded-lg border border-border bg-bg-raised p-0.5 shadow-sm";
+// Brand-filled active state shared by the on/off SlideSwitch toggles.
+const activeSwitch = "border-brand bg-brand hover:bg-brand-hover";
+
+// Pill treatment for the segmented sort control: fully rounded, softer border,
+// and a brand-filled active segment.
+const viewToggleBox = "rounded-full border-border/60 bg-bg-subtle p-1 shadow-none";
+const viewToggleItem =
+  "rounded-full px-3 py-1 data-[state=on]:bg-brand data-[state=on]:text-brand-fg data-[state=on]:shadow-sm";
 
 interface Props {
-  view: View;
-  onViewChange: (view: View) => void;
+  showMap: boolean;
+  onShowMapChange: (showMap: boolean) => void;
   showFavorites: boolean;
   onFavoritesToggle: () => void;
   sort: SortMode;
@@ -24,12 +39,12 @@ interface Props {
 }
 
 /**
- * Controls above the startups list/map. Sort and the detailed-view toggle only
- * apply to the list, so they're hidden in map view.
+ * Controls above the startups list. Map is an on/off toggle that swaps the right
+ * panel for a map; the detailed-view toggle only affects the list rows.
  */
 export function StartupsToolbar({
-  view,
-  onViewChange,
+  showMap,
+  onShowMapChange,
   showFavorites,
   onFavoritesToggle,
   sort,
@@ -39,70 +54,109 @@ export function StartupsToolbar({
   query,
   onQueryChange,
 }: Props) {
-  return (
-    <div className="flex items-center gap-2 pb-3">
+  // On mobile the extra controls collapse behind the filters button.
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Sort + favorites + details, shared by the desktop inline row and the
+  // collapsible mobile row. Details is desktop-only and hides itself there.
+  const controls = (
+    <>
       <ToggleGroup
         type="single"
-        value={view}
-        // Single-select must always keep a value — ignore deselection (empty).
-        onValueChange={(v) => v && onViewChange(v as View)}
+        value={sort}
+        className={viewToggleBox}
+        onValueChange={(v) => v && onSortChange(v as SortMode)}
       >
-        <ToggleGroupItem value="list">
-          <List size={13} />
-          List
+        <ToggleGroupItem value="recent" className={viewToggleItem}>
+          <Clock size={13} />
+          Recent
         </ToggleGroupItem>
-        <ToggleGroupItem value="map">
-          <Map size={13} />
-          Map
+        <ToggleGroupItem value="trending" className={viewToggleItem}>
+          <TrendingUp size={13} />
+          Trending
         </ToggleGroupItem>
       </ToggleGroup>
 
-      <div className={singleToggleBox}>
-        <Toggle pressed={showFavorites} onPressedChange={onFavoritesToggle}>
+      <label className="flex items-center gap-2">
+        <span className="text-xs font-medium text-text-muted">Favorites</span>
+        <SlideSwitch
+          checked={showFavorites}
+          onCheckedChange={onFavoritesToggle}
+          checkedClassName={activeSwitch}
+          aria-label="Toggle favorites only"
+        >
           <Star size={13} fill={showFavorites ? "currentColor" : "none"} />
-          Favorites
-        </Toggle>
-      </div>
+        </SlideSwitch>
+      </label>
 
-      {view === "list" && (
-        <>
-          <ToggleGroup
-            type="single"
-            value={sort}
-            onValueChange={(v) => v && onSortChange(v as SortMode)}
+      <label className="flex items-center gap-2 max-md:hidden">
+        <span className="text-xs font-medium text-text-muted">Details</span>
+        <SlideSwitch
+          checked={expanded}
+          onCheckedChange={onExpandedChange}
+          checkedClassName={activeSwitch}
+          aria-label="Toggle detailed view"
+        >
+          <LayoutList size={13} />
+        </SlideSwitch>
+      </label>
+    </>
+  );
+
+  return (
+    <div className="flex flex-col gap-2 pb-3">
+      <div className="flex items-center gap-2">
+        {/* Search fills the row; the buttons after it stay pinned to the right. */}
+        <div className="relative min-w-0 flex-1 md:w-56 md:flex-none">
+          <Search
+            size={13}
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
+          />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            placeholder="Filter startups…"
+            className="h-8 rounded-full border-border/60 bg-bg-subtle pl-9 pr-4 text-xs"
+          />
+        </div>
+
+        <label className="flex shrink-0 items-center gap-2">
+          <span className="text-xs font-medium text-text-muted max-md:hidden">
+            Map
+          </span>
+          <SlideSwitch
+            checked={showMap}
+            onCheckedChange={onShowMapChange}
+            checkedClassName={activeSwitch}
+            aria-label="Toggle map"
           >
-            <ToggleGroupItem value="recent">
-              <Clock size={13} />
-              Recent
-            </ToggleGroupItem>
-            <ToggleGroupItem value="trending">
-              <TrendingUp size={13} />
-              Trending
-            </ToggleGroupItem>
-          </ToggleGroup>
+            <Map size={13} />
+          </SlideSwitch>
+        </label>
 
-          <div className={`${singleToggleBox} max-md:hidden`}>
-            <Toggle pressed={expanded} onPressedChange={onExpandedChange}>
-              <LayoutList size={13} />
-              Details
-            </Toggle>
-          </div>
-        </>
-      )}
+        {/* Mobile-only: reveals the extra controls in a second row. */}
+        <ToggleButton
+          checked={showAdvanced}
+          onCheckedChange={setShowAdvanced}
+          checkedClassName={activeSwitch}
+          aria-label="More filters"
+          className="shrink-0 md:hidden"
+        >
+          <SlidersHorizontal size={13} />
+        </ToggleButton>
 
-      <div className="relative w-56">
-        <Search
-          size={13}
-          className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-subtle"
-        />
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="Filter startups…"
-          className="h-8 pl-8 pr-3 text-xs"
-        />
+        {/* Desktop: controls inline; mobile hides them behind the filters button. */}
+        <div className="hidden shrink-0 items-center gap-2 md:flex">
+          {controls}
+        </div>
       </div>
+
+      {showAdvanced && (
+        <div className="flex flex-wrap items-center gap-2 md:hidden">
+          {controls}
+        </div>
+      )}
     </div>
   );
 }

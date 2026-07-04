@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Map, { Marker, NavigationControl } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -18,9 +18,10 @@ export interface LocationGroup {
 interface Props {
   startups: Startup[];
   coordsMap: CoordsMap;
-  selected: Startup | null;
-  onSelect: (startup: Startup) => void;
-  onLocationSelect: (group: LocationGroup) => void;
+  /** Locations with an active constraint — their pins render highlighted. */
+  activeLocations: string[];
+  /** Toggle a location constraint when its pin is clicked. */
+  onToggleLocation: (location: string) => void;
 }
 
 /** Groups startups that share the exact same location string */
@@ -49,36 +50,19 @@ function groupByLocation(
 export default function StartupsMap({
   startups,
   coordsMap,
-  selected,
-  onSelect,
-  onLocationSelect,
+  activeLocations,
+  onToggleLocation,
 }: Props) {
   const mapRef = useRef<MapRef>(null);
-  const [clickedLocation, setClickedLocation] = useState<string | null>(null);
 
-  // Resize the GL canvas whenever the detail panel opens or closes
+  // Size the GL canvas once the container has settled (e.g. the map panel
+  // just appeared or the layout transition finished).
   useEffect(() => {
     const id = setTimeout(() => {
       mapRef.current?.resize();
-    }, 310); // just after the 300ms CSS transition completes
+    }, 310);
     return () => clearTimeout(id);
-  }, [selected]);
-
-  const handleMarkerClick = useCallback(
-    (group: LocationGroup) => {
-      // Set this pin as clicked
-      setClickedLocation(group.location);
-
-      // If there's only one startup at this location, select it directly
-      if (group.startups.length === 1) {
-        onSelect(group.startups[0]);
-      } else {
-        // Otherwise, show the location group in the panel
-        onLocationSelect(group);
-      }
-    },
-    [onSelect, onLocationSelect],
-  );
+  }, []);
 
   const groups = groupByLocation(startups, coordsMap);
 
@@ -89,6 +73,11 @@ export default function StartupsMap({
     <div className="relative h-full w-full overflow-hidden rounded-xl border border-border">
       <Map
         ref={mapRef}
+        // Pool and reuse the underlying mapbox instance across mounts instead of
+        // destroying it on every list<->map switch. Prevents mapbox's teardown
+        // race ("this.errorCb is not a function") when a style/tile request
+        // resolves after the map has been unmounted.
+        reuseMaps
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         initialViewState={{
           longitude: -3.7,
@@ -101,12 +90,11 @@ export default function StartupsMap({
         mapStyle="mapbox://styles/mapbox/light-v11"
         projection="mercator"
         maxPitch={0}
-        onClick={() => setClickedLocation(null)}
       >
         <NavigationControl position="top-right" showCompass={false} />
 
         {groups.map((group) => {
-          const isClicked = clickedLocation === group.location;
+          const isActive = activeLocations.includes(group.location);
 
           return (
             <Marker
@@ -116,14 +104,14 @@ export default function StartupsMap({
               anchor="bottom"
               onClick={(e) => {
                 e.originalEvent.stopPropagation();
-                handleMarkerClick(group);
+                onToggleLocation(group.location);
               }}
             >
               <div className="relative cursor-pointer select-none">
                 {/* Pin body */}
                 <div
                   className={`flex h-7 min-w-[1.75rem] items-center justify-center rounded-full px-2 text-xs font-semibold shadow-md transition ${
-                    isClicked
+                    isActive
                       ? "bg-brand-subtle text-brand-text hover:bg-brand-subtle"
                       : "bg-brand text-brand-fg hover:bg-brand-hover"
                   }`}
@@ -143,7 +131,7 @@ export default function StartupsMap({
                 </div>
                 {/* Pin tail */}
                 <div
-                  className={`mx-auto h-1.5 w-0.5 ${isClicked ? "bg-brand-subtle" : "bg-brand"}`}
+                  className={`mx-auto h-1.5 w-0.5 ${isActive ? "bg-brand-subtle" : "bg-brand"}`}
                 />
               </div>
             </Marker>
