@@ -134,8 +134,14 @@ export default function StartupPageClient({
     return (
       <div className="flex flex-col">
         {/* Header — mirrors a collapsed list row (accent gradient background).
-            Clicking the row collapses it; the button opens the full profile. */}
-        <div className="flex w-full items-center gap-3 border-b border-border bg-gradient-to-r from-brand/30 to-transparent px-4 py-3">
+            Clicking the row collapses it; the button opens the full profile.
+            While collapsing it reverts to a plain row (no gradient, no button)
+            so it eases back into the normal list. */}
+        <div
+          className={`flex w-full items-center gap-3 border-b border-border px-4 py-3 ${
+            closing ? "" : "bg-gradient-to-r from-brand/30 to-transparent"
+          }`}
+        >
           <button
             type="button"
             onClick={onClose}
@@ -172,12 +178,14 @@ export default function StartupPageClient({
             </div>
           </button>
 
-          <Button asChild variant="outline" size="lg" className="shrink-0">
-            <Link href={startupPath(startup)}>
-              View profile
-              <ArrowUpRight size={16} />
-            </Link>
-          </Button>
+          {!closing && (
+            <Button asChild variant="outline" size="lg" className="shrink-0">
+              <Link href={startupPath(startup)}>
+                View profile
+                <ArrowUpRight size={16} />
+              </Link>
+            </Button>
+          )}
         </div>
 
         {/* Body — drops open from under the header so the list below eases

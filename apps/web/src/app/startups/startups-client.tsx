@@ -111,18 +111,24 @@ export default function StartupsClient({
     }
   }, [selected]);
 
-  // Play the collapse animation, then drop the inline card once it finishes.
-  // Keep in sync with the `drop-close` duration in globals.css.
+  // Keep a row rendered while it plays its `drop-close` animation, then drop it.
+  // Keep CLOSE_MS in sync with the `drop-close` duration in globals.css.
   const CLOSE_MS = 240;
-  function collapse() {
-    if (!selected) return;
-    setClosingId(selected.id);
+  function startClosing(id: Startup["id"]) {
+    setClosingId(id);
     if (closeTimer.current) clearTimeout(closeTimer.current);
     closeTimer.current = setTimeout(() => {
-      setSelected(null);
-      setClosingId(null);
+      setClosingId((cur) => (cur === id ? null : cur));
       closeTimer.current = null;
     }, CLOSE_MS);
+  }
+
+  // Collapse the open card: animate it out, and deselect immediately so nothing
+  // else treats it as selected while it plays out.
+  function collapse() {
+    if (!selected) return;
+    startClosing(selected.id);
+    setSelected(null);
   }
 
   // Clear any pending collapse timer on unmount.
@@ -140,12 +146,8 @@ export default function StartupsClient({
       collapse();
       return;
     }
-    // Switching selection: cancel any in-flight collapse and open the new row.
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setClosingId(null);
+    // Switching: animate the previously open row out while the new one opens.
+    if (selected) startClosing(selected.id);
     setSelected(startup);
   }
 
@@ -208,10 +210,6 @@ export default function StartupsClient({
     />
   );
 
-  // Selecting a startup expands its row inline into the detail card, regardless
-  // of what the right panel is showing.
-  const detailInList = true;
-
   const inlineDetail = (s: Startup) => (
     <StartupPageClient
       startup={s}
@@ -234,7 +232,9 @@ export default function StartupsClient({
         </li>
       ) : (
         filtered.map((s) =>
-          detailInList && selected?.id === s.id ? (
+          // Render as the inline card while selected, and keep rendering it
+          // through its collapse animation (closingId) before the row returns.
+          selected?.id === s.id || closingId === s.id ? (
             <li key={s.id} className="border-b border-border last:border-b-0">
               {inlineDetail(s)}
             </li>
