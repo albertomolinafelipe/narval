@@ -50,6 +50,8 @@ interface Props {
   editable?: boolean;
   /** Compact "tall row": play the collapse animation instead of the drop-in. */
   closing?: boolean;
+  /** Compact "tall row": play the drop-in on open (off when restored open). */
+  animateOpen?: boolean;
   onClose?: () => void;
 }
 
@@ -59,6 +61,7 @@ export default function StartupPageClient({
   compact = false,
   editable = false,
   closing = false,
+  animateOpen = true,
   onClose,
 }: Props) {
   const { user } = useUser();
@@ -190,7 +193,11 @@ export default function StartupPageClient({
 
         {/* Body — drops open from under the header so the list below eases
             down instead of snapping to full height; reverses on collapse. */}
-        <div className={closing ? "drop-close" : "drop-open"}>
+        <div
+          className={
+            closing ? "drop-close" : animateOpen ? "drop-open" : "drop-static"
+          }
+        >
           <div className="min-h-0 overflow-hidden">
             <div className="flex flex-col gap-6 px-6 py-5">
               {/* Tagline + metadata pills */}

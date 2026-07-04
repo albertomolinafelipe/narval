@@ -238,6 +238,13 @@ body {
   animation: drop-close 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* Same open layout as drop-open but with no animation — used when a row is
+   restored already-open (e.g. returning from a profile) so nothing shifts. */
+.drop-static {
+  display: grid;
+  grid-template-rows: 1fr;
+}
+
 /* Range Input Styling */
 input[type="range"] {
   -webkit-appearance: none;

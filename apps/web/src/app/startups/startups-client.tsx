@@ -28,6 +28,10 @@ type Startup = components["schemas"]["Startup"];
 
 const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 
+// Persisted list state so leaving for a profile and coming back restores the
+// selected startup and scroll position.
+const LIST_STATE_KEY = "startups:list-state";
+
 interface Props {
   showFavoritedOnly?: boolean;
   initialView?: View;
@@ -49,6 +53,17 @@ export default function StartupsClient({
   // Id of the row playing its collapse animation before it unmounts.
   const [closingId, setClosingId] = useState<Startup["id"] | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Scroll/selection restore across a trip to a startup profile.
+  const listRef = useRef<HTMLUListElement>(null);
+  const scrollTopRef = useRef(0);
+  const selectedIdRef = useRef<Startup["id"] | null>(null);
+  // Id restored from storage: its row renders already-open (no drop-in
+  // animation). Cleared as soon as the user interacts.
+  const [restoreOpenId, setRestoreOpenId] = useState<Startup["id"] | null>(
+    null,
+  );
+  const restoredRef = useRef(false);
 
   // Use React Query to fetch startups
   const {
@@ -116,6 +131,7 @@ export default function StartupsClient({
   // else treats it as selected while it plays out.
   function collapse() {
     if (!selected) return;
+    setRestoreOpenId(null);
     startClosing(selected.id);
     setSelected(null);
   }
@@ -128,7 +144,66 @@ export default function StartupsClient({
     [],
   );
 
+  // Track the latest selected id for the unmount save below.
+  useEffect(() => {
+    selectedIdRef.current = selected?.id ?? null;
+  }, [selected]);
+
+  // Save selection + scroll on unmount so we can restore them on return.
+  useEffect(
+    () => () => {
+      try {
+        sessionStorage.setItem(
+          LIST_STATE_KEY,
+          JSON.stringify({
+            selectedId: selectedIdRef.current,
+            scrollTop: scrollTopRef.current,
+          }),
+        );
+      } catch {
+        // sessionStorage may be unavailable (private mode / SSR) — ignore.
+      }
+    },
+    [],
+  );
+
+  // Restore selection + scroll once the list data is available. Runs once.
+  useEffect(() => {
+    if (restoredRef.current || startups.length === 0) return;
+    restoredRef.current = true;
+
+    let saved: { selectedId: Startup["id"] | null; scrollTop: number } | null =
+      null;
+    try {
+      const raw = sessionStorage.getItem(LIST_STATE_KEY);
+      if (raw) saved = JSON.parse(raw);
+    } catch {
+      // ignore
+    }
+    if (!saved) return;
+
+    if (saved.selectedId != null) {
+      const match = startups.find((s) => s.id === saved.selectedId);
+      if (match) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore from sessionStorage
+        setRestoreOpenId(match.id);
+        setSelected(match);
+      }
+    }
+
+    // Wait for the (possibly newly-selected, already-open) row to render, then
+    // set the scroll position.
+    const target = saved.scrollTop ?? 0;
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (listRef.current) listRef.current.scrollTop = target;
+      }),
+    );
+  }, [startups]);
+
   function handleStartupClick(startup: Startup) {
+    // Any manual interaction ends the "restored" state, so rows animate again.
+    setRestoreOpenId(null);
     // Selecting a startup expands its row inline into the detail card ("tall
     // row"); clicking it again collapses it with an animation.
     if (selected?.id === startup.id) {
@@ -204,13 +279,19 @@ export default function StartupsClient({
       startup={s}
       compact={true}
       closing={closingId === s.id}
+      // A row restored from storage renders already-open, without the drop-in.
+      animateOpen={restoreOpenId !== s.id}
       onClose={collapse}
     />
   );
 
   const listEl = (
     <ul
+      ref={listRef}
       role="list"
+      onScroll={(e) => {
+        scrollTopRef.current = e.currentTarget.scrollTop;
+      }}
       className="flex flex-col overflow-y-auto rounded-xl border border-border max-md:flex-1 max-md:min-h-0"
     >
       {filtered.length === 0 ? (
