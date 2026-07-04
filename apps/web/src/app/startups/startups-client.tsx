@@ -46,7 +46,6 @@ export default function StartupsClient({
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [showFavorites, setShowFavorites] = useState(showFavoritedOnly);
-  const [highlight, setHighlight] = useState(false);
   // Id of the row playing its collapse animation before it unmounts.
   const [closingId, setClosingId] = useState<Startup["id"] | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,16 +99,6 @@ export default function StartupsClient({
   if (selected && !visibleIds.has(selected.id)) {
     setSelected(null);
   }
-
-  // Trigger highlight animation when selected startup changes
-  useEffect(() => {
-    if (selected) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional animation trigger
-      setHighlight(true);
-      const timer = setTimeout(() => setHighlight(false), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [selected]);
 
   // Keep a row rendered while it plays its `drop-close` animation, then drop it.
   // Keep CLOSE_MS in sync with the `drop-close` duration in globals.css.
@@ -282,7 +271,8 @@ export default function StartupsClient({
       {toolbar}
       {chips}
 
-      {/* Left: list (always). Right panel: map when toggled on, else detail. */}
+      {/* Left: list (always). Startup details expand inline in the list itself;
+          the right panel shows the map when toggled on, else its own info. */}
       <div className="flex w-full flex-1 gap-4 overflow-hidden">
         <div
           className="flex flex-col transition-[width] duration-300 ease-in-out"
@@ -301,23 +291,8 @@ export default function StartupsClient({
           {showMap ? (
             <div className="h-full w-full overflow-hidden">{mapEl}</div>
           ) : (
-            <div
-              className={`flex h-full flex-col overflow-y-auto rounded-xl border bg-bg transition-all duration-300 ${
-                highlight
-                  ? "border-brand shadow-lg shadow-brand/20"
-                  : "border-border"
-              }`}
-            >
-              {selected ? (
-                <StartupPageClient
-                  key={selected.id}
-                  startup={selected}
-                  compact={true}
-                  onClose={() => setSelected(null)}
-                />
-              ) : (
-                <StartupDetailPlaceholder />
-              )}
+            <div className="flex h-full flex-col overflow-y-auto rounded-xl border border-border bg-bg">
+              <StartupDetailPlaceholder />
             </div>
           )}
         </div>
