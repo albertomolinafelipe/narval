@@ -171,7 +171,7 @@ export default function StartupPageClient({
                     </p>
                   )}
               {(startup.tagline || startup.description) && (
-                <p className="mt-1 line-clamp-2 text-xs text-text-subtle">
+                <p className="mt-1 line-clamp-2 text-xs text-text-subtle max-md:hidden">
                   {startup.tagline ?? startup.description}
                 </p>
               )}
@@ -181,7 +181,7 @@ export default function StartupPageClient({
           {!closing && (
             <Button asChild variant="outline" size="lg" className="shrink-0">
               <Link href={startupPath(startup)}>
-                View profile
+                <span className="max-md:hidden">View profile</span>
                 <ArrowUpRight size={16} />
               </Link>
             </Button>

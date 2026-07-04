@@ -46,7 +46,7 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
           }
           {(s.tagline || s.description) && (
             <p
-              className={`mt-1 text-xs text-text-subtle ${
+              className={`mt-1 text-xs text-text-subtle max-md:hidden ${
                 expanded ? "truncate" : "line-clamp-2"
               }`}
             >

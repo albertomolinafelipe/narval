@@ -121,17 +121,6 @@ export function StartupsToolbar({
           />
         </div>
 
-        {/* Mobile-only: reveals the extra controls in a second row. */}
-        <ToggleButton
-          checked={showAdvanced}
-          onCheckedChange={setShowAdvanced}
-          checkedClassName={activeSwitch}
-          aria-label="More filters"
-          className="shrink-0 md:hidden"
-        >
-          <SlidersHorizontal size={13} />
-        </ToggleButton>
-
         <label className="flex shrink-0 items-center gap-2">
           <span className="text-xs font-medium text-text-muted max-md:hidden">
             Map
@@ -145,6 +134,17 @@ export function StartupsToolbar({
             <Map size={13} />
           </SlideSwitch>
         </label>
+
+        {/* Mobile-only: reveals the extra controls in a second row. */}
+        <ToggleButton
+          checked={showAdvanced}
+          onCheckedChange={setShowAdvanced}
+          checkedClassName={activeSwitch}
+          aria-label="More filters"
+          className="shrink-0 md:hidden"
+        >
+          <SlidersHorizontal size={13} />
+        </ToggleButton>
 
         {/* Desktop: controls inline; mobile hides them behind the filters button. */}
         <div className="hidden shrink-0 items-center gap-2 md:flex">
