@@ -434,20 +434,22 @@ export function EditableSelect({
     >
       <Select.Trigger
         aria-label={field}
-        className="group inline-flex max-w-full items-center gap-1 rounded text-left outline-none disabled:opacity-50"
+        className="group inline-flex max-w-full items-start gap-1 rounded text-left outline-none disabled:opacity-50"
       >
-        {hasValue ? (
-          display ? (
-            display(value)
+        <span>
+          {hasValue ? (
+            display ? (
+              display(value)
+            ) : (
+              value
+            )
           ) : (
-            <span>{value}</span>
-          )
-        ) : (
-          <span className="text-sm text-text-subtle">{placeholder}</span>
-        )}
+            <span className="text-sm text-text-subtle">{placeholder}</span>
+          )}
+        </span>
         <Pencil
           size={15}
-          className="shrink-0 text-text-subtle opacity-0 transition group-hover:text-brand group-hover:opacity-100"
+          className="mt-1.5 shrink-0 text-text-subtle opacity-0 transition group-hover:text-brand group-hover:opacity-100"
         />
       </Select.Trigger>
       <Select.Portal>
