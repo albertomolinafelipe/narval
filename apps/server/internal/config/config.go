@@ -29,6 +29,8 @@ type Config struct {
 	// CORSOrigins is a comma-separated list of allowed origins, e.g.
 	// "http://localhost:3000,https://app.example.com"
 	CORSOrigins []string
+	// AdminEmails may create admin-seeded startup shells. Comma-separated env.
+	AdminEmails []string
 }
 
 // insecureDefaults are values that should never be used in production
@@ -63,6 +65,7 @@ func Load() *Config {
 		GoogleClientID:           getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:       getEnv("GOOGLE_CLIENT_SECRET", ""),
 		CORSOrigins:              splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")),
+		AdminEmails:              splitCSV(getEnv("ADMIN_EMAILS", "albmf@protonmail.com")),
 	}
 }
 

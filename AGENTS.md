@@ -4,7 +4,7 @@ This document is the entry point for any AI agent or developer working on this c
 
 ---
 
-## 🚧 Currently working on: Startups search UI/UX
+## Currently working on: Startups search UI/UX
 
 Branch `search-ui`. This branch is **UI/UX only** — building out the search *experience and layout*, not the logic behind it. **No backend work** (server-side `?q=`, full-text search, ranking are out of scope, deferred to a later branch). Any advanced field whose filtering isn't wired up yet ships **disabled or marked WIP** — build the visual affordance, don't fake the behavior.
 
@@ -68,6 +68,93 @@ fake the behavior.
 - [ ] **Expandable panel** — expand affordance + ~3× height advanced panel scaffold.
 - [ ] **Advanced fields (UI)** — geolocation, people, etc. as controls feeding constraint factories; leave the rest disabled/WIP.
 - [x] **Detail when no side panel** — when the map occupies the right panel (or on mobile), selecting a row expands it **inline** into the compact `StartupPageClient` card instead of navigating; the card's X collapses it, its header still links to the full page. Covers both list renderers (`StartupListRow` list and `StartupResultsList`).
+
+### Next up: Admin-seeded startup profiles + claim flow
+
+**Goal.** Let admins pre-build a startup's profile, then send that startup a link. The
+startup clicks it, logs in with **their own** email, and takes ownership — outreach tool:
+*"I already made your profile, come claim it."*
+
+#### Core insight — reuse the edit page verbatim
+
+Editing a startup is **not a form**: `app/startups/in/[id]/edit/page.tsx` renders the public
+`StartupPageClient` with `editable`, which turns every field into an inline autosaving
+control via `ProfileEditProvider` (`_profile/edit-context.tsx`), each field PATCHing itself.
+So there is **nothing to reuse-by-copying** — an admin "create" is just:
+
+1. Create an empty **shell** `Startup` **owned by the admin**, then
+2. Redirect to the existing `/startups/in/[id]/edit`. No new edit UI.
+
+#### The ownership trick, and lock-at-claim
+
+Edit/update handlers are owner-gated (`st.OwnerID != ownerID` → 403, `handler.go`). Keep the
+shell **owned by the admin** until claimed, so the admin edits it through the normal owner
+path with **zero authorization changes**. **Claiming reassigns** `OwnerID`/`OwnerEmail` from
+the admin to the startup — that reassignment *is* the handoff, and it's also what locks the
+admin out: once ownership moves, the admin's owner check fails and they can no longer edit.
+No "seal on exit" flag — the lock happens automatically at claim time. Before claim, the admin
+can keep tweaking (useful if the startup asks for a fix first). Because auth is passwordless
+OTP, no credential is ever transferred: the claim login itself proves the email.
+
+#### One profile per email — scoped to claimed
+
+An admin holds **many** unclaimed shells (all owned by their account), but every *real*
+startup email must still map to exactly one profile. The rule is therefore **one *claimed*
+startup per owner**, enforced by a **partial unique index** `owner_id WHERE claimed = true`
+(replaces the ad-hoc one-per-owner check at `handler.go:279`). Unclaimed shells fall outside
+it, so admins can seed freely; claiming flips `claimed = true` and reassigns ownership, so the
+claimant lands at exactly one. `GetMe` (`auth/handler.go:358`) filters `claimed = true` so an
+admin's shells never masquerade as "their profile."
+
+#### No dashboard — links live in the admin's own doc
+
+There is **no admin list/dashboard**. While editing an unclaimed shell, the edit page shows
+two copy buttons (only when `claimed == false` and you're the owner):
+
+1. **Copy claim link** — the bearer link sent to the startup.
+2. **Copy edit link** — just `/startups/in/[id]/edit`, so the admin can return later.
+
+The admin pastes both into their own notes. Re-editing is **pure ownership**, not the
+whitelist — revisiting the saved edit link works until the startup claims it. The whitelist
+only gates *creating* new shells. The edit link is owner-gated server-side (safe to store);
+the **claim link is the secret** — treat it like a bearer credential.
+
+#### Schema (`models/startup.go`)
+
+- `Claimed bool` (default false)
+- `ClaimToken string` (unique index; empty once claimed) — random, unguessable, single-use
+- Partial unique index on `OwnerID WHERE claimed = true` (one claimed profile per owner)
+- `OwnerID` stays `not null` (the admin owns the shell until claimed)
+
+#### Backend
+
+- **Admin gate:** session email ∈ `ADMIN_EMAILS` whitelist (env). No `admin` flag on `User` yet.
+  Gates only shell **creation** — every other action is plain ownership.
+- `POST /admin/startups` — create shell (name only; owner = admin; `Claimed=false`; random
+  `ClaimToken`). Skips one-per-owner / account-type / website checks. Returns id + claim link.
+- **Claim binding:** extend the login reconciliation (`accounts.LinkOrCreate`) with a *claim
+  intent*: a valid unclaimed `ClaimToken` binds the authenticated user as owner
+  (reassign `OwnerID`/`OwnerEmail`, set `AccountType=startup`, `Claimed=true`, burn token).
+  Invalid or already-claimed → reject. Reuses the existing OTP/Google flow, not a parallel one.
+- `GET /startups/claim/:token` — public: fetch the shell for the claim preview page.
+- **Visibility:** public list/search/detail reads filter `claimed = true` so unclaimed shells
+  stay invisible until claimed.
+
+#### Frontend
+
+- Admin-only **"New profile"** action (name → create shell → redirect to existing edit page).
+- Edit page: **two copy buttons** (claim link, edit link) when the shell is unclaimed and owned.
+- Public **`/claim/[token]`** landing: preview the profile + "log in with your email" (OTP)
+  or Google → binds ownership on success.
+
+#### Guardrails
+
+- **`Verified` stays false** — claiming ≠ verified; the real owner still runs the existing
+  domain-verification flow to earn the badge.
+- **`ClaimToken` is a bearer capability** — single-use (burned on claim); consider email-pinning
+  and expiry so a leaked link can't be claimed by the wrong person.
+- **Never relax the public rule** — it's the partial unique index; admin multi-ownership only
+  ever applies to *unclaimed* shells.
 
 ---
 
