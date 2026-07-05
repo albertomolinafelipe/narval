@@ -10,9 +10,13 @@ interface PrefixInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Red border to flag a value that doesn't fit the prefix. */
+  invalid?: boolean;
   id?: string;
   autoFocus?: boolean;
   onKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   /** Extra classes for the wrapper (width, background, …). */
   className?: string;
   /** Extra classes for the input (font size, …). */
@@ -30,15 +34,22 @@ export default function PrefixInput({
   onChange,
   placeholder,
   disabled,
+  invalid,
   id,
   autoFocus,
   onKeyDown,
+  onFocus,
+  onBlur,
   className,
   inputClassName,
 }: PrefixInputProps) {
   return (
     <div
-      className={`flex overflow-hidden rounded-lg border border-border bg-bg focus-within:border-brand ${className ?? ""}`}
+      className={`flex overflow-hidden rounded-lg border bg-bg ${
+        invalid
+          ? "border-danger focus-within:border-danger"
+          : "border-border focus-within:border-brand"
+      } ${className ?? ""}`}
     >
       <span className="flex shrink-0 select-none items-center border-r border-border bg-bg-subtle px-2 text-xs text-text-subtle">
         {prefix}
@@ -51,6 +62,8 @@ export default function PrefixInput({
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className={`min-w-0 flex-1 bg-transparent px-2 py-1 text-sm text-text outline-none placeholder:text-text-subtle disabled:opacity-50 ${inputClassName ?? ""}`}
       />
     </div>
