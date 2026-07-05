@@ -31,7 +31,7 @@ export default function ClaimBanner({ id }: { id: string }) {
   const editUrl = `${origin}/startups/in/${id}/edit`;
 
   return (
-    <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-[var(--color-wip-text)] bg-bg-raised px-4 py-3">
+    <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-[var(--color-wip-text)] bg-[var(--color-wip-text)]/10 px-4 py-3">
       <p className="text-sm font-medium text-text">Unclaimed profile</p>
       <p className="mt-0.5 text-xs text-text-muted">
         Save both links. Send the claim link to the startup; keep the edit link to
@@ -63,7 +63,7 @@ function CopyButton({
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="flex items-center gap-2 rounded-lg border border-[var(--color-wip-text)] px-3 py-1.5 text-sm text-text transition hover:bg-bg-subtle"
+      className="flex items-center gap-2 rounded-lg border border-[var(--color-wip-text)] bg-[var(--color-wip-text)]/10 px-3 py-1.5 text-sm text-text transition hover:bg-[var(--color-wip-text)]/20"
     >
       {copied ? <Check className="h-4 w-4 text-brand" /> : icon}
       {copied ? "Copied" : label}
