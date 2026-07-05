@@ -42,6 +42,16 @@ func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
 	}
 }
 
+// isAdmin reports whether email is on the admin whitelist.
+func (h *Handler) isAdmin(email string) bool {
+	for _, a := range h.cfg.AdminEmails {
+		if a == email {
+			return true
+		}
+	}
+	return false
+}
+
 // Register initiates passwordless signup - creates OTP and sends via email.
 func (h *Handler) Register(c *gin.Context) {
 	var req struct {
@@ -414,14 +424,16 @@ func (h *Handler) GetMe(c *gin.Context) {
 		"email":        user.Email,
 		"nickname":     user.Nickname,
 		"account_type": user.AccountType,
+		"is_admin":     h.isAdmin(user.Email),
 		"created_at":   user.CreatedAt,
 		"updated_at":   user.UpdatedAt,
 	}
 
-	// Look up profile_id and logo_url for startup accounts
+	// Look up profile_id and logo_url for startup accounts. Only a claimed
+	// profile is "theirs" — an admin's unclaimed shells never count here.
 	if user.AccountType == models.AccountTypeStartup {
 		var startup models.Startup
-		if err := h.db.Where("owner_id = ?", user.ID).First(&startup).Error; err == nil {
+		if err := h.db.Where("owner_id = ? AND claimed = ?", user.ID, true).First(&startup).Error; err == nil {
 			response["profile_id"] = startup.ID
 			response["logo_url"] = startup.LogoURL
 		}
