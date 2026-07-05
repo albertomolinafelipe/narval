@@ -109,7 +109,7 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
   }
 
   return (
-    <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-border bg-bg-raised px-4 py-4">
+    <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-[var(--color-wip-text)] bg-bg-raised px-4 py-4">
       <p className="text-sm font-medium text-text">
         This profile for {shell.name} was set up for you
       </p>
