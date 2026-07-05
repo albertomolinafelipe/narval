@@ -347,6 +347,7 @@ func main() {
 			OwnerEmail:     s.ContactEmail,
 			ProfileSetup:   true,
 			Verified:       true,
+			Claimed:        true,
 		}
 
 		if err := db.Where(models.Startup{Name: startup.Name}).FirstOrCreate(&startup).Error; err != nil {

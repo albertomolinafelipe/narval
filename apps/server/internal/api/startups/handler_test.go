@@ -175,6 +175,7 @@ func TestListStartups_ReturnsAll(t *testing.T) {
 			OwnerID:      "u1",
 			OwnerEmail:   "u@e.com",
 			ProfileSetup: true,
+			Claimed:      true,
 			CreatedAt:    time.Now(),
 		}
 		require.NoError(t, db.Create(&s).Error)
