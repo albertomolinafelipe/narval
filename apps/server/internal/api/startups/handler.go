@@ -127,13 +127,9 @@ func (h *Handler) GetStartup(c *gin.Context, idOrDomain string) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
 		return
 	}
-
-	// Unclaimed shells are private to their owner (the admin building them), so a
-	// half-finished profile never leaks publicly. Claiming makes them visible.
-	if !st.Claimed && st.OwnerID != middleware.GetDBUserID(c) {
-		c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
-		return
-	}
+	// Fetch-by-id stays public (the admin edit page reads it server-side without a
+	// session). Unclaimed shells are kept out of the public *list*, not addressable
+	// pages — they're reachable only by their exact id or claim link.
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
