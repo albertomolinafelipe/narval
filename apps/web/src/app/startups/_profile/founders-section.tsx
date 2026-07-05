@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil, Loader2, X } from "lucide-react";
 import { SiLinkedin } from "react-icons/si";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
 import PrefixInput from "@/app/_components/shared/prefix-input";
+import { normalizeToHandle } from "@/lib/startup/social-input";
 import { uploadFounderPhoto } from "@/lib/api/client";
 import { components } from "@/lib/api/generated";
 import { Button } from "@/components/ui/button";
@@ -20,13 +21,6 @@ const LINKEDIN_PREFIX = "https://linkedin.com/in/";
 
 function linkedinHref(value: string): string {
   return value.startsWith("http") ? value : LINKEDIN_PREFIX + value;
-}
-
-function stripLinkedin(value: string): string {
-  const normalized = value.replace("https://www.", "https://");
-  return normalized.startsWith(LINKEDIN_PREFIX)
-    ? normalized.slice(LINKEDIN_PREFIX.length)
-    : value;
 }
 
 /** 3:4 portrait photo with initial fallback. */
@@ -144,6 +138,7 @@ export function FoundersSection({ startup }: { startup: Startup }) {
 
   const [draft, setDraft] = useState<Founder[]>(() => JSON.parse(savedJson));
   const [saving, setSaving] = useState(false);
+  const [focusedRow, setFocusedRow] = useState<number | null>(null);
 
   useEffect(() => {
     setDraft(JSON.parse(savedJson));
@@ -185,6 +180,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
     .filter((f) => f.name);
   const dirty = JSON.stringify(cleaned) !== savedJson;
   const atLimit = draft.length >= MAX_FOUNDERS;
+  const hasLinkErrors = draft.some(
+    (f) => normalizeToHandle(f.linkedin ?? "", LINKEDIN_PREFIX).error,
+  );
 
   const setRow = (i: number, patch: Partial<Founder>) =>
     setDraft((d) => d.map((f, j) => (j === i ? { ...f, ...patch } : f)));
@@ -235,16 +233,41 @@ export function FoundersSection({ startup }: { startup: Startup }) {
                 onChange={(e) => setRow(i, { name: e.target.value })}
                 className={inputClass}
               />
-              <PrefixInput
-                prefix="linkedin.com/in/"
-                value={stripLinkedin(f.linkedin ?? "")}
-                placeholder="handle"
-                onChange={(v) =>
-                  setRow(i, {
-                    linkedin: v.trim() ? LINKEDIN_PREFIX + v.trim() : "",
-                  })
-                }
-              />
+              {(() => {
+                const { handle, error } = normalizeToHandle(
+                  f.linkedin ?? "",
+                  LINKEDIN_PREFIX,
+                );
+                return (
+                  <>
+                    <PrefixInput
+                      prefix="linkedin.com/in/"
+                      value={handle}
+                      invalid={!!error}
+                      placeholder="handle"
+                      onFocus={() => setFocusedRow(i)}
+                      onBlur={() => setFocusedRow(null)}
+                      onChange={(v) => {
+                        const next = normalizeToHandle(v, LINKEDIN_PREFIX);
+                        setRow(i, {
+                          linkedin: next.error
+                            ? v
+                            : next.handle
+                              ? LINKEDIN_PREFIX + next.handle
+                              : "",
+                        });
+                      }}
+                    />
+                    {error ? (
+                      <p className="text-xs text-danger">{error}</p>
+                    ) : focusedRow === i ? (
+                      <p className="text-xs text-text-subtle">
+                        Paste the link or just the handle
+                      </p>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
           </div>
         ))}
@@ -268,7 +291,7 @@ export function FoundersSection({ startup }: { startup: Startup }) {
           <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
             Cancel
           </Button>
-          <Button size="sm" onClick={onSave} disabled={saving}>
+          <Button size="sm" onClick={onSave} disabled={saving || hasLinkErrors}>
             {saving && <Loader2 size={14} className="animate-spin" />}
             Save
           </Button>

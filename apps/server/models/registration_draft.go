@@ -20,6 +20,10 @@ type RegistrationDraft struct {
 	// Name is required for startup registration, empty for plain users.
 	Name string `json:"name"`
 
+	// ClaimToken is set when this OTP flow is a startup claiming an admin-seeded
+	// shell; it is carried into the account reconciliation on verify.
+	ClaimToken string `json:"claim_token"`
+
 	CreatedAt time.Time `json:"created_at"`
 }
 

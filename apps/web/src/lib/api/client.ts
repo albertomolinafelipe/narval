@@ -405,3 +405,64 @@ export async function updateStartup(
 
   return response.json();
 }
+
+// ─── Admin-seeded shells + claim flow ────────────────────────────────────────
+
+/** Admin only: create an unclaimed shell owned by the admin. Returns the new id
+ * and the claim token to hand to the startup. */
+export async function createAdminStartup(
+  name: string,
+): Promise<{ id: string; name: string; claim_token: string }> {
+  const response = await fetch(`/api/proxy/admin/startups`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || "Failed to create profile");
+  }
+  return response.json();
+}
+
+/** Owner only: fetch the claim token for a shell so the admin can (re)copy the
+ * claim link from the edit page. `claim_token` is empty once claimed. */
+export async function getClaimLink(
+  id: string,
+): Promise<{ claimed: boolean; claim_token: string }> {
+  const response = await fetch(`/api/proxy/startups/${id}/claim-link`, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || "Failed to load claim link");
+  }
+  return response.json();
+}
+
+/** Public: fetch an unclaimed shell by its claim token to preview on the claim page. */
+export async function getClaimStartup(token: string): Promise<Startup> {
+  const response = await fetch(`/api/proxy/claim/${token}`, {
+    credentials: "include",
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || "This claim link is invalid or already used");
+  }
+  return response.json();
+}
+
+/** Public: begin claiming a shell — sends an OTP to the startup's email. */
+export async function startClaim(email: string, token: string): Promise<void> {
+  const response = await fetch(`/api/proxy/auth/claim`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, token }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || "Failed to send verification code");
+  }
+}

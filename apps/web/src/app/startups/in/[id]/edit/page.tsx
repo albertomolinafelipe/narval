@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
 import { fetchStartup } from "@/lib/api/client";
+import ClaimBanner from "./claim-banner";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -23,6 +24,7 @@ export default async function StartupEditPage({ params }: Props) {
       <AppHeader customTab={{ label: startup.name }} />
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <ClaimBanner id={id} />
         <StartupPageClient startup={startup} editable />
       </main>
     </div>

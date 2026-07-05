@@ -1,21 +1,40 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import Link from "next/link";
 import Image from "next/image";
-import { AlertCircle, User } from "lucide-react";
+import { AlertCircle, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createAdminStartup } from "@/lib/api/client";
 import { useAuthModal } from "../auth/auth-modal-context";
 
 export default function UserMenu() {
   const { user, authenticated, loading } = useUser();
   const { openModal } = useAuthModal();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profileSetup, setProfileSetup] = useState<boolean | null>(null);
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  async function handleNewProfile() {
+    const name = window.prompt("Startup name for the new profile")?.trim();
+    if (!name) return;
+    setCreating(true);
+    try {
+      const { id } = await createAdminStartup(name);
+      setOpen(false);
+      router.push(`/startups/in/${id}/edit`);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Failed to create profile");
+    } finally {
+      setCreating(false);
+    }
+  }
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -140,6 +159,17 @@ export default function UserMenu() {
           )}
 
           <div className="p-2">
+            {user.is_admin && (
+              <button
+                type="button"
+                onClick={handleNewProfile}
+                disabled={creating}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition hover:bg-bg-subtle disabled:opacity-50"
+              >
+                <Plus className="h-4 w-4" />
+                {creating ? "Creating…" : "New profile"}
+              </button>
+            )}
             {hasProfile && (
               <Link
                 href={profilePath}

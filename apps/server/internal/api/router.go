@@ -116,7 +116,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 	srv := &server{
 		auth:     auth.NewHandler(cfg, db, rdb),
 		health:   &health.Handler{},
-		startups: startups.NewHandler(db, store, email.New(cfg)),
+		startups: startups.NewHandler(db, store, email.New(cfg), cfg.AdminEmails),
 		stats:    stats.NewHandler(db),
 	}
 
@@ -134,6 +134,12 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 			},
 		},
 	})
+
+	// Admin-seeded startup shells + claim flow (not in OpenAPI spec).
+	v1.POST("/admin/startups", authMiddleware, srv.startups.CreateAdminStartup)
+	v1.GET("/startups/:id/claim-link", authMiddleware, srv.startups.GetClaimLink)
+	v1.POST("/auth/claim", srv.auth.StartClaim)
+	v1.GET("/claim/:token", srv.startups.GetClaimStartup)
 
 	// Founder photo upload (not in OpenAPI spec — returns {url} for client to store in founders JSON)
 	v1.POST("/startups/:id/founder-photo", authMiddleware, srv.startups.UploadFounderPhoto)

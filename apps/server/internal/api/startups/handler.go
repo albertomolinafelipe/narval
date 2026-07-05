@@ -50,14 +50,16 @@ var validIndustries = map[string]bool{
 // Handler handles all /startups routes.
 type Handler struct {
 	*common.BaseHandler
-	Mailer email.Sender
+	Mailer      email.Sender
+	AdminEmails []string // emails allowed to create admin-seeded shells
 }
 
 // NewHandler creates a new startups handler.
-func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender) *Handler {
+func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender, adminEmails []string) *Handler {
 	return &Handler{
 		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),
 		Mailer:      mailer,
+		AdminEmails: adminEmails,
 	}
 }
 
@@ -125,6 +127,9 @@ func (h *Handler) GetStartup(c *gin.Context, idOrDomain string) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
 		return
 	}
+	// Fetch-by-id stays public (the admin edit page reads it server-side without a
+	// session). Unclaimed shells are kept out of the public *list*, not addressable
+	// pages — they're reachable only by their exact id or claim link.
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
@@ -167,8 +172,9 @@ func (h *Handler) ListStartups(c *gin.Context) {
 			Where("startup_favorites.user_id = ?", userID)
 	}
 
-	// Filter: only show profiles with profile_setup = true
-	query = query.Where("profile_setup = ?", true)
+	// Filter: only show claimed profiles that have completed setup. Unclaimed
+	// admin shells stay out of every public listing until a startup claims them.
+	query = query.Where("profile_setup = ? AND claimed = ?", true, true)
 
 	if err := query.Find(&startupList).Error; err != nil {
 		h.Logger.Printf("ListStartups: db query failed: %v", err)
@@ -285,6 +291,7 @@ func (h *Handler) CreateStartup(c *gin.Context) {
 		Name:       req.Name,
 		OwnerID:    ownerID,
 		OwnerEmail: ownerEmail,
+		Claimed:    true,
 	}
 
 	// Website is required at registration and must be a valid domain.
@@ -647,6 +654,7 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"owner_id":          s.OwnerID,
 		"owner_email":       s.OwnerEmail,
 		"profile_setup":     s.ProfileSetup,
+		"claimed":           s.Claimed,
 		"created_at":        s.CreatedAt,
 		"updated_at":        s.UpdatedAt,
 	}

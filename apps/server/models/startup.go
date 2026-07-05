@@ -62,8 +62,18 @@ type Startup struct {
 	OwnerEmail   string    `gorm:"not null"                       json:"owner_email"`
 	ProfileSetup bool      `gorm:"default:false"                  json:"profile_setup"`
 	Verified     bool      `gorm:"default:false"                  json:"verified"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+
+	// Claimed is true for every real profile (normal registration + already
+	// handed-off shells). Admin-seeded shells start false and are excluded from
+	// public reads until a startup claims them. The "one profile per owner" rule
+	// is a partial unique index on (owner_id) WHERE claimed — see db.Migrate.
+	Claimed bool `gorm:"default:false"                       json:"claimed"`
+	// ClaimToken is the bearer secret in the claim link; non-empty only while a
+	// shell is unclaimed, burned on claim. Never serialised in API responses.
+	ClaimToken string `json:"-"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // BeforeCreate sets a UUID primary key when none is provided.

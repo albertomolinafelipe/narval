@@ -12,6 +12,8 @@ export interface User {
   account_type: AccountType;
   profile_id?: string | null;
   logo_url?: string | null;
+  /** True when the email is on the admin whitelist (may seed startup shells). */
+  is_admin?: boolean;
   created_at: string;
 }
 
