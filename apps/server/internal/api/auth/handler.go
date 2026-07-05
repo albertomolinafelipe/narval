@@ -209,6 +209,7 @@ func (h *Handler) Verify(c *gin.Context) {
 			AccountType: draft.AccountType,
 			Nickname:    draft.Nickname,
 			Name:        draft.Name,
+			ClaimToken:  draft.ClaimToken,
 		}
 	}
 	user, err := accounts.LinkOrCreate(h.db, req.Email, authUserID, intent)
@@ -304,6 +305,71 @@ func (h *Handler) Login(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "verification code sent to email",
 	})
+}
+
+// StartClaim begins claiming an admin-seeded shell: it validates the claim
+// token, sends an OTP to the email the startup provides, and stashes the token
+// on a draft so Verify binds the shell to them. Works for brand-new emails and
+// existing accounts alike (unlike Register, which rejects existing emails).
+func (h *Handler) StartClaim(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+		Token string `json:"token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
+		return
+	}
+
+	// The token must point at an existing, still-unclaimed shell.
+	var shell models.Startup
+	if err := h.db.Where("claim_token = ? AND claimed = ?", req.Token, false).First(&shell).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"code": "INVALID_CLAIM", "message": "this claim link is invalid or already used"})
+		return
+	}
+
+	tenantID := "public"
+	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, req.Email, nil)
+	if err != nil {
+		h.logger.Printf("StartClaim CreateCode failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
+		return
+	}
+
+	draft := models.RegistrationDraft{
+		Email:            req.Email,
+		Nickname:         shell.Name,
+		AccountType:      models.AccountTypeStartup,
+		Name:             shell.Name,
+		ClaimToken:       req.Token,
+		PreAuthSessionID: codeResp.OK.PreAuthSessionID,
+		DeviceID:         codeResp.OK.DeviceID,
+	}
+	h.db.Where("email = ?", req.Email).Delete(&models.RegistrationDraft{})
+	if err := h.db.Create(&draft).Error; err != nil {
+		h.logger.Printf("failed to create claim draft: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "claim failed"})
+		return
+	}
+
+	userInputCode := codeResp.OK.UserInputCode
+	err = passwordless.SendEmail(emaildelivery.EmailType{
+		PasswordlessLogin: &emaildelivery.PasswordlessLoginType{
+			Email:            req.Email,
+			UserInputCode:    &userInputCode,
+			UrlWithLinkCode:  nil,
+			CodeLifetime:     codeResp.OK.CodeLifetime,
+			PreAuthSessionId: codeResp.OK.PreAuthSessionID,
+			TenantId:         tenantID,
+		},
+	})
+	if err != nil {
+		h.logger.Printf("Failed to send claim email: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to send verification email"})
+		return
+	}
+
+	c.JSON(http.StatusAccepted, gin.H{"message": "verification code sent to email"})
 }
 
 // Logout revokes the current session.
