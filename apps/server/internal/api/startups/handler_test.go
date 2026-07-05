@@ -409,6 +409,74 @@ func TestDeleteStartupLogo_DeletesBlob(t *testing.T) {
 	assert.Empty(t, updated.LogoURL)
 }
 
+// updateStartup drives UpdateStartup with a raw JSON body as the given owner.
+func updateStartup(t *testing.T, h *startups.Handler, startupID uuid.UUID, ownerID, ownerEmail, jsonBody string) *httptest.ResponseRecorder {
+	t.Helper()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/startups/"+startupID.String(), strings.NewReader(jsonBody))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: startupID.String()}}
+	setUserContext(c, ownerID, ownerEmail)
+	h.UpdateStartup(c, startupID)
+	return w
+}
+
+func TestUpdateStartup_RemovedGalleryAndFounderBlobsDeleted(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-update"
+	startupID := uuid.MustParse("66666666-6666-6666-6666-666666666666")
+	keptShot := fakeBaseURL + "screenshots/" + startupID.String() + "/1-keep.png"
+	goneShot := fakeBaseURL + "screenshots/" + startupID.String() + "/2-gone.png"
+	keptPhoto := fakeBaseURL + "founders/" + startupID.String() + "/3-keep.png"
+	gonePhoto := fakeBaseURL + "founders/" + startupID.String() + "/4-gone.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Update Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "u@s.com",
+		Gallery:    `["` + keptShot + `","` + goneShot + `"]`,
+		Founders:   `[{"name":"A","photo_url":"` + keptPhoto + `"},{"name":"B","photo_url":"` + gonePhoto + `"}]`,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	// New state drops one screenshot and one founder photo.
+	body := `{"gallery":"[\"` + keptShot + `\"]","founders":"[{\"name\":\"A\",\"photo_url\":\"` + keptPhoto + `\"}]"}`
+	require.Equal(t, http.StatusOK, updateStartup(t, h, startupID, ownerID, "u@s.com", body).Code)
+
+	assert.ElementsMatch(t, []string{
+		"screenshots/" + startupID.String() + "/2-gone.png",
+		"founders/" + startupID.String() + "/4-gone.png",
+	}, fs.deleted)
+}
+
+func TestUpdateStartup_ReorderKeepsAllBlobs(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-reorder"
+	startupID := uuid.MustParse("77777777-7777-7777-7777-777777777777")
+	a := fakeBaseURL + "screenshots/" + startupID.String() + "/1-a.png"
+	b := fakeBaseURL + "screenshots/" + startupID.String() + "/2-b.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Reorder Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "ro@s.com",
+		Gallery:    `["` + a + `","` + b + `"]`,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	// Same set, swapped order — nothing should be deleted.
+	body := `{"gallery":"[\"` + b + `\",\"` + a + `\"]"}`
+	require.Equal(t, http.StatusOK, updateStartup(t, h, startupID, ownerID, "ro@s.com", body).Code)
+	assert.Empty(t, fs.deleted)
+}
+
 func TestCreateStartup_WrongAccountType(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	h, db := buildHandler(t)
