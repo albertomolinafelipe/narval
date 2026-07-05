@@ -65,7 +65,7 @@ func Load() *Config {
 		GoogleClientID:           getEnv("GOOGLE_CLIENT_ID", ""),
 		GoogleClientSecret:       getEnv("GOOGLE_CLIENT_SECRET", ""),
 		CORSOrigins:              splitCSV(getEnv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")),
-		AdminEmails:              splitCSV(getEnv("ADMIN_EMAILS", "albmf@protonmail.com")),
+		AdminEmails:              splitCSV(getEnv("ADMIN_EMAILS", "")),
 	}
 }
 
