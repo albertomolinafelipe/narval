@@ -5,6 +5,7 @@ import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { SiLinkedin, SiX, SiInstagram, SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { parseProductLinks } from "@/lib/startup/product-links";
+import { normalizeToHandle } from "@/lib/startup/social-input";
 import PrefixInput from "@/app/_components/shared/prefix-input";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
@@ -84,11 +85,6 @@ const LINKS: LinkDef[] = [
   },
 ];
 
-function stripPrefix(url: string, prefix: string): string {
-  const normalized = url.replace("https://www.", "https://");
-  return normalized.startsWith(prefix) ? normalized.slice(prefix.length) : url;
-}
-
 function EditableLink({
   def,
   startup,
@@ -102,7 +98,8 @@ function EditableLink({
 }) {
   const { isOwner, save } = useProfileEdit();
   const value = def.getValue(startup);
-  const suffix = stripPrefix(value, def.prefix);
+  const suffix = normalizeToHandle(value, def.prefix).handle;
+  const [error, setError] = useState<string | null>(null);
 
   const edit = useInlineEdit(
     suffix,
@@ -141,35 +138,49 @@ function EditableLink({
     );
   }
 
-  const commit = async () => { await edit.commit(edit.draft.trim()); onClose?.(); };
-  const cancel = () => { edit.cancel(); onClose?.(); };
+  const commit = async () => {
+    if (error) return;
+    await edit.commit(edit.draft.trim());
+    onClose?.();
+  };
+  const cancel = () => { setError(null); edit.cancel(); onClose?.(); };
 
   return (
-    <div className="flex items-center gap-1">
-      <PrefixInput
-        prefix={def.prefix.replace("https://", "")}
-        value={edit.draft}
-        disabled={edit.saving}
-        placeholder={def.placeholder}
-        autoFocus
-        onChange={edit.setDraft}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); commit(); }
-          if (e.key === "Escape") cancel();
-        }}
-        className="w-52 bg-bg-raised"
-        inputClassName="text-xs"
-      />
-      <button type="button" onClick={commit} disabled={edit.saving} aria-label="Save"
-        className="shrink-0 rounded p-1 text-success transition hover:bg-success/10 disabled:opacity-50"
-      >
-        <Check size={16} />
-      </button>
-      <button type="button" onClick={cancel} disabled={edit.saving} aria-label="Cancel"
-        className="shrink-0 rounded p-1 text-danger transition hover:bg-danger/10 disabled:opacity-50"
-      >
-        <X size={16} />
-      </button>
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1">
+        <PrefixInput
+          prefix={def.prefix.replace("https://", "")}
+          value={edit.draft}
+          disabled={edit.saving}
+          invalid={!!error}
+          placeholder={def.placeholder}
+          autoFocus
+          onChange={(v) => {
+            const { handle, error } = normalizeToHandle(v, def.prefix);
+            edit.setDraft(handle);
+            setError(error);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Escape") cancel();
+          }}
+          className="w-52 bg-bg-raised"
+          inputClassName="text-xs"
+        />
+        <button type="button" onClick={commit} disabled={edit.saving || !!error} aria-label="Save"
+          className="shrink-0 rounded p-1 text-success transition hover:bg-success/10 disabled:opacity-50"
+        >
+          <Check size={16} />
+        </button>
+        <button type="button" onClick={cancel} disabled={edit.saving} aria-label="Cancel"
+          className="shrink-0 rounded p-1 text-danger transition hover:bg-danger/10 disabled:opacity-50"
+        >
+          <X size={16} />
+        </button>
+      </div>
+      <p className={`pl-1 text-xs ${error ? "text-danger" : "text-text-subtle"}`}>
+        {error ?? "Paste the full link or just the handle"}
+      </p>
     </div>
   );
 }
