@@ -25,11 +25,29 @@ import (
 	"github.com/narval/server/models"
 )
 
-// fakeStorage satisfies StorageClient without a real MinIO.
-type fakeStorage struct{}
+// fakeStorage satisfies StorageClient without a real MinIO. It records deleted
+// object names so tests can assert on orphan cleanup.
+type fakeStorage struct {
+	deleted []string
+}
+
+const fakeBaseURL = "http://minio/narval/"
 
 func (f *fakeStorage) UploadLogo(_ context.Context, objectName string, _ io.Reader, _ int64, _ string) (string, error) {
-	return "http://minio/narval/" + objectName, nil
+	return fakeBaseURL + objectName, nil
+}
+
+func (f *fakeStorage) Delete(_ context.Context, objectName string) error {
+	f.deleted = append(f.deleted, objectName)
+	return nil
+}
+
+func (f *fakeStorage) ObjectNameFromURL(rawURL string) (string, bool) {
+	name, ok := strings.CutPrefix(rawURL, fakeBaseURL)
+	if !ok || name == "" {
+		return "", false
+	}
+	return name, true
 }
 
 // buildHandler creates an in-memory SQLite DB, runs migrations, and returns a Handler.

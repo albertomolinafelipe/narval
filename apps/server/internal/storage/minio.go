@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -75,6 +76,26 @@ func (c *Client) UploadLogo(ctx context.Context, objectName string, r io.Reader,
 // PublicURL returns the direct public URL for an object.
 func (c *Client) PublicURL(objectName string) string {
 	return fmt.Sprintf("%s/%s/%s", c.publicURL, c.bucket, objectName)
+}
+
+// Delete removes an object by name. Removing a missing object is not an error.
+func (c *Client) Delete(ctx context.Context, objectName string) error {
+	if err := c.minio.RemoveObject(ctx, c.bucket, objectName, minio.RemoveObjectOptions{}); err != nil {
+		return fmt.Errorf("minio remove object: %w", err)
+	}
+	return nil
+}
+
+// ObjectNameFromURL maps a stored public URL back to its object name. ok is false
+// when the URL isn't under this store's public base (external image), so callers
+// never delete objects they don't own.
+func (c *Client) ObjectNameFromURL(rawURL string) (string, bool) {
+	prefix := fmt.Sprintf("%s/%s/", c.publicURL, c.bucket)
+	name, ok := strings.CutPrefix(rawURL, prefix)
+	if !ok || name == "" {
+		return "", false
+	}
+	return name, true
 }
 
 // PresignedURL returns a temporary pre-signed GET URL for an object (fallback for private buckets).
