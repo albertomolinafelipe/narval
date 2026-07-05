@@ -409,11 +409,15 @@ func (h *Handler) UploadStartupLogo(c *gin.Context, id openapi_types.UUID) {
 		return
 	}
 
+	oldURL := st.LogoURL
 	st.LogoURL = logoURL
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
 	}
+
+	// Replaced an existing logo — remove the now-orphaned blob.
+	h.DeleteOwnedImage(c.Request.Context(), startupID, oldURL)
 
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
@@ -463,18 +467,22 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 		return
 	}
 
+	oldURL := st.BannerImage
 	st.BannerImage = bannerURL
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
 	}
 
+	// Replaced an existing banner — remove the now-orphaned blob.
+	h.DeleteOwnedImage(c.Request.Context(), startupID, oldURL)
+
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
 // clearStartupImage clears one image field (logo or banner) for an owned
-// startup. The blob is left in object storage (orphaned); only the reference is
-// dropped. apply mutates the loaded startup to zero the relevant field.
+// startup and removes the now-orphaned blob from object storage. apply mutates
+// the loaded startup to zero the relevant field.
 func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply func(*models.Startup)) {
 	startupID := id.String()
 
@@ -494,10 +502,19 @@ func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply
 		return
 	}
 
+	oldLogo, oldBanner := st.LogoURL, st.BannerImage
 	apply(&st)
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
+	}
+
+	// Delete whichever image was just cleared (went from set to empty).
+	if st.LogoURL == "" && oldLogo != "" {
+		h.DeleteOwnedImage(c.Request.Context(), startupID, oldLogo)
+	}
+	if st.BannerImage == "" && oldBanner != "" {
+		h.DeleteOwnedImage(c.Request.Context(), startupID, oldBanner)
 	}
 
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
