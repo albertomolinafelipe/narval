@@ -175,9 +175,8 @@ func (h *Handler) ListStartups(c *gin.Context) {
 			Where("startup_favorites.user_id = ?", userID)
 	}
 
-	// Filter: only show claimed profiles that have completed setup. Unclaimed
-	// admin shells stay out of every public listing until a startup claims them.
-	query = query.Where("profile_setup = ? AND claimed = ?", true, true)
+	// Filter: only show profiles that have completed setup.
+	query = query.Where("profile_setup = ?", true)
 
 	if err := query.Find(&startupList).Error; err != nil {
 		h.Logger.Printf("ListStartups: db query failed: %v", err)
