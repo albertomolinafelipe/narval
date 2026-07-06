@@ -28,7 +28,29 @@ import {
 export type StartupImageKind = "logo" | "banner";
 
 type SortOrder = "recent" | "trending";
-type ListFilters = { favorited?: boolean; sort?: SortOrder };
+type ListFilters = { favorited?: boolean };
+
+// Newest first — the server's default order and the `recent` sort.
+function createdDesc(a: Startup, b: Startup): number {
+  return (
+    new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+  );
+}
+
+// Sorting is done client-side over the already-fetched list; the server's
+// `?sort=` param is left in the API but no longer sent. `trending` ranks by
+// active boosts, falling back to recency for ties.
+function sortStartups(list: Startup[], sort: SortOrder): Startup[] {
+  const copy = [...list];
+  if (sort === "trending") {
+    copy.sort(
+      (a, b) => (b.boost_count ?? 0) - (a.boost_count ?? 0) || createdDesc(a, b),
+    );
+  } else {
+    copy.sort(createdDesc);
+  }
+  return copy;
+}
 
 // Unwrap a generated SDK result, throwing a plain Error on failure so callers
 // (and React Query) see a consistent error. Defaults are omitted from the
@@ -47,10 +69,9 @@ async function unwrap<T>(
   return data as T;
 }
 
-function listQuery({ favorited, sort }: ListFilters): ListStartupsData["query"] {
+function listQuery({ favorited }: ListFilters): ListStartupsData["query"] {
   const query: NonNullable<ListStartupsData["query"]> = {};
   if (favorited) query.favorited = true;
-  if (sort && sort !== "recent") query.sort = sort;
   return query;
 }
 
@@ -78,10 +99,15 @@ export function useStartupsQuery(
 ) {
   const { authenticated, loading } = useUser();
 
+  // Sort in memory so every sort order shares one fetch/cache entry. React
+  // Compiler memoises the inline select on `sort`.
+  const sort = options.sort ?? "recent";
+
   return useQuery({
     ...listStartupsOptions({ query: listQuery(options) }),
     enabled: !loading && (!options.favorited || authenticated),
     refetchOnMount: options.refetchOnMount,
+    select: (data) => sortStartups(data, sort),
   });
 }
 

@@ -1,14 +1,8 @@
-<div align="center">
-  <table>
-    <tr>
-      <td><img src="apps/web/public/logo.jpeg" alt="Narval" width="120" /></td>
-      <td>
-        <h1>Narval</h1>
-        <p>The platform where startups present themselves and get discovered.</p>
-      </td>
-    </tr>
-  </table>
-</div>
+# Narval
+
+The platform for startup discovery
+
+<img src="apps/web/public/logo.jpeg" alt="Narval" width="300" />
 
 ## Functionalities
 
