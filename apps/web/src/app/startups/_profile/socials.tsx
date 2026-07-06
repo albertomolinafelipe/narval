@@ -2,6 +2,7 @@
 
 import { useState, type ComponentType } from "react";
 import { Plus, Check, X, Pencil, Globe } from "lucide-react";
+import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
 import { SiLinkedin, SiX, SiInstagram, SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { parseProductLinks } from "@/lib/startup/product-links";
@@ -108,11 +109,18 @@ function EditableLink({
   );
 
   const { Icon } = def;
+  // Bound to the handle, not just the flag: the backend clears instagram_verified
+  // whenever the handle changes, so the badge can never sit on an unverified handle.
+  const verified = def.id === "instagram" && !!startup.instagram_verified;
 
   if (!edit.editing) {
     const inner = (
       <>
-        <Icon size={18} className="shrink-0" />
+        {verified ? (
+          <InstagramGradientIcon size={18} className="shrink-0" />
+        ) : (
+          <Icon size={18} className="shrink-0" />
+        )}
         <span className="truncate">{def.displayLabel ?? suffix ?? def.label}</span>
       </>
     );
@@ -140,6 +148,17 @@ function EditableLink({
 
   const commit = async () => {
     if (error) return;
+    // Changing a verified Instagram handle drops the verification server-side, so
+    // make the owner confirm the trade-off before saving a different handle.
+    if (
+      verified &&
+      edit.draft.trim() !== suffix &&
+      !window.confirm(
+        "Changing your Instagram handle will remove your verified badge. Continue?",
+      )
+    ) {
+      return;
+    }
     await edit.commit(edit.draft.trim());
     onClose?.();
   };

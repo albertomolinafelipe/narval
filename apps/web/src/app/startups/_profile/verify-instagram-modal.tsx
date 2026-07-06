@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Check, Copy, ExternalLink } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
+import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,20 +35,7 @@ function InstagramIcon({
   gradient?: boolean;
 }) {
   if (!gradient) return <SiInstagram size={size} />;
-  return (
-    <>
-      <svg width={0} height={0} className="absolute" aria-hidden>
-        <linearGradient id="ig-gradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#feda75" />
-          <stop offset="25%" stopColor="#fa7e1e" />
-          <stop offset="50%" stopColor="#d62976" />
-          <stop offset="75%" stopColor="#962fbf" />
-          <stop offset="100%" stopColor="#4f5bd5" />
-        </linearGradient>
-      </svg>
-      <SiInstagram size={size} style={{ fill: "url(#ig-gradient)" }} />
-    </>
-  );
+  return <InstagramGradientIcon size={size} />;
 }
 
 // ─── Step 1 — handle ─────────────────────────────────────────────────────────
