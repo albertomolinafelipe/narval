@@ -11,21 +11,26 @@ import {
   boostStartup,
   checkStartupWebsite,
   confirmDomainVerification,
+  confirmInstagramVerification,
   createStartup,
   deleteStartupBanner,
   deleteStartupLogo,
   favoriteStartup,
   getHealth,
+  getInstagramVerification,
   getMe,
   getStartup,
   getStats,
+  listInstagramVerifications,
   listStartups,
   login,
   logout,
   type Options,
   refreshToken,
   register,
+  resetInstagramVerification,
   startDomainVerification,
+  startInstagramVerification,
   unfavoriteStartup,
   updateStartup,
   uploadStartupBanner,
@@ -40,6 +45,9 @@ import type {
   ConfirmDomainVerificationData,
   ConfirmDomainVerificationError,
   ConfirmDomainVerificationResponse,
+  ConfirmInstagramVerificationData,
+  ConfirmInstagramVerificationError,
+  ConfirmInstagramVerificationResponse,
   CreateStartupData,
   CreateStartupError,
   CreateStartupResponse,
@@ -53,6 +61,9 @@ import type {
   FavoriteStartupError,
   GetHealthData,
   GetHealthResponse,
+  GetInstagramVerificationData,
+  GetInstagramVerificationError,
+  GetInstagramVerificationResponse,
   GetMeData,
   GetMeError,
   GetMeResponse,
@@ -61,6 +72,9 @@ import type {
   GetStartupResponse,
   GetStatsData,
   GetStatsResponse,
+  ListInstagramVerificationsData,
+  ListInstagramVerificationsError,
+  ListInstagramVerificationsResponse,
   ListStartupsData,
   ListStartupsResponse,
   LoginData,
@@ -74,8 +88,14 @@ import type {
   RefreshTokenResponse,
   RegisterData,
   RegisterError,
+  ResetInstagramVerificationData,
+  ResetInstagramVerificationError,
+  ResetInstagramVerificationResponse,
   StartDomainVerificationData,
   StartDomainVerificationError,
+  StartInstagramVerificationData,
+  StartInstagramVerificationError,
+  StartInstagramVerificationResponse,
   UnfavoriteStartupData,
   UnfavoriteStartupError,
   UnfavoriteStartupResponse,
@@ -694,6 +714,143 @@ export const confirmDomainVerificationMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await confirmDomainVerification({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getInstagramVerificationQueryKey = (
+  options: Options<GetInstagramVerificationData>,
+) => createQueryKey("getInstagramVerification", options);
+
+/**
+ * Get the current Instagram verification challenge for a startup
+ */
+export const getInstagramVerificationOptions = (
+  options: Options<GetInstagramVerificationData>,
+) =>
+  queryOptions<
+    GetInstagramVerificationResponse,
+    GetInstagramVerificationError,
+    GetInstagramVerificationResponse,
+    ReturnType<typeof getInstagramVerificationQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getInstagramVerification({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getInstagramVerificationQueryKey(options),
+  });
+
+/**
+ * Lock an Instagram handle and get the code to DM the company account
+ */
+export const startInstagramVerificationMutation = (
+  options?: Partial<Options<StartInstagramVerificationData>>,
+): UseMutationOptions<
+  StartInstagramVerificationResponse,
+  StartInstagramVerificationError,
+  Options<StartInstagramVerificationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    StartInstagramVerificationResponse,
+    StartInstagramVerificationError,
+    Options<StartInstagramVerificationData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await startInstagramVerification({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const listInstagramVerificationsQueryKey = (
+  options?: Options<ListInstagramVerificationsData>,
+) => createQueryKey("listInstagramVerifications", options);
+
+/**
+ * List Instagram verifications for the admin console
+ */
+export const listInstagramVerificationsOptions = (
+  options?: Options<ListInstagramVerificationsData>,
+) =>
+  queryOptions<
+    ListInstagramVerificationsResponse,
+    ListInstagramVerificationsError,
+    ListInstagramVerificationsResponse,
+    ReturnType<typeof listInstagramVerificationsQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await listInstagramVerifications({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: listInstagramVerificationsQueryKey(options),
+  });
+
+/**
+ * Confirm a startup's Instagram after matching the DM (admin only)
+ */
+export const confirmInstagramVerificationMutation = (
+  options?: Partial<Options<ConfirmInstagramVerificationData>>,
+): UseMutationOptions<
+  ConfirmInstagramVerificationResponse,
+  ConfirmInstagramVerificationError,
+  Options<ConfirmInstagramVerificationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ConfirmInstagramVerificationResponse,
+    ConfirmInstagramVerificationError,
+    Options<ConfirmInstagramVerificationData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await confirmInstagramVerification({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Reset a verification, unlocking the handle (admin only)
+ */
+export const resetInstagramVerificationMutation = (
+  options?: Partial<Options<ResetInstagramVerificationData>>,
+): UseMutationOptions<
+  ResetInstagramVerificationResponse,
+  ResetInstagramVerificationError,
+  Options<ResetInstagramVerificationData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    ResetInstagramVerificationResponse,
+    ResetInstagramVerificationError,
+    Options<ResetInstagramVerificationData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await resetInstagramVerification({
         ...options,
         ...fnOptions,
         throwOnError: true,

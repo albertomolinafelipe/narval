@@ -143,6 +143,14 @@ export type Startup = {
    * Verified domain (read-only, set at verification; empty if unverified)
    */
   verified_domain?: string;
+  /**
+   * Verified Instagram handle (read-only, set at verification; empty if unverified)
+   */
+  verified_instagram?: string;
+  /**
+   * Whether the startup's Instagram handle has been verified via DM
+   */
+  instagram_verified?: boolean;
   logo_url?: string;
   stage?: Stage;
   industry?: Industry;
@@ -327,6 +335,56 @@ export type ConfirmDomainVerificationRequest = {
    * The one-time code delivered to the work email.
    */
   code: string;
+};
+
+/**
+ * A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms.
+ */
+export type InstagramVerification = {
+  id: string;
+  startup_id: string;
+  /**
+   * The locked Instagram handle being verified (normalized, no leading @).
+   */
+  handle: string;
+  /**
+   * Correlation token the startup must DM to the company account (e.g. "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record.
+   */
+  code: string;
+  /**
+   * pending until an admin confirms the DM; verified once matched.
+   */
+  status: "pending" | "verified";
+  created_at: string;
+};
+
+export type StartInstagramVerificationRequest = {
+  /**
+   * Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it.
+   */
+  handle: string;
+};
+
+/**
+ * A pending or verified Instagram challenge as shown in the admin console.
+ */
+export type AdminInstagramVerification = {
+  id: string;
+  startup_id: string;
+  /**
+   * Name of the claiming startup, for display in the console.
+   */
+  startup_name: string;
+  /**
+   * The claimed Instagram handle the DM should come from.
+   */
+  handle: string;
+  /**
+   * The correlation token the startup was told to DM.
+   */
+  code: string;
+  status: "pending" | "verified";
+  created_at: string;
 };
 
 export type GetHealthData = {
@@ -1015,3 +1073,201 @@ export type ConfirmDomainVerificationResponses = {
 
 export type ConfirmDomainVerificationResponse =
   ConfirmDomainVerificationResponses[keyof ConfirmDomainVerificationResponses];
+
+export type GetInstagramVerificationData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/startups/{id}/verify-instagram";
+};
+
+export type GetInstagramVerificationErrors = {
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Not the owner of this startup
+   */
+  403: Error;
+  /**
+   * Startup not found, or no verification in progress
+   */
+  404: Error;
+};
+
+export type GetInstagramVerificationError =
+  GetInstagramVerificationErrors[keyof GetInstagramVerificationErrors];
+
+export type GetInstagramVerificationResponses = {
+  /**
+   * The in-progress or completed verification
+   */
+  200: InstagramVerification;
+};
+
+export type GetInstagramVerificationResponse =
+  GetInstagramVerificationResponses[keyof GetInstagramVerificationResponses];
+
+export type StartInstagramVerificationData = {
+  body: StartInstagramVerificationRequest;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/startups/{id}/verify-instagram";
+};
+
+export type StartInstagramVerificationErrors = {
+  /**
+   * Invalid or missing handle
+   */
+  400: Error;
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Not the owner of this startup
+   */
+  403: Error;
+  /**
+   * Startup not found
+   */
+  404: Error;
+  /**
+   * A verification is already locked for this startup, or the handle is already verified by another startup. An admin must reset it to change.
+   */
+  409: Error;
+};
+
+export type StartInstagramVerificationError =
+  StartInstagramVerificationErrors[keyof StartInstagramVerificationErrors];
+
+export type StartInstagramVerificationResponses = {
+  /**
+   * Handle locked; returns the code and DM link
+   */
+  201: InstagramVerification;
+};
+
+export type StartInstagramVerificationResponse =
+  StartInstagramVerificationResponses[keyof StartInstagramVerificationResponses];
+
+export type ListInstagramVerificationsData = {
+  body?: never;
+  path?: never;
+  query?: {
+    /**
+     * Filter by status. Omit to return all.
+     */
+    status?: "pending" | "verified";
+  };
+  url: "/admin/instagram-verifications";
+};
+
+export type ListInstagramVerificationsErrors = {
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Admin access required
+   */
+  403: Error;
+};
+
+export type ListInstagramVerificationsError =
+  ListInstagramVerificationsErrors[keyof ListInstagramVerificationsErrors];
+
+export type ListInstagramVerificationsResponses = {
+  /**
+   * List of verifications
+   */
+  200: Array<AdminInstagramVerification>;
+};
+
+export type ListInstagramVerificationsResponse =
+  ListInstagramVerificationsResponses[keyof ListInstagramVerificationsResponses];
+
+export type ConfirmInstagramVerificationData = {
+  body?: never;
+  path: {
+    /**
+     * The verification id.
+     */
+    id: string;
+  };
+  query?: never;
+  url: "/admin/instagram-verifications/{id}/confirm";
+};
+
+export type ConfirmInstagramVerificationErrors = {
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Admin access required
+   */
+  403: Error;
+  /**
+   * Verification not found
+   */
+  404: Error;
+};
+
+export type ConfirmInstagramVerificationError =
+  ConfirmInstagramVerificationErrors[keyof ConfirmInstagramVerificationErrors];
+
+export type ConfirmInstagramVerificationResponses = {
+  /**
+   * Verification confirmed; the startup's Instagram is now verified
+   */
+  200: AdminInstagramVerification;
+};
+
+export type ConfirmInstagramVerificationResponse =
+  ConfirmInstagramVerificationResponses[keyof ConfirmInstagramVerificationResponses];
+
+export type ResetInstagramVerificationData = {
+  body?: never;
+  path: {
+    /**
+     * The verification id.
+     */
+    id: string;
+  };
+  query?: never;
+  url: "/admin/instagram-verifications/{id}/reset";
+};
+
+export type ResetInstagramVerificationErrors = {
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Admin access required
+   */
+  403: Error;
+  /**
+   * Verification not found
+   */
+  404: Error;
+};
+
+export type ResetInstagramVerificationError =
+  ResetInstagramVerificationErrors[keyof ResetInstagramVerificationErrors];
+
+export type ResetInstagramVerificationResponses = {
+  /**
+   * Verification cleared; the startup can lock a new handle
+   */
+  204: void;
+};
+
+export type ResetInstagramVerificationResponse =
+  ResetInstagramVerificationResponses[keyof ResetInstagramVerificationResponses];
