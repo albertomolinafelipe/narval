@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useBoostMutation } from "@/lib/api/use-startups-query";
-import { components } from "@/lib/api/generated";
-
-type Startup = components["schemas"]["Startup"];
+import type { Startup } from "@/lib/api/gen";
 
 /**
  * Shared boost behavior for the boost button / counter: auth guard, mutation,

@@ -1,126 +1,163 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@/lib/user";
-import {
-  fetchStartups,
-  fetchStartup,
-  toggleFavorite,
-  boostStartup,
-  updateStartup,
-  uploadStartupImage,
-  deleteStartupImage,
-  type FetchStartupsOptions,
-  type StartupImageKind,
-} from "./client";
-import { components } from "./generated";
 import { trackBoost } from "@/lib/analytics";
+import {
+  boostStartup,
+  deleteStartupBanner,
+  deleteStartupLogo,
+  favoriteStartup,
+  unfavoriteStartup,
+  updateStartup,
+  uploadStartupBanner,
+  uploadStartupLogo,
+} from "./gen";
+import type {
+  ListStartupsData,
+  Startup,
+  UpdateStartupRequest,
+} from "./gen";
+import {
+  getStartupOptions,
+  getStartupQueryKey,
+  listStartupsOptions,
+  listStartupsQueryKey,
+} from "./gen/@tanstack/react-query.gen";
 
-type Startup = components["schemas"]["Startup"];
+export type StartupImageKind = "logo" | "banner";
 
-// Query Keys
-export const startupsKeys = {
-  all: ["startups"] as const,
-  lists: () => [...startupsKeys.all, "list"] as const,
-  list: (filters: FetchStartupsOptions) =>
-    [...startupsKeys.lists(), filters] as const,
-  details: () => [...startupsKeys.all, "detail"] as const,
-  detail: (id: string) => [...startupsKeys.details(), id] as const,
-};
+type SortOrder = "recent" | "trending";
+type ListFilters = { favorited?: boolean; sort?: SortOrder };
+
+// Unwrap a generated SDK result, throwing a plain Error on failure so callers
+// (and React Query) see a consistent error. Defaults are omitted from the
+// query so the request — and its cache key — match the server's behaviour.
+async function unwrap<T>(
+  result: Promise<{ data?: T; error?: unknown; response?: Response }>,
+): Promise<T> {
+  const { data, error, response } = await result;
+  if (!response?.ok || error) {
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String((error as { message: unknown }).message)
+        : `Request failed: ${response?.status ?? "network error"}`;
+    throw new Error(message);
+  }
+  return data as T;
+}
+
+function listQuery({ favorited, sort }: ListFilters): ListStartupsData["query"] {
+  const query: NonNullable<ListStartupsData["query"]> = {};
+  if (favorited) query.favorited = true;
+  if (sort && sort !== "recent") query.sort = sort;
+  return query;
+}
+
+const listKey = (filters: ListFilters = {}) =>
+  listStartupsQueryKey({ query: listQuery(filters) });
+const detailKey = (id: string) => getStartupQueryKey({ path: { id } });
+
+/** Invalidate every startup list variant (all filters/sorts). */
+function invalidateLists(queryClient: ReturnType<typeof useQueryClient>) {
+  return queryClient.invalidateQueries({ queryKey: listStartupsQueryKey() });
+}
 
 /**
- * Query hook for fetching startups list with optional filters.
- * Uses SuperTokens session cookies for authentication automatically.
+ * Query hook for the startups list with optional filters. Uses SuperTokens
+ * session cookies (forwarded by the /api/proxy route) for authentication.
  */
 export function useStartupsQuery(
   options: {
     favorited?: boolean;
-    sort?: "recent" | "trending";
-    // Refetch every time the component mounts (e.g. on navigating back to the
-    // page) so the list reflects changes made elsewhere. Overrides the global
-    // refetchOnMount: false default.
+    sort?: SortOrder;
+    // Refetch on mount (e.g. navigating back) so the list reflects changes
+    // made elsewhere. Overrides the global refetchOnMount: false default.
     refetchOnMount?: boolean | "always";
   } = {},
 ) {
   const { authenticated, loading } = useUser();
 
   return useQuery({
-    queryKey: startupsKeys.list({ favorited: options.favorited, sort: options.sort }),
-    queryFn: () =>
-      fetchStartups({
-        favorited: options.favorited,
-        sort: options.sort,
-      }),
+    ...listStartupsOptions({ query: listQuery(options) }),
     enabled: !loading && (!options.favorited || authenticated),
     refetchOnMount: options.refetchOnMount,
   });
 }
 
-/**
- * Query hook for fetching a single startup by ID.
- * Uses SuperTokens session cookies for authentication automatically.
- */
+/** Query hook for a single startup by UUID or verified domain. */
 export function useStartupQuery(id: string, placeholderData?: Startup) {
   const { loading } = useUser();
 
   return useQuery({
-    queryKey: startupsKeys.detail(id),
-    queryFn: () =>
-      fetchStartup(id, {
-        // No need to pass accessToken - SuperTokens uses cookies
-      }),
-    placeholderData, // Use placeholderData instead of initialData
-    // Refetch when session becomes available
+    ...getStartupOptions({ path: { id } }),
+    placeholderData,
     enabled: !loading,
   });
 }
 
 /**
- * Mutation hook for partially updating a startup (in-place editing).
- * Sends only the changed fields; on success updates the detail cache with the
- * returned startup and refreshes the lists. Owner enforcement is server-side.
+ * Mutation hook for partially updating a startup (in-place editing). Sends only
+ * the changed fields; on success updates the detail cache with the returned
+ * startup and refreshes the lists. Owner enforcement is server-side.
  */
 export function useUpdateStartupMutation(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (patch: components["schemas"]["UpdateStartupRequest"]) =>
-      updateStartup(id, patch),
+    mutationFn: (patch: UpdateStartupRequest) =>
+      unwrap(updateStartup({ path: { id }, body: patch })),
     onSuccess: (updated) => {
-      queryClient.setQueryData(startupsKeys.detail(id), updated);
-      queryClient.invalidateQueries({ queryKey: startupsKeys.lists() });
+      queryClient.setQueryData(detailKey(id), updated);
+      invalidateLists(queryClient);
     },
   });
 }
 
 /**
- * Mutation hook for a startup's logo/banner: upload a cropped blob or remove it.
- * On success updates the detail cache with the returned startup and refreshes
- * the lists (so avatars elsewhere reflect the change). Owner enforcement is
- * server-side.
+ * Mutation hook for a startup's logo/banner: upload a cropped blob or remove
+ * it. On success updates the detail cache and refreshes the lists so avatars
+ * elsewhere reflect the change. Owner enforcement is server-side.
  */
 export function useStartupImageMutation(id: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (
-      variables:
-        | { kind: StartupImageKind; blob: Blob }
-        | { kind: StartupImageKind; blob: null },
-    ) =>
-      variables.blob
-        ? uploadStartupImage(id, variables.kind, variables.blob)
-        : deleteStartupImage(id, variables.kind),
+    mutationFn: ({
+      kind,
+      blob,
+    }: {
+      kind: StartupImageKind;
+      blob: Blob | null;
+    }) => {
+      if (!blob) {
+        return unwrap(
+          kind === "logo"
+            ? deleteStartupLogo({ path: { id } })
+            : deleteStartupBanner({ path: { id } }),
+        );
+      }
+      // Wrap in a File so the multipart part carries a filename — Go's
+      // FormFile() ignores nameless parts.
+      const file = new File([blob], `${kind}.jpg`, {
+        type: blob.type || "image/jpeg",
+      });
+      return unwrap(
+        kind === "logo"
+          ? uploadStartupLogo({ path: { id }, body: { logo: file } })
+          : uploadStartupBanner({ path: { id }, body: { banner: file } }),
+      );
+    },
     onSuccess: (updated) => {
-      queryClient.setQueryData(startupsKeys.detail(id), updated);
-      queryClient.invalidateQueries({ queryKey: startupsKeys.lists() });
+      queryClient.setQueryData(detailKey(id), updated);
+      invalidateLists(queryClient);
     },
   });
 }
 
 /**
- * Mutation hook for toggling favorite status on a startup.
- * Includes optimistic updates and automatic cache invalidation.
+ * Mutation hook for toggling favorite status, with optimistic updates across
+ * the detail and list caches and rollback on error.
  */
 export function useFavoriteMutation() {
   const { authenticated } = useUser();
@@ -128,173 +165,103 @@ export function useFavoriteMutation() {
 
   return useMutation({
     mutationFn: ({ id, isFavorited }: { id: string; isFavorited: boolean }) => {
-      if (!authenticated) {
-        throw new Error("Authentication required");
-      }
-      // No need to pass accessToken - SuperTokens uses cookies
-      return toggleFavorite(id, isFavorited);
+      if (!authenticated) throw new Error("Authentication required");
+      return unwrap(
+        isFavorited
+          ? unfavoriteStartup({ path: { id } })
+          : favoriteStartup({ path: { id } }),
+      );
     },
     onMutate: async ({ id, isFavorited }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: startupsKeys.all });
+      await queryClient.cancelQueries({ queryKey: listStartupsQueryKey() });
 
-      // Snapshot the previous values for rollback
-      const previousStartup = queryClient.getQueryData(startupsKeys.detail(id));
-      const previousStartupsList = queryClient.getQueryData(
-        startupsKeys.list({ favorited: false }),
-      );
+      const previousStartup = queryClient.getQueryData(detailKey(id));
+      const previousStartupsList = queryClient.getQueryData(listKey());
       const previousFavoritesList = queryClient.getQueryData(
-        startupsKeys.list({ favorited: true }),
+        listKey({ favorited: true }),
       );
 
-      // Optimistically update the single startup cache
-      queryClient.setQueryData<Startup>(startupsKeys.detail(id), (old) => {
-        if (!old) return old;
-        return { ...old, is_favorited: !isFavorited };
-      });
-
-      // Optimistically update the all startups list
-      queryClient.setQueryData<Startup[]>(
-        startupsKeys.list({ favorited: false }),
-        (old) => {
-          if (!old) return old;
-          return old.map((startup) =>
-            startup.id === id
-              ? { ...startup, is_favorited: !isFavorited }
-              : startup,
-          );
-        },
+      queryClient.setQueryData<Startup>(detailKey(id), (old) =>
+        old ? { ...old, is_favorited: !isFavorited } : old,
       );
-
-      // Optimistically update the favorites list
+      queryClient.setQueryData<Startup[]>(listKey(), (old) =>
+        old?.map((s) =>
+          s.id === id ? { ...s, is_favorited: !isFavorited } : s,
+        ),
+      );
+      // Removing from favorites: drop it from the favorites list. Adding is
+      // left to the onSettled refetch (we lack the full object here).
       if (isFavorited) {
-        // Removing from favorites - filter it out
-        queryClient.setQueryData<Startup[]>(
-          startupsKeys.list({ favorited: true }),
-          (old) => {
-            if (!old) return old;
-            return old.filter((startup) => startup.id !== id);
-          },
+        queryClient.setQueryData<Startup[]>(listKey({ favorited: true }), (old) =>
+          old?.filter((s) => s.id !== id),
         );
-      } else {
-        // Adding to favorites - need to refetch to get it (we don't have the full object here)
-        // We'll invalidate instead of optimistic add
       }
 
-      // Return context for rollback
       return { previousStartup, previousStartupsList, previousFavoritesList };
     },
-    onError: (_err, _variables, context) => {
-      // Rollback on error
+    onError: (_err, { id }, context) => {
       if (context?.previousStartup) {
-        queryClient.setQueryData(
-          startupsKeys.detail(_variables.id),
-          context.previousStartup,
-        );
+        queryClient.setQueryData(detailKey(id), context.previousStartup);
       }
       if (context?.previousStartupsList) {
-        queryClient.setQueryData(
-          startupsKeys.list({ favorited: false }),
-          context.previousStartupsList,
-        );
+        queryClient.setQueryData(listKey(), context.previousStartupsList);
       }
       if (context?.previousFavoritesList) {
         queryClient.setQueryData(
-          startupsKeys.list({ favorited: true }),
+          listKey({ favorited: true }),
           context.previousFavoritesList,
         );
       }
     },
-    onSettled: () => {
-      // Refetch to ensure consistency
-      queryClient.invalidateQueries({ queryKey: startupsKeys.all });
-    },
+    onSettled: () => invalidateLists(queryClient),
   });
 }
 
 /**
- * Mutation hook for boosting a startup.
- * Includes optimistic updates and automatic cache invalidation.
+ * Mutation hook for boosting a startup, with optimistic updates. A repeat boost
+ * returns 409 from the server, which we treat as success (the count is already
+ * reflected) rather than an error.
  */
 export function useBoostMutation() {
   const { authenticated } = useUser();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => {
-      if (!authenticated) {
-        throw new Error("Authentication required");
-      }
-      // No need to pass accessToken - SuperTokens uses cookies
-      return boostStartup(id);
+    mutationFn: async (id: string) => {
+      if (!authenticated) throw new Error("Authentication required");
+      const { error, response } = await boostStartup({ path: { id } });
+      if (response?.status === 409) return; // already boosted — idempotent
+      if (!response?.ok || error) throw new Error("Failed to boost startup");
     },
     onMutate: async (id) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: startupsKeys.all });
+      await queryClient.cancelQueries({ queryKey: listStartupsQueryKey() });
 
-      // Snapshot the previous values for rollback
-      const previousStartup = queryClient.getQueryData(startupsKeys.detail(id));
-      const previousStartupsList = queryClient.getQueryData(
-        startupsKeys.list({ favorited: false }),
+      const previousStartup = queryClient.getQueryData(detailKey(id));
+      const previousStartupsList = queryClient.getQueryData(listKey());
+
+      const boost = (s: Startup): Startup =>
+        s.has_boosted
+          ? s
+          : { ...s, has_boosted: true, boost_count: (s.boost_count ?? 0) + 1 };
+
+      queryClient.setQueryData<Startup>(detailKey(id), (old) =>
+        old ? boost(old) : old,
+      );
+      queryClient.setQueryData<Startup[]>(listKey(), (old) =>
+        old?.map((s) => (s.id === id ? boost(s) : s)),
       );
 
-      // Optimistically update the single startup cache
-      queryClient.setQueryData<Startup>(startupsKeys.detail(id), (old) => {
-        if (!old) return old;
-        // Don't update if already boosted - prevents count increment on repeated clicks
-        if (old.has_boosted) return old;
-        return {
-          ...old,
-          has_boosted: true,
-          boost_count: (old.boost_count ?? 0) + 1,
-        };
-      });
-
-      // Optimistically update the all startups list
-      queryClient.setQueryData<Startup[]>(
-        startupsKeys.list({ favorited: false }),
-        (old) => {
-          if (!old) return old;
-          return old.map((startup) =>
-            startup.id === id
-              ? // Don't update if already boosted
-                startup.has_boosted
-                ? startup
-                : {
-                    ...startup,
-                    has_boosted: true,
-                    boost_count: (startup.boost_count ?? 0) + 1,
-                  }
-              : startup,
-          );
-        },
-      );
-
-      // Return context for rollback
       return { previousStartup, previousStartupsList };
     },
     onError: (_err, id, context) => {
-      // Rollback on error
       if (context?.previousStartup) {
-        queryClient.setQueryData(
-          startupsKeys.detail(id),
-          context.previousStartup,
-        );
+        queryClient.setQueryData(detailKey(id), context.previousStartup);
       }
       if (context?.previousStartupsList) {
-        queryClient.setQueryData(
-          startupsKeys.list({ favorited: false }),
-          context.previousStartupsList,
-        );
+        queryClient.setQueryData(listKey(), context.previousStartupsList);
       }
     },
-    onSuccess: (_data, id) => {
-      // Track successful boost in Umami analytics
-      trackBoost(id);
-    },
-    onSettled: () => {
-      // Refetch to ensure consistency (gets real boost count from server)
-      queryClient.invalidateQueries({ queryKey: startupsKeys.all });
-    },
+    onSuccess: (_data, id) => trackBoost(id),
+    onSettled: () => invalidateLists(queryClient),
   });
 }

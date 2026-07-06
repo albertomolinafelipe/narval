@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
-import { fetchStartup } from "@/lib/api/client";
+import { getStartupById } from "@/lib/api/startups";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -14,7 +14,7 @@ export default async function StartupSlugPage({ params }: Props) {
 
   // The backend resolves a non-UUID identifier against verified startups only,
   // so an unknown or non-verified domain returns null here.
-  const startup = await fetchStartup(slug.toLowerCase());
+  const startup = await getStartupById(slug.toLowerCase());
 
   if (!startup) notFound();
 

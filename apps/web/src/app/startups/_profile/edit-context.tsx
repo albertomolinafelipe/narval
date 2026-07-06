@@ -2,14 +2,12 @@
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { toast } from "sonner";
-import { components } from "@/lib/api/generated";
-import type { StartupImageKind } from "@/lib/api/client";
+import type { UpdateStartupRequest } from "@/lib/api/gen";
 import {
   useUpdateStartupMutation,
   useStartupImageMutation,
+  type StartupImageKind,
 } from "@/lib/api/use-startups-query";
-
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 interface ProfileEditValue {
   /** UX gate only — real authorization is enforced server-side (403 if not owner). */

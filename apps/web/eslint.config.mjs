@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated API client — regenerated via `make generate`, never hand-edited.
+    "src/lib/api/gen/**",
   ]),
 ]);
 

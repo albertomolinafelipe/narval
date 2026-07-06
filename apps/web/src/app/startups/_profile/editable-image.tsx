@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
-import type { StartupImageKind } from "@/lib/api/client";
+import type { StartupImageKind } from "@/lib/api/use-startups-query";
 import { useProfileEdit } from "./edit-context";
 
 interface EditableImageProps {

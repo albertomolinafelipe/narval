@@ -793,7 +793,12 @@ export interface operations {
     };
     listStartups: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description When true, return only startups favorited by the authenticated user (requires auth). */
+                favorited?: boolean;
+                /** @description Sort order for the list. */
+                sort?: "recent" | "trending";
+            };
             header?: never;
             path?: never;
             cookie?: never;
