@@ -7,6 +7,7 @@ import {
   Clock,
   LayoutList,
   SlidersHorizontal,
+  MoreHorizontal,
 } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SlideSwitch } from "@/components/ui/slide-switch";
@@ -36,6 +37,8 @@ interface Props {
   onExpandedChange: (expanded: boolean) => void;
   query: string;
   onQueryChange: (query: string) => void;
+  filtersOpen: boolean;
+  onFiltersToggle: (open: boolean) => void;
 }
 
 /**
@@ -53,6 +56,8 @@ export function StartupsToolbar({
   onExpandedChange,
   query,
   onQueryChange,
+  filtersOpen,
+  onFiltersToggle,
 }: Props) {
   // On mobile the extra controls collapse behind the filters button.
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -121,6 +126,17 @@ export function StartupsToolbar({
           />
         </div>
 
+        {/* Advanced-filter panel toggle — all breakpoints. */}
+        <ToggleButton
+          checked={filtersOpen}
+          onCheckedChange={onFiltersToggle}
+          checkedClassName={activeSwitch}
+          aria-label="Advanced filters"
+          className="shrink-0"
+        >
+          <SlidersHorizontal size={13} />
+        </ToggleButton>
+
         <label className="flex shrink-0 items-center gap-2">
           <span className="text-xs font-medium text-text-muted max-md:hidden">
             Map
@@ -135,15 +151,15 @@ export function StartupsToolbar({
           </SlideSwitch>
         </label>
 
-        {/* Mobile-only: reveals the extra controls in a second row. */}
+        {/* Mobile-only: reveals the sort/favorites/details controls below. */}
         <ToggleButton
           checked={showAdvanced}
           onCheckedChange={setShowAdvanced}
           checkedClassName={activeSwitch}
-          aria-label="More filters"
+          aria-label="More controls"
           className="shrink-0 md:hidden"
         >
-          <SlidersHorizontal size={13} />
+          <MoreHorizontal size={13} />
         </ToggleButton>
 
         {/* Desktop: controls inline; mobile hides them behind the filters button. */}
