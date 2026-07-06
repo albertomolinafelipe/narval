@@ -527,7 +527,16 @@ export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
 export type ListStartupsData = {
   body?: never;
   path?: never;
-  query?: never;
+  query?: {
+    /**
+     * When true, return only startups favorited by the authenticated user (requires auth).
+     */
+    favorited?: boolean;
+    /**
+     * Sort order for the list.
+     */
+    sort?: "recent" | "trending";
+  };
   url: "/startups";
 };
 

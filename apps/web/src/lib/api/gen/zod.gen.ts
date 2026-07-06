@@ -265,6 +265,11 @@ export const zRefreshTokenResponse = zTokenResponse;
  */
 export const zGetMeResponse = zUserProfile;
 
+export const zListStartupsQuery = z.object({
+  favorited: z.boolean().optional(),
+  sort: z.enum(["recent", "trending"]).optional().default("recent"),
+});
+
 /**
  * List of startups
  */
