@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="apps/web/public/logo.jpeg" alt="Narval" width="120" />
+  <img src="apps/web/public/logo.jpeg" alt="Narval" width="500" />
   <h1>Narval</h1>
   <p>A platform where startups present themselves and get discovered.</p>
 </div>
