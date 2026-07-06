@@ -66,7 +66,8 @@ type Startup struct {
 	// Claimed is true for every real profile (normal registration + already
 	// handed-off shells). Admin-seeded shells start false and are excluded from
 	// public reads until a startup claims them. The "one profile per owner" rule
-	// is a partial unique index on (owner_id) WHERE claimed — see db.Migrate.
+	// is enforced in the claim/registration paths (accounts.bindClaim,
+	// CreateStartup), not by a DB constraint.
 	Claimed bool `gorm:"default:false"                       json:"claimed"`
 	// ClaimToken is the bearer secret in the claim link; non-empty only while a
 	// shell is unclaimed, burned on claim. Never serialised in API responses.

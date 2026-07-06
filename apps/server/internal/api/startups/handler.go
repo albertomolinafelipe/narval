@@ -22,8 +22,10 @@ import (
 	"github.com/narval/server/models"
 )
 
-const maxLogoSize = 5 << 20    // 5 MiB
-const maxBannerSize = 10 << 20 // 10 MiB
+const (
+	maxLogoSize   = 5 << 20  // 5 MiB
+	maxBannerSize = 10 << 20 // 10 MiB
+)
 
 // Controlled enum values
 
@@ -159,7 +161,7 @@ func (h *Handler) ListStartups(c *gin.Context) {
 	}
 
 	// Get current user ID if authenticated
-	userID := middleware.GetUserID(c)
+	userID := middleware.GetDBUserID(c)
 
 	if filterFavorited {
 		// Require authentication for favorited filter
@@ -173,9 +175,8 @@ func (h *Handler) ListStartups(c *gin.Context) {
 			Where("startup_favorites.user_id = ?", userID)
 	}
 
-	// Filter: only show claimed profiles that have completed setup. Unclaimed
-	// admin shells stay out of every public listing until a startup claims them.
-	query = query.Where("profile_setup = ? AND claimed = ?", true, true)
+	// Filter: only show profiles that have completed setup.
+	query = query.Where("profile_setup = ?", true)
 
 	if err := query.Find(&startupList).Error; err != nil {
 		h.Logger.Printf("ListStartups: db query failed: %v", err)
@@ -267,7 +268,10 @@ func (h *Handler) CreateStartup(c *gin.Context) {
 		return
 	}
 
-	ownerID := middleware.GetUserID(c)
+	// owner_id is the local users.id everywhere (registration, claim, admin seed)
+	// and every ownership check compares against it, so use the DB id here too —
+	// not the SuperTokens auth id.
+	ownerID := middleware.GetDBUserID(c)
 	ownerEmail := middleware.GetUserEmail(c)
 
 	// Enforce: only accounts of type "startup" may create a startup profile.
@@ -702,7 +706,7 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 	response["boost_count"] = boostCount
 
 	// Add favorite status if user is authenticated
-	userID := middleware.GetUserID(c)
+	userID := middleware.GetDBUserID(c)
 	if userID != "" {
 		isFavorited := h.isStartupFavorited(userID, s.ID)
 		response["is_favorited"] = isFavorited
@@ -936,7 +940,7 @@ func capFeaturesJSON(raw string) string {
 
 // FavoriteStartup creates a favorite for the authenticated user on the specified startup.
 func (h *Handler) FavoriteStartup(c *gin.Context, id openapi_types.UUID) {
-	userID := middleware.GetUserID(c)
+	userID := middleware.GetDBUserID(c)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED", "message": "authentication required"})
 		return
@@ -976,7 +980,7 @@ func (h *Handler) FavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 
 // UnfavoriteStartup removes a favorite for the authenticated user on the specified startup.
 func (h *Handler) UnfavoriteStartup(c *gin.Context, id openapi_types.UUID) {
-	userID := middleware.GetUserID(c)
+	userID := middleware.GetDBUserID(c)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED", "message": "authentication required"})
 		return
@@ -999,7 +1003,7 @@ func (h *Handler) UnfavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 // BoostStartup creates a boost for the authenticated user on the specified startup.
 // Boosts are irreversible but expire after 7 days automatically.
 func (h *Handler) BoostStartup(c *gin.Context, id openapi_types.UUID) {
-	userID := middleware.GetUserID(c)
+	userID := middleware.GetDBUserID(c)
 	if userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": "UNAUTHORIZED", "message": "authentication required"})
 		return

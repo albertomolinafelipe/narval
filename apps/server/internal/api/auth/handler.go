@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"regexp"
@@ -224,8 +225,15 @@ func (h *Handler) Verify(c *gin.Context) {
 	}
 	user, err := accounts.LinkOrCreate(h.db, req.Email, authUserID, intent)
 	if err != nil {
-		h.logger.Printf("failed to reconcile user: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
+		switch {
+		case errors.Is(err, accounts.ErrAlreadyHasProfile):
+			c.JSON(http.StatusConflict, gin.H{"code": "ALREADY_HAS_PROFILE", "message": "this account already has a startup profile"})
+		case errors.Is(err, accounts.ErrInvalidClaim):
+			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_CLAIM", "message": "this claim link is invalid or already used"})
+		default:
+			h.logger.Printf("failed to reconcile user: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
+		}
 		return
 	}
 	if draftErr == nil {
@@ -336,6 +344,21 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	if err := h.db.Where("claim_token = ? AND claimed = ?", req.Token, false).First(&shell).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": "INVALID_CLAIM", "message": "this claim link is invalid or already used"})
 		return
+	}
+
+	// Reject up front if this email already owns a startup — one profile per
+	// account. bindClaim enforces this authoritatively, but catching it here
+	// avoids sending a code for a claim that can't complete.
+	var existing models.User
+	if err := h.db.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+		var owned int64
+		h.db.Model(&models.Startup{}).
+			Where("owner_id = ? AND claimed = ?", existing.ID, true).
+			Count(&owned)
+		if owned > 0 {
+			c.JSON(http.StatusConflict, gin.H{"code": "ALREADY_HAS_PROFILE", "message": "this email already has a startup profile"})
+			return
+		}
 	}
 
 	tenantID := "public"
