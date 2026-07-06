@@ -27,9 +27,9 @@ type Startup struct {
 	Location       string `json:"location"`
 	FoundedYear    int    `json:"founded_year"`
 	TechStack      string `json:"tech_stack"`
-	BannerImage    string `json:"banner_image"`             // URL of the banner image
-	ProductLinks   string `json:"product_links"`            // JSON: {"web":"...","ios":"...","android":"..."}
-	Founders       string `json:"founders"`                 // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
+	BannerImage    string `json:"banner_image"`              // URL of the banner image
+	ProductLinks   string `json:"product_links"`             // JSON: {"web":"...","ios":"...","android":"..."}
+	Founders       string `json:"founders"`                  // JSON: [{"name":"...","photo_url":"...","linkedin":"..."}]
 	Gallery        string `gorm:"type:text" json:"gallery"`  // JSON: ["url1","url2",…] vertical product screenshots (max 4)
 	ProductStatus  string `json:"product_status"`            // coming-soon | waitlist | beta | live (empty = none)
 	Features       string `gorm:"type:text" json:"features"` // JSON: [{"title":"...","description":"..."}] key product features (max 8)
@@ -58,10 +58,16 @@ type Startup struct {
 	ContactFunding string `json:"contact_funding"`
 	ContactTalent  string `json:"contact_talent"`
 
-	OwnerID      string    `gorm:"not null;index"                 json:"owner_id"`
-	OwnerEmail   string    `gorm:"not null"                       json:"owner_email"`
-	ProfileSetup bool      `gorm:"default:false"                  json:"profile_setup"`
-	Verified     bool      `gorm:"default:false"                  json:"verified"`
+	OwnerID      string `gorm:"not null;index"                 json:"owner_id"`
+	OwnerEmail   string `gorm:"not null"                       json:"owner_email"`
+	ProfileSetup bool   `gorm:"default:false"                  json:"profile_setup"`
+	Verified     bool   `gorm:"default:false"                  json:"verified"`
+
+	// InstagramVerified is set once an admin confirms the DM challenge;
+	// VerifiedInstagram records which handle was verified. Both are read-only to
+	// the owner and cleared when an admin resets the verification.
+	InstagramVerified bool   `gorm:"default:false"           json:"instagram_verified"`
+	VerifiedInstagram string `                               json:"verified_instagram"`
 
 	// Claimed is true for every real profile (normal registration + already
 	// handed-off shells). Admin-seeded shells start false and are excluded from

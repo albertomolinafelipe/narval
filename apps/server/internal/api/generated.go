@@ -23,6 +23,12 @@ const (
 	AccountTypeUser    AccountType = "user"
 )
 
+// Defines values for AdminInstagramVerificationStatus.
+const (
+	AdminInstagramVerificationStatusPending  AdminInstagramVerificationStatus = "pending"
+	AdminInstagramVerificationStatusVerified AdminInstagramVerificationStatus = "verified"
+)
+
 // Defines values for FundingRound.
 const (
 	FundingRoundBridge  FundingRound = "bridge"
@@ -51,6 +57,12 @@ const (
 	SaaS           Industry = "SaaS"
 )
 
+// Defines values for InstagramVerificationStatus.
+const (
+	InstagramVerificationStatusPending  InstagramVerificationStatus = "pending"
+	InstagramVerificationStatusVerified InstagramVerificationStatus = "verified"
+)
+
 // Defines values for Stage.
 const (
 	StageGrowth     Stage = "growth"
@@ -62,6 +74,12 @@ const (
 	StageSeriesB    Stage = "series-b"
 )
 
+// Defines values for ListInstagramVerificationsParamsStatus.
+const (
+	Pending  ListInstagramVerificationsParamsStatus = "pending"
+	Verified ListInstagramVerificationsParamsStatus = "verified"
+)
+
 // Defines values for ListStartupsParamsSort.
 const (
 	Recent   ListStartupsParamsSort = "recent"
@@ -70,6 +88,25 @@ const (
 
 // AccountType defines model for AccountType.
 type AccountType string
+
+// AdminInstagramVerification A pending or verified Instagram challenge as shown in the admin console.
+type AdminInstagramVerification struct {
+	// Code The correlation token the startup was told to DM.
+	Code      string    `json:"code"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Handle The claimed Instagram handle the DM should come from.
+	Handle    string             `json:"handle"`
+	Id        openapi_types.UUID `json:"id"`
+	StartupId openapi_types.UUID `json:"startup_id"`
+
+	// StartupName Name of the claiming startup, for display in the console.
+	StartupName string                           `json:"startup_name"`
+	Status      AdminInstagramVerificationStatus `json:"status"`
+}
+
+// AdminInstagramVerificationStatus defines model for AdminInstagramVerification.Status.
+type AdminInstagramVerificationStatus string
 
 // ConfirmDomainVerificationRequest defines model for ConfirmDomainVerificationRequest.
 type ConfirmDomainVerificationRequest struct {
@@ -124,6 +161,24 @@ type FundingRound string
 // Industry defines model for Industry.
 type Industry string
 
+// InstagramVerification A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms.
+type InstagramVerification struct {
+	// Code Correlation token the startup must DM to the company account (e.g. "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record.
+	Code      string    `json:"code"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Handle The locked Instagram handle being verified (normalized, no leading @).
+	Handle    string             `json:"handle"`
+	Id        openapi_types.UUID `json:"id"`
+	StartupId openapi_types.UUID `json:"startup_id"`
+
+	// Status pending until an admin confirms the DM; verified once matched.
+	Status InstagramVerificationStatus `json:"status"`
+}
+
+// InstagramVerificationStatus pending until an admin confirms the DM; verified once matched.
+type InstagramVerificationStatus string
+
 // LoginRequest defines model for LoginRequest.
 type LoginRequest struct {
 	Password string `json:"password"`
@@ -163,6 +218,12 @@ type StartDomainVerificationRequest struct {
 	Website string `json:"website"`
 }
 
+// StartInstagramVerificationRequest defines model for StartInstagramVerificationRequest.
+type StartInstagramVerificationRequest struct {
+	// Handle Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it.
+	Handle string `json:"handle"`
+}
+
 // Startup defines model for Startup.
 type Startup struct {
 	// About Long-form markdown pitch shown on the Overview tab
@@ -199,6 +260,9 @@ type Startup struct {
 	Id         openapi_types.UUID `json:"id"`
 	Industry   *Industry          `json:"industry,omitempty"`
 	Instagram  *string            `json:"instagram,omitempty"`
+
+	// InstagramVerified Whether the startup's Instagram handle has been verified via DM
+	InstagramVerified *bool `json:"instagram_verified,omitempty"`
 
 	// IsFavorited Whether the current authenticated user has favorited this startup (only present when authenticated)
 	IsFavorited *bool   `json:"is_favorited,omitempty"`
@@ -237,6 +301,9 @@ type Startup struct {
 
 	// VerifiedDomain Verified domain (read-only, set at verification; empty if unverified)
 	VerifiedDomain *string `json:"verified_domain,omitempty"`
+
+	// VerifiedInstagram Verified Instagram handle (read-only, set at verification; empty if unverified)
+	VerifiedInstagram *string `json:"verified_instagram,omitempty"`
 
 	// VideoUrl YouTube URL embedded on the Overview tab
 	VideoUrl *string `json:"video_url,omitempty"`
@@ -345,6 +412,15 @@ type WebsiteCheckResponse struct {
 	Available bool `json:"available"`
 }
 
+// ListInstagramVerificationsParams defines parameters for ListInstagramVerifications.
+type ListInstagramVerificationsParams struct {
+	// Status Filter by status. Omit to return all.
+	Status *ListInstagramVerificationsParamsStatus `form:"status,omitempty" json:"status,omitempty"`
+}
+
+// ListInstagramVerificationsParamsStatus defines parameters for ListInstagramVerifications.
+type ListInstagramVerificationsParamsStatus string
+
 // ListStartupsParams defines parameters for ListStartups.
 type ListStartupsParams struct {
 	// Favorited When true, return only startups favorited by the authenticated user (requires auth).
@@ -402,8 +478,20 @@ type StartDomainVerificationJSONRequestBody = StartDomainVerificationRequest
 // ConfirmDomainVerificationJSONRequestBody defines body for ConfirmDomainVerification for application/json ContentType.
 type ConfirmDomainVerificationJSONRequestBody = ConfirmDomainVerificationRequest
 
+// StartInstagramVerificationJSONRequestBody defines body for StartInstagramVerification for application/json ContentType.
+type StartInstagramVerificationJSONRequestBody = StartInstagramVerificationRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// List Instagram verifications for the admin console
+	// (GET /admin/instagram-verifications)
+	ListInstagramVerifications(c *gin.Context, params ListInstagramVerificationsParams)
+	// Confirm a startup's Instagram after matching the DM (admin only)
+	// (POST /admin/instagram-verifications/{id}/confirm)
+	ConfirmInstagramVerification(c *gin.Context, id openapi_types.UUID)
+	// Reset a verification, unlocking the handle (admin only)
+	// (POST /admin/instagram-verifications/{id}/reset)
+	ResetInstagramVerification(c *gin.Context, id openapi_types.UUID)
 	// Login with username and password
 	// (POST /auth/login)
 	Login(c *gin.Context)
@@ -467,6 +555,12 @@ type ServerInterface interface {
 	// Confirm domain verification with the one-time code
 	// (POST /startups/{id}/verify-domain/confirm)
 	ConfirmDomainVerification(c *gin.Context, id openapi_types.UUID)
+	// Get the current Instagram verification challenge for a startup
+	// (GET /startups/{id}/verify-instagram)
+	GetInstagramVerification(c *gin.Context, id openapi_types.UUID)
+	// Lock an Instagram handle and get the code to DM the company account
+	// (POST /startups/{id}/verify-instagram)
+	StartInstagramVerification(c *gin.Context, id openapi_types.UUID)
 	// Aggregate directory counts (startups + users)
 	// (GET /stats)
 	GetStats(c *gin.Context)
@@ -480,6 +574,86 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
+
+// ListInstagramVerifications operation middleware
+func (siw *ServerInterfaceWrapper) ListInstagramVerifications(c *gin.Context) {
+
+	var err error
+
+	c.Set(BearerAuthScopes, []string{})
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstagramVerificationsParams
+
+	// ------------- Optional query parameter "status" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "status", c.Request.URL.Query(), &params.Status)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter status: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ListInstagramVerifications(c, params)
+}
+
+// ConfirmInstagramVerification operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmInstagramVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ConfirmInstagramVerification(c, id)
+}
+
+// ResetInstagramVerification operation middleware
+func (siw *ServerInterfaceWrapper) ResetInstagramVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.ResetInstagramVerification(c, id)
+}
 
 // Login operation middleware
 func (siw *ServerInterfaceWrapper) Login(c *gin.Context) {
@@ -942,6 +1116,58 @@ func (siw *ServerInterfaceWrapper) ConfirmDomainVerification(c *gin.Context) {
 	siw.Handler.ConfirmDomainVerification(c, id)
 }
 
+// GetInstagramVerification operation middleware
+func (siw *ServerInterfaceWrapper) GetInstagramVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetInstagramVerification(c, id)
+}
+
+// StartInstagramVerification operation middleware
+func (siw *ServerInterfaceWrapper) StartInstagramVerification(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", c.Param("id"), &id, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	c.Set(BearerAuthScopes, []string{})
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.StartInstagramVerification(c, id)
+}
+
 // GetStats operation middleware
 func (siw *ServerInterfaceWrapper) GetStats(c *gin.Context) {
 
@@ -982,6 +1208,9 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
+	router.GET(options.BaseURL+"/admin/instagram-verifications", wrapper.ListInstagramVerifications)
+	router.POST(options.BaseURL+"/admin/instagram-verifications/:id/confirm", wrapper.ConfirmInstagramVerification)
+	router.POST(options.BaseURL+"/admin/instagram-verifications/:id/reset", wrapper.ResetInstagramVerification)
 	router.POST(options.BaseURL+"/auth/login", wrapper.Login)
 	router.POST(options.BaseURL+"/auth/logout", wrapper.Logout)
 	router.GET(options.BaseURL+"/auth/me", wrapper.GetMe)
@@ -1003,5 +1232,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 	router.POST(options.BaseURL+"/startups/:id/logo", wrapper.UploadStartupLogo)
 	router.POST(options.BaseURL+"/startups/:id/verify-domain", wrapper.StartDomainVerification)
 	router.POST(options.BaseURL+"/startups/:id/verify-domain/confirm", wrapper.ConfirmDomainVerification)
+	router.GET(options.BaseURL+"/startups/:id/verify-instagram", wrapper.GetInstagramVerification)
+	router.POST(options.BaseURL+"/startups/:id/verify-instagram", wrapper.StartInstagramVerification)
 	router.GET(options.BaseURL+"/stats", wrapper.GetStats)
 }

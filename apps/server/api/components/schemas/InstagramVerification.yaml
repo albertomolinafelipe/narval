@@ -8,7 +8,6 @@ required:
   - startup_id
   - handle
   - code
-  - dm_url
   - status
   - created_at
 properties:
@@ -26,9 +25,6 @@ properties:
     description: >-
       Correlation token the startup must DM to the company account (e.g.
       "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record.
-  dm_url:
-    type: string
-    description: Deep link that opens a DM to the company Instagram account (e.g. https://ig.me/m/gonarval).
   status:
     type: string
     description: pending until an admin confirms the DM; verified once matched.

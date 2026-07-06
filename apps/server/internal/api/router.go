@@ -84,6 +84,25 @@ func (s *server) StartDomainVerification(c *gin.Context, id openapi_types.UUID) 
 func (s *server) ConfirmDomainVerification(c *gin.Context, id openapi_types.UUID) {
 	s.startups.ConfirmDomainVerification(c, id)
 }
+func (s *server) StartInstagramVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.StartInstagramVerification(c, id)
+}
+func (s *server) GetInstagramVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.GetInstagramVerification(c, id)
+}
+func (s *server) ListInstagramVerifications(c *gin.Context, params ListInstagramVerificationsParams) {
+	status := ""
+	if params.Status != nil {
+		status = string(*params.Status)
+	}
+	s.startups.ListInstagramVerifications(c, status)
+}
+func (s *server) ConfirmInstagramVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.ConfirmInstagramVerification(c, id)
+}
+func (s *server) ResetInstagramVerification(c *gin.Context, id openapi_types.UUID) {
+	s.startups.ResetInstagramVerification(c, id)
+}
 
 func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.Client) *gin.Engine {
 	if cfg.Env == "production" {
