@@ -1,0 +1,40 @@
+type: object
+description: >-
+  A startup's Instagram verification challenge. The startup DMs the code from the
+  handle they claim to the company Instagram account; an admin then matches the
+  incoming DM in the console and confirms.
+required:
+  - id
+  - startup_id
+  - handle
+  - code
+  - dm_url
+  - status
+  - created_at
+properties:
+  id:
+    type: string
+    format: uuid
+  startup_id:
+    type: string
+    format: uuid
+  handle:
+    type: string
+    description: The locked Instagram handle being verified (normalized, no leading @).
+  code:
+    type: string
+    description: >-
+      Correlation token the startup must DM to the company account (e.g.
+      "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record.
+  dm_url:
+    type: string
+    description: Deep link that opens a DM to the company Instagram account (e.g. https://ig.me/m/gonarval).
+  status:
+    type: string
+    description: pending until an admin confirms the DM; verified once matched.
+    enum:
+      - pending
+      - verified
+  created_at:
+    type: string
+    format: date-time
