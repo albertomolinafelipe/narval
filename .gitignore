@@ -41,3 +41,6 @@ caddy_config/
 
 # Local working notes
 *TODO.md
+
+# hey-api codegen crash logs
+apps/web/openapi-ts-error-*.log
