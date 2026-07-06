@@ -156,6 +156,69 @@ the **claim link is the secret** — treat it like a bearer credential.
 - **Never relax the public rule** — it's the partial unique index; admin multi-ownership only
   ever applies to *unclaimed* shells.
 
+### Next up: Generated frontend API layer — kill the hand-plumbing
+
+**Goal.** The Go side is fully generated from the OpenAPI spec (types + server stubs via
+`oapi-codegen`). The frontend is not: it generates *types only* (`openapi-typescript`) and then
+hand-plumbs everything on top of them, with the same shapes and enums copied by hand across
+three layers. Bring the frontend to Go-side parity: **one spec → generated types, a typed
+client per endpoint, React Query hooks, and Zod schemas**, so nothing is written twice.
+
+The bar for this work is explicit: the end state must be **idiomatic, near-perfect, extendable,
+and readable, with the duplication entirely gone** — not reduced, gone. No hand-maintained layer
+should restate anything the spec already describes.
+
+#### What's wrong today (the duplication to delete)
+
+The generated types exist but almost nothing leans on them; the real API layer is written by hand.
+
+1. **The typed client is dead code.** `lib/api/client.ts` builds a typed `openapi-fetch` client
+   (`apiClient`) from the generated `paths` — and it is used **zero times**. Every real call
+   (31 across 10 files) is a hand-rolled `fetch("/api/proxy/...")` restating URL, method,
+   headers, and error handling each time.
+2. **Enums are defined three times.** Generated types, then re-listed in `lib/enums.ts`, then
+   **hardcoded as raw strings** in `lib/schemas/startup-schema.ts` (`VALID_STAGES`,
+   `VALID_INDUSTRIES`, `VALID_ROUNDS`). The third copy isn't tied to the spec — a new backend
+   enum value silently goes stale. This is a live drift bug, not a style nit.
+3. **Validation hand-copies the API shape.** `startupProfileSchema` re-describes
+   `UpdateStartupRequest` field by field in Zod.
+4. **React Query hooks wrap hand-written fetch wrappers** (`lib/api/use-startups-query.ts`,
+   `use-stats-query.ts`) — two hand-maintained layers where zero are needed.
+
+#### Target — one generator, three layers, zero hand-copies
+
+Adopt **`@hey-api/openapi-ts`** with its **TanStack Query** and **Zod** plugins — the TypeScript
+equivalent of what `oapi-codegen` gives the Go side. From the single bundled spec it emits:
+
+- a typed function per operation (replaces the 31 hand-rolled fetches and `client.ts`),
+- React Query hooks (replaces the hand-written query/mutation wrappers),
+- Zod schemas + inferred types (replaces the hand-copied validation shape and the enum copies).
+
+Wire it into `make generate` alongside the Go step so one command regenerates both sides; commit
+the output like the other generated files. Only **UI-only** validation with no API counterpart
+(URL-format checks, human-facing max-length messages) stays hand-written — and it composes on top
+of the generated schema, it does not re-declare the shape.
+
+#### Ground rules
+
+- **Spec is the single source of truth.** If a shape or enum lives in the OpenAPI spec, the
+  frontend imports it — never restates it. Deleting a hand-copy is part of the work, not a
+  follow-up.
+- **Generated files are not hand-edited** — same rule as `generated.go`/`generated.ts`; change the
+  spec, run `make generate`, commit the output.
+- **Preserve the proxy.** All browser traffic goes through `/api/proxy/[...path]` for SuperTokens
+  cookie forwarding — point the generated client's `baseUrl` at the proxy; don't bypass it.
+- **Slice it and stop to test.** Land the generator + one feature end-to-end (startups
+  list/detail) first, verify, then roll feature by feature — deleting the corresponding
+  `client.ts` wrapper, hook, and enum/schema copy as each caller moves over.
+
+#### Done means
+
+`lib/api/client.ts`'s fetch wrappers, the duplicate lists in `lib/enums.ts`, and the hardcoded
+enums/shape in `startup-schema.ts` are **removed**, replaced by generated code that tracks the
+spec automatically. Adding or changing an endpoint is `make generate` + wire the UI — never
+"update it in four places."
+
 ---
 
 ## What is Narval?
