@@ -357,11 +357,27 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 	// Snapshot the image-bearing JSON fields before applying the update so we can
 	// clean up blobs the owner removed (a deleted screenshot or founder photo).
 	oldGallery, oldFounders := st.Gallery, st.Founders
+	oldInstagram := st.Instagram
 	applyStartupFields(&st, &req)
+
+	// Editing the Instagram handle invalidates any verification: a verified badge
+	// must never outlive the exact handle it was granted for. Clear the flag here
+	// and drop any in-progress or completed challenge below.
+	instagramChanged := instagramHandleKey(oldInstagram) != instagramHandleKey(st.Instagram)
+	if instagramChanged {
+		st.InstagramVerified = false
+	}
 
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
+	}
+
+	if instagramChanged {
+		if err := h.DB.Where("startup_id = ?", startupID).
+			Delete(&models.InstagramVerification{}).Error; err != nil {
+			h.Logger.Printf("UpdateStartup: failed to clear instagram verification: %v", err)
+		}
 	}
 
 	// Remove orphaned screenshot / founder-photo blobs dropped by this update.
@@ -651,7 +667,6 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"milestones":         s.Milestones,
 		"website":            s.Website,
 		"verified_domain":    s.VerifiedDomain,
-		"verified_instagram": s.VerifiedInstagram,
 		"instagram_verified": s.InstagramVerified,
 		"logo_url":           s.LogoURL,
 		"stage":              s.Stage,

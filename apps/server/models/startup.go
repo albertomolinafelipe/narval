@@ -63,11 +63,10 @@ type Startup struct {
 	ProfileSetup bool   `gorm:"default:false"                  json:"profile_setup"`
 	Verified     bool   `gorm:"default:false"                  json:"verified"`
 
-	// InstagramVerified is set once an admin confirms the DM challenge;
-	// VerifiedInstagram records which handle was verified. Both are read-only to
-	// the owner and cleared when an admin resets the verification.
-	InstagramVerified bool   `gorm:"default:false"           json:"instagram_verified"`
-	VerifiedInstagram string `                               json:"verified_instagram"`
+	// InstagramVerified is set once an admin confirms the DM challenge for the
+	// current Instagram handle. Read-only to the owner: it is cleared whenever the
+	// handle is edited or an admin resets the verification.
+	InstagramVerified bool `gorm:"default:false"           json:"instagram_verified"`
 
 	// Claimed is true for every real profile (normal registration + already
 	// handed-off shells). Admin-seeded shells start false and are excluded from

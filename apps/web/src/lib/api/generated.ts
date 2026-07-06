@@ -461,9 +461,7 @@ export interface components {
             website?: string;
             /** @description Verified domain (read-only, set at verification; empty if unverified) */
             verified_domain?: string;
-            /** @description Verified Instagram handle (read-only, set at verification; empty if unverified) */
-            verified_instagram?: string;
-            /** @description Whether the startup's Instagram handle has been verified via DM */
+            /** @description Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited. */
             instagram_verified?: boolean;
             logo_url?: string;
             stage?: components["schemas"]["Stage"];

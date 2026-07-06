@@ -106,7 +106,6 @@ export const zStartup = z.object({
   milestones: z.string().optional(),
   website: z.string().optional(),
   verified_domain: z.string().optional(),
-  verified_instagram: z.string().optional(),
   instagram_verified: z.boolean().optional(),
   logo_url: z.string().optional(),
   stage: zStage.optional(),

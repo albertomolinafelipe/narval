@@ -45,6 +45,16 @@ func normalizeInstagramHandle(raw string) (string, bool) {
 	return h, true
 }
 
+// instagramHandleKey reduces any Instagram value (bare handle, @handle, or full
+// URL) to its normalized handle for comparison, or "" if empty/invalid. Used to
+// tell whether an edit actually changed the handle (vs cosmetic reformatting).
+func instagramHandleKey(raw string) string {
+	if h, ok := normalizeInstagramHandle(raw); ok {
+		return h
+	}
+	return ""
+}
+
 // generateInstagramCode returns a short correlation token like "NRVL-7K3F9Q".
 func generateInstagramCode() (string, error) {
 	b := make([]byte, 6)
@@ -123,18 +133,12 @@ func (h *Handler) StartInstagramVerification(c *gin.Context, id openapi_types.UU
 		return
 	}
 
-	// The handle must not already be verified by a different startup.
-	var taken int64
-	h.DB.Model(&models.Startup{}).
-		Where("verified_instagram = ? AND instagram_verified = ? AND id <> ?", handle, true, st.ID).
-		Count(&taken)
-	if taken > 0 {
-		c.JSON(http.StatusConflict, gin.H{"code": "INSTAGRAM_TAKEN", "message": "this Instagram handle is already verified by another startup"})
-		return
-	}
+	// No cross-startup uniqueness check: several startups may attempt the same
+	// handle, but only the real owner can DM the code, so the admin match is the
+	// real gate. Enforcing uniqueness here would just let anyone squat a handle.
 
-	// The handle locks on create: refuse a second challenge for the same startup.
-	// Only an admin reset clears it.
+	// One active challenge per startup: refuse a second. Editing the handle (which
+	// deletes the draft) or an admin reset clears it.
 	var existing models.InstagramVerification
 	err := h.DB.Where("startup_id = ?", st.ID).First(&existing).Error
 	if err == nil {
@@ -236,14 +240,15 @@ func (h *Handler) ConfirmInstagramVerification(c *gin.Context, id openapi_types.
 		return
 	}
 
-	// Overwriting VerifiedInstagram frees any handle the startup previously held.
+	// Confirming makes the verified handle the startup's displayed Instagram, so
+	// the badge and the shown handle can never disagree.
 	if err := h.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&v).Update("verified", true).Error; err != nil {
 			return err
 		}
 		return tx.Model(&models.Startup{}).Where("id = ?", v.StartupID).Updates(map[string]interface{}{
 			"instagram_verified": true,
-			"verified_instagram": v.Handle,
+			"instagram":          "https://instagram.com/" + v.Handle,
 		}).Error
 	}); err != nil {
 		h.Logger.Printf("ConfirmInstagramVerification: db update failed: %v", err)
@@ -257,8 +262,8 @@ func (h *Handler) ConfirmInstagramVerification(c *gin.Context, id openapi_types.
 	c.JSON(http.StatusOK, adminInstagramVerificationResponse(v, name))
 }
 
-// ResetInstagramVerification deletes a challenge and unlocks the handle,
-// clearing the startup's verified flags if they still point at it. Admin only.
+// ResetInstagramVerification deletes a challenge and clears the startup's
+// verified flag. Admin only.
 func (h *Handler) ResetInstagramVerification(c *gin.Context, id openapi_types.UUID) {
 	if !h.requireAdmin(c) {
 		return
@@ -274,13 +279,12 @@ func (h *Handler) ResetInstagramVerification(c *gin.Context, id openapi_types.UU
 		return
 	}
 
+	// The draft only survives while the handle is unchanged (editing it deletes
+	// the draft), so the flag safely refers to this challenge's handle.
 	if err := h.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(&models.Startup{}).
-			Where("id = ? AND verified_instagram = ?", v.StartupID, v.Handle).
-			Updates(map[string]interface{}{
-				"instagram_verified": false,
-				"verified_instagram": "",
-			}).Error; err != nil {
+			Where("id = ?", v.StartupID).
+			Update("instagram_verified", false).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&v).Error

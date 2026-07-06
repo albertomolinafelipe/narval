@@ -144,11 +144,7 @@ export type Startup = {
    */
   verified_domain?: string;
   /**
-   * Verified Instagram handle (read-only, set at verification; empty if unverified)
-   */
-  verified_instagram?: string;
-  /**
-   * Whether the startup's Instagram handle has been verified via DM
+   * Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited.
    */
   instagram_verified?: boolean;
   logo_url?: string;

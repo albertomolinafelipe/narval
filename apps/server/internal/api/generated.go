@@ -261,7 +261,7 @@ type Startup struct {
 	Industry   *Industry          `json:"industry,omitempty"`
 	Instagram  *string            `json:"instagram,omitempty"`
 
-	// InstagramVerified Whether the startup's Instagram handle has been verified via DM
+	// InstagramVerified Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited.
 	InstagramVerified *bool `json:"instagram_verified,omitempty"`
 
 	// IsFavorited Whether the current authenticated user has favorited this startup (only present when authenticated)
@@ -301,9 +301,6 @@ type Startup struct {
 
 	// VerifiedDomain Verified domain (read-only, set at verification; empty if unverified)
 	VerifiedDomain *string `json:"verified_domain,omitempty"`
-
-	// VerifiedInstagram Verified Instagram handle (read-only, set at verification; empty if unverified)
-	VerifiedInstagram *string `json:"verified_instagram,omitempty"`
 
 	// VideoUrl YouTube URL embedded on the Overview tab
 	VideoUrl *string `json:"video_url,omitempty"`
