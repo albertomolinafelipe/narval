@@ -55,7 +55,7 @@ export function MetaPills({ startup }: { startup: Startup }) {
         min={1}
         className="text-sm"
         display={(v) => (
-          <Pill icon={<MdGroups size={14} />} label={`${v} people`} />
+          <Pill icon={<MdGroups size={14} />} label={`${v} ${v === 1 ? "person" : "people"}`} />
         )}
       />
     </div>

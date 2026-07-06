@@ -18,7 +18,6 @@ interface Props {
 /** A single row in the startups list (list view). */
 export function StartupListRow({ startup: s, expanded, selected, onClick }: Props) {
   const links = expanded ? parseProductLinks(s.product_links) : {};
-  const hasPlatform = links.web || links.ios || links.android;
 
   return (
     <li className="border-b border-border last:border-b-0">
@@ -73,9 +72,10 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
           </>
         )}
 
-        {/* Platform icons — only in detailed view */}
-        {expanded && hasPlatform && (
-          <div className="flex shrink-0 items-center gap-2 text-text-subtle">
+        {/* Platform icons — only in detailed view. Always reserve the column
+            (even when empty) so the metadata columns line up across rows. */}
+        {expanded && (
+          <div className="flex w-16 shrink-0 items-center gap-2 text-text-subtle">
             {links.web && <Globe size={15} />}
             {links.ios && <SiAppstore size={15} />}
             {links.android && <SiGoogleplay size={15} />}

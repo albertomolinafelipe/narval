@@ -25,22 +25,48 @@ import (
 	"github.com/narval/server/models"
 )
 
-// fakeStorage satisfies StorageClient without a real MinIO.
-type fakeStorage struct{}
+// fakeStorage satisfies StorageClient without a real MinIO. It records deleted
+// object names so tests can assert on orphan cleanup.
+type fakeStorage struct {
+	deleted []string
+}
+
+const fakeBaseURL = "http://minio/narval/"
 
 func (f *fakeStorage) UploadLogo(_ context.Context, objectName string, _ io.Reader, _ int64, _ string) (string, error) {
-	return "http://minio/narval/" + objectName, nil
+	return fakeBaseURL + objectName, nil
+}
+
+func (f *fakeStorage) Delete(_ context.Context, objectName string) error {
+	f.deleted = append(f.deleted, objectName)
+	return nil
+}
+
+func (f *fakeStorage) ObjectNameFromURL(rawURL string) (string, bool) {
+	name, ok := strings.CutPrefix(rawURL, fakeBaseURL)
+	if !ok || name == "" {
+		return "", false
+	}
+	return name, true
 }
 
 // buildHandler creates an in-memory SQLite DB, runs migrations, and returns a Handler.
 func buildHandler(t *testing.T) (*startups.Handler, *gorm.DB) {
+	h, db, _ := buildHandlerWithFake(t)
+	return h, db
+}
+
+// buildHandlerWithFake is buildHandler plus a handle on the fake storage, for
+// asserting on orphan cleanup (Delete calls).
+func buildHandlerWithFake(t *testing.T) (*startups.Handler, *gorm.DB, *fakeStorage) {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&models.Startup{}, &models.User{}))
-	return startups.NewHandlerWithStorage(db, &fakeStorage{}), db
+	fs := &fakeStorage{}
+	return startups.NewHandlerWithStorage(db, fs), db, fs
 }
 
 // setUserContext injects the fake auth claims the middleware normally provides.
@@ -287,6 +313,168 @@ func TestUploadStartupLogo_Success(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &updated))
 	assert.NotEmpty(t, updated.LogoURL)
 	assert.Contains(t, updated.LogoURL, startupID.String())
+}
+
+// uploadLogo drives UploadStartupLogo for the given owner and returns the recorder.
+func uploadLogo(t *testing.T, h *startups.Handler, startupID uuid.UUID, ownerID, ownerEmail string) *httptest.ResponseRecorder {
+	t.Helper()
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	fw, _ := mw.CreateFormFile("logo", "logo.png")
+	fw.Write([]byte("fakepngdata"))
+	mw.Close()
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPost, "/api/v1/startups/"+startupID.String()+"/logo", &body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+	c.Params = gin.Params{{Key: "id", Value: startupID.String()}}
+	setUserContext(c, ownerID, ownerEmail)
+
+	h.UploadStartupLogo(c, startupID)
+	return w
+}
+
+func TestUploadStartupLogo_ReplaceDeletesOldBlob(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-replace"
+	startupID := uuid.MustParse("33333333-3333-3333-3333-333333333333")
+	oldName := "logos/" + startupID.String() + "/111-old.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Replace Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "r@s.com",
+		LogoURL:    fakeBaseURL + oldName,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	require.Equal(t, http.StatusOK, uploadLogo(t, h, startupID, ownerID, "r@s.com").Code)
+	assert.Equal(t, []string{oldName}, fs.deleted)
+}
+
+func TestUploadStartupLogo_ReplaceKeepsExternalBlob(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-external"
+	startupID := uuid.MustParse("44444444-4444-4444-4444-444444444444")
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "External Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "e@s.com",
+		LogoURL:    "https://example.com/some-external-logo.png",
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	require.Equal(t, http.StatusOK, uploadLogo(t, h, startupID, ownerID, "e@s.com").Code)
+	assert.Empty(t, fs.deleted, "external URLs must not be deleted")
+}
+
+func TestDeleteStartupLogo_DeletesBlob(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-delete"
+	startupID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
+	name := "logos/" + startupID.String() + "/222-cur.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Delete Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "d@s.com",
+		LogoURL:    fakeBaseURL + name,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodDelete, "/api/v1/startups/"+startupID.String()+"/logo", nil)
+	c.Params = gin.Params{{Key: "id", Value: startupID.String()}}
+	setUserContext(c, ownerID, "d@s.com")
+
+	h.DeleteStartupLogo(c, startupID)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, []string{name}, fs.deleted)
+
+	var updated models.Startup
+	require.NoError(t, db.First(&updated, "id = ?", startupID.String()).Error)
+	assert.Empty(t, updated.LogoURL)
+}
+
+// updateStartup drives UpdateStartup with a raw JSON body as the given owner.
+func updateStartup(t *testing.T, h *startups.Handler, startupID uuid.UUID, ownerID, ownerEmail, jsonBody string) *httptest.ResponseRecorder {
+	t.Helper()
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest(http.MethodPatch, "/api/v1/startups/"+startupID.String(), strings.NewReader(jsonBody))
+	c.Request.Header.Set("Content-Type", "application/json")
+	c.Params = gin.Params{{Key: "id", Value: startupID.String()}}
+	setUserContext(c, ownerID, ownerEmail)
+	h.UpdateStartup(c, startupID)
+	return w
+}
+
+func TestUpdateStartup_RemovedGalleryAndFounderBlobsDeleted(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-update"
+	startupID := uuid.MustParse("66666666-6666-6666-6666-666666666666")
+	keptShot := fakeBaseURL + "screenshots/" + startupID.String() + "/1-keep.png"
+	goneShot := fakeBaseURL + "screenshots/" + startupID.String() + "/2-gone.png"
+	keptPhoto := fakeBaseURL + "founders/" + startupID.String() + "/3-keep.png"
+	gonePhoto := fakeBaseURL + "founders/" + startupID.String() + "/4-gone.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Update Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "u@s.com",
+		Gallery:    `["` + keptShot + `","` + goneShot + `"]`,
+		Founders:   `[{"name":"A","photo_url":"` + keptPhoto + `"},{"name":"B","photo_url":"` + gonePhoto + `"}]`,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	// New state drops one screenshot and one founder photo.
+	body := `{"gallery":"[\"` + keptShot + `\"]","founders":"[{\"name\":\"A\",\"photo_url\":\"` + keptPhoto + `\"}]"}`
+	require.Equal(t, http.StatusOK, updateStartup(t, h, startupID, ownerID, "u@s.com", body).Code)
+
+	assert.ElementsMatch(t, []string{
+		"screenshots/" + startupID.String() + "/2-gone.png",
+		"founders/" + startupID.String() + "/4-gone.png",
+	}, fs.deleted)
+}
+
+func TestUpdateStartup_ReorderKeepsAllBlobs(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h, db, fs := buildHandlerWithFake(t)
+
+	const ownerID = "owner-reorder"
+	startupID := uuid.MustParse("77777777-7777-7777-7777-777777777777")
+	a := fakeBaseURL + "screenshots/" + startupID.String() + "/1-a.png"
+	b := fakeBaseURL + "screenshots/" + startupID.String() + "/2-b.png"
+
+	require.NoError(t, db.Create(&models.Startup{
+		ID:         startupID.String(),
+		Name:       "Reorder Co",
+		OwnerID:    ownerID,
+		OwnerEmail: "ro@s.com",
+		Gallery:    `["` + a + `","` + b + `"]`,
+		CreatedAt:  time.Now(),
+	}).Error)
+
+	// Same set, swapped order — nothing should be deleted.
+	body := `{"gallery":"[\"` + b + `\",\"` + a + `\"]"}`
+	require.Equal(t, http.StatusOK, updateStartup(t, h, startupID, ownerID, "ro@s.com", body).Code)
+	assert.Empty(t, fs.deleted)
 }
 
 func TestCreateStartup_WrongAccountType(t *testing.T) {

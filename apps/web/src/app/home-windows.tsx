@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Hammer, User } from "lucide-react";
+import { Hammer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StartupListWindow } from "@/app/startup-list-window";
+import { WeeklyPickCard } from "@/app/weekly-pick-card";
 
 /**
  * Decorative floating cards in the side gutters of the home hero. Left: the top-
- * startups list (→ /startups) above today's showcase, centered vertically. Right: the
+ * startups list (→ /startups) above this week's pick, centered vertically. Right: the
  * map (→ the map view) above a "coming soon" card. Each bobs independently. They
  * sit behind the centered hero content (z-0, under the z-10 main, which is
  * pointer-events-none so these stay clickable). Desktop only.
@@ -24,9 +25,10 @@ export function HomeWindows() {
         >
           <StartupListWindow className="w-96" />
         </Link>
-        <div style={{ animation: "window-float-2 11s ease-in-out infinite" }}>
-          <ShowcaseCard className="w-96" />
-        </div>
+        <WeeklyPickCard
+          className="w-96"
+          style={{ animation: "window-float-2 11s ease-in-out infinite" }}
+        />
       </div>
 
       {/* Right — map above coming soon */}
@@ -68,23 +70,6 @@ function ComingSoonCard({ className }: { className?: string }) {
         <p className="mt-1 text-sm text-text-muted">
           We are still working on everything
         </p>
-      </div>
-    </div>
-  );
-}
-
-/** "Today's Showcase" window — a single featured startup (placeholder for now). */
-function ShowcaseCard({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex flex-col", className)}>
-      <p className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-text-muted">
-        Today&apos;s Showcase
-      </p>
-      <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-bg-raised/70 p-4 shadow-xl backdrop-blur-sm">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-text-subtle">
-          <User size={24} />
-        </div>
-        <span className="text-base font-semibold text-text">TBD</span>
       </div>
     </div>
   );

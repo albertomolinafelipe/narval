@@ -1,6 +1,7 @@
 package startups
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -353,12 +354,20 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 	if req.Name != "" {
 		st.Name = req.Name
 	}
+	// Snapshot the image-bearing JSON fields before applying the update so we can
+	// clean up blobs the owner removed (a deleted screenshot or founder photo).
+	oldGallery, oldFounders := st.Gallery, st.Founders
 	applyStartupFields(&st, &req)
 
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
 	}
+
+	// Remove orphaned screenshot / founder-photo blobs dropped by this update.
+	ctx := c.Request.Context()
+	h.cleanupRemovedImages(ctx, startupID, galleryURLs(oldGallery), galleryURLs(st.Gallery))
+	h.cleanupRemovedImages(ctx, startupID, founderPhotoURLs(oldFounders), founderPhotoURLs(st.Founders))
 
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
@@ -409,11 +418,15 @@ func (h *Handler) UploadStartupLogo(c *gin.Context, id openapi_types.UUID) {
 		return
 	}
 
+	oldURL := st.LogoURL
 	st.LogoURL = logoURL
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
 	}
+
+	// Replaced an existing logo — remove the now-orphaned blob.
+	h.DeleteOwnedImage(c.Request.Context(), startupID, oldURL)
 
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
@@ -463,18 +476,22 @@ func (h *Handler) UploadStartupBanner(c *gin.Context, id openapi_types.UUID) {
 		return
 	}
 
+	oldURL := st.BannerImage
 	st.BannerImage = bannerURL
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
 	}
 
+	// Replaced an existing banner — remove the now-orphaned blob.
+	h.DeleteOwnedImage(c.Request.Context(), startupID, oldURL)
+
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
 }
 
 // clearStartupImage clears one image field (logo or banner) for an owned
-// startup. The blob is left in object storage (orphaned); only the reference is
-// dropped. apply mutates the loaded startup to zero the relevant field.
+// startup and removes the now-orphaned blob from object storage. apply mutates
+// the loaded startup to zero the relevant field.
 func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply func(*models.Startup)) {
 	startupID := id.String()
 
@@ -494,10 +511,19 @@ func (h *Handler) clearStartupImage(c *gin.Context, id openapi_types.UUID, apply
 		return
 	}
 
+	oldLogo, oldBanner := st.LogoURL, st.BannerImage
 	apply(&st)
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
+	}
+
+	// Delete whichever image was just cleared (went from set to empty).
+	if st.LogoURL == "" && oldLogo != "" {
+		h.DeleteOwnedImage(c.Request.Context(), startupID, oldLogo)
+	}
+	if st.BannerImage == "" && oldBanner != "" {
+		h.DeleteOwnedImage(c.Request.Context(), startupID, oldBanner)
 	}
 
 	c.JSON(http.StatusOK, h.startupResponse(c, st))
@@ -800,6 +826,56 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	}
 	if req.Features != nil {
 		s.Features = capFeaturesJSON(*req.Features)
+	}
+}
+
+// galleryURLs parses the gallery JSON (array of URL strings). Malformed values
+// yield no URLs, so cleanup skips them rather than guessing.
+func galleryURLs(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	var urls []string
+	if err := json.Unmarshal([]byte(raw), &urls); err != nil {
+		return nil
+	}
+	return urls
+}
+
+// founderPhotoURLs extracts the photo_url of each founder from the founders JSON.
+func founderPhotoURLs(raw string) []string {
+	if raw == "" {
+		return nil
+	}
+	var founders []struct {
+		PhotoURL string `json:"photo_url"`
+	}
+	if err := json.Unmarshal([]byte(raw), &founders); err != nil {
+		return nil
+	}
+	out := make([]string, 0, len(founders))
+	for _, f := range founders {
+		if f.PhotoURL != "" {
+			out = append(out, f.PhotoURL)
+		}
+	}
+	return out
+}
+
+// cleanupRemovedImages deletes the blobs for image URLs present in old but not
+// in new. DeleteOwnedImage guards ownership, so external URLs are left alone.
+func (h *Handler) cleanupRemovedImages(ctx context.Context, startupID string, oldURLs, newURLs []string) {
+	if len(oldURLs) == 0 {
+		return
+	}
+	kept := make(map[string]bool, len(newURLs))
+	for _, u := range newURLs {
+		kept[u] = true
+	}
+	for _, u := range oldURLs {
+		if !kept[u] {
+			h.DeleteOwnedImage(ctx, startupID, u)
+		}
 	}
 }
 
