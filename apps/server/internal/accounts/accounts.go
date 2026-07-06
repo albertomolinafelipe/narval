@@ -21,6 +21,10 @@ var ErrNoAccount = errors.New("no account for email")
 // unknown or already claimed.
 var ErrInvalidClaim = errors.New("invalid or already-claimed claim token")
 
+// ErrAlreadyHasProfile is returned when a claim would give an account a second
+// claimed startup. One profile per account is the rule.
+var ErrAlreadyHasProfile = errors.New("account already owns a startup profile")
+
 // Intent carries the data a registration needs. It is nil for a plain sign-in.
 type Intent struct {
 	AccountType models.AccountType
@@ -93,9 +97,9 @@ func LinkOrCreate(db *gorm.DB, email, authUserID string, intent *Intent) (models
 }
 
 // bindClaim reassigns the unclaimed shell identified by token to user, marks it
-// claimed, and burns the token — atomically. The partial unique index on
-// (owner_id) WHERE claimed enforces that the claimant ends up with at most one
-// claimed profile; a second claim by the same owner fails on that constraint.
+// claimed, and burns the token — atomically. It rejects the claim with
+// ErrAlreadyHasProfile when the user already owns a claimed startup, enforcing
+// the "one profile per account" rule (there is no DB constraint backing it).
 func bindClaim(db *gorm.DB, user *models.User, token string) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		var s models.Startup
@@ -105,6 +109,18 @@ func bindClaim(db *gorm.DB, user *models.User, token string) error {
 			}
 			return err
 		}
+
+		// One claimed profile per account: refuse if this owner already has one.
+		var owned int64
+		if err := tx.Model(&models.Startup{}).
+			Where("owner_id = ? AND claimed = ?", user.ID, true).
+			Count(&owned).Error; err != nil {
+			return err
+		}
+		if owned > 0 {
+			return ErrAlreadyHasProfile
+		}
+
 		s.OwnerID = user.ID
 		s.OwnerEmail = user.Email
 		s.Claimed = true
@@ -126,6 +142,6 @@ func SessionPayload(user models.User) map[string]interface{} {
 	return map[string]interface{}{
 		"email":        user.Email,
 		"account_type": user.AccountType,
-		"user_id":      user.ID, // internal user id, not the SuperTokens auth id
+		"user_id":      user.ID,
 	}
 }

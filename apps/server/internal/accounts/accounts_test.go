@@ -139,6 +139,29 @@ func TestLinkOrCreate_ClaimByExistingUser(t *testing.T) {
 	assert.True(t, st.Claimed)
 }
 
+func TestLinkOrCreate_ClaimRejectedWhenAlreadyHasProfile(t *testing.T) {
+	db := newDB(t)
+
+	// Registered as a startup — this account already owns a claimed profile.
+	_, err := accounts.LinkOrCreate(db, "dup@acme.io", "auth-1", &accounts.Intent{
+		AccountType: models.AccountTypeStartup,
+		Name:        "Acme",
+	})
+	require.NoError(t, err)
+
+	// Claiming a shell with the same account is rejected — one profile per account.
+	_, token := seedShell(t, db, "Shell")
+	_, err = accounts.LinkOrCreate(db, "dup@acme.io", "auth-1", &accounts.Intent{
+		ClaimToken: token,
+	})
+	assert.ErrorIs(t, err, accounts.ErrAlreadyHasProfile)
+
+	// The shell is left untouched.
+	var shell models.Startup
+	require.NoError(t, db.Where("claim_token = ?", token).First(&shell).Error)
+	assert.False(t, shell.Claimed)
+}
+
 func TestLinkOrCreate_ClaimInvalidToken(t *testing.T) {
 	db := newDB(t)
 	_, err := accounts.LinkOrCreate(db, "founder@acme.io", "auth-claim", &accounts.Intent{
