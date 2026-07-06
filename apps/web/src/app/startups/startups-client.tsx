@@ -17,11 +17,17 @@ import {
 import { StartupListRow } from "./_components/startup-list-row";
 import { StartupDetailPlaceholder } from "./_components/startup-detail-placeholder";
 import { ConstraintChips } from "./_components/constraint-chips";
+import { AdvancedFilters, type Range } from "./_components/advanced-filters";
 import {
   type Constraint,
   applyConstraints,
   toggleConstraint,
   locationConstraint,
+  industryInConstraint,
+  stageInConstraint,
+  foundedRangeConstraint,
+  teamSizeRangeConstraint,
+  TEAM_SCALE,
 } from "@/lib/startup/constraints";
 
 type Startup = components["schemas"]["Startup"];
@@ -31,6 +37,11 @@ const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 // Persisted list state so leaving for a profile and coming back restores the
 // selected startup and scroll position.
 const LIST_STATE_KEY = "startups:list-state";
+
+// Team size uses a fixed non-linear scale, so its slider bounds are constant
+// (not derived from the list). The top stop is an open-ended "1000+".
+const TEAM_TOP = TEAM_SCALE[TEAM_SCALE.length - 1];
+const TEAM_DOMAIN: Range = [TEAM_SCALE[0], TEAM_TOP];
 
 interface Props {
   showFavoritedOnly?: boolean;
@@ -45,6 +56,13 @@ export default function StartupsClient({
   const isMobile = useMediaQuery("(max-width: 767px)");
   const [selected, setSelected] = useState<Startup | null>(null);
   const [constraints, setConstraints] = useState<Constraint[]>([]);
+  const [industries, setIndustries] = useState<string[]>([]);
+  const [stages, setStages] = useState<string[]>([]);
+  // Range filters are null until narrowed; a full-domain selection resets to
+  // null so it stops constraining and drops its chip.
+  const [foundedRange, setFoundedRange] = useState<Range | null>(null);
+  const [teamRange, setTeamRange] = useState<Range | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [showMap, setShowMap] = useState(initialView === "map");
   const [sort, setSort] = useState<SortMode>("recent");
   const [expanded, setExpanded] = useState(false);
@@ -84,8 +102,37 @@ export default function StartupsClient({
   // Geocode locations client-side
   const { coordsMap } = useGeocode(locations);
 
+  // Slider bounds derived from the loaded list. Values of 0 mean "unset" and are
+  // excluded; the upper bound is forced above the lower so the slider is valid
+  // even when every startup shares one value.
+  const foundedDomain = useMemo<Range>(() => {
+    const years = startups
+      .map((s) => s.founded_year ?? 0)
+      .filter((y) => y > 0);
+    if (years.length === 0) return [2000, new Date().getFullYear()];
+    const lo = Math.min(...years);
+    return [lo, Math.max(...years, lo + 1)];
+  }, [startups]);
+
+  // Location constraints (from map pins) plus the advanced-panel field filters,
+  // combined into one AND-ed set. Field factories return null when unset.
+  const activeConstraints = useMemo(() => {
+    const fields = [
+      industryInConstraint(industries),
+      stageInConstraint(stages),
+      foundedRange && foundedRangeConstraint(foundedRange[0], foundedRange[1]),
+      teamRange &&
+        teamSizeRangeConstraint(
+          teamRange[0],
+          // Top stop is open-ended: "1000+" includes any larger team.
+          teamRange[1] >= TEAM_TOP ? Infinity : teamRange[1],
+        ),
+    ].filter((c): c is Constraint => c !== null);
+    return [...constraints, ...fields];
+  }, [constraints, industries, stages, foundedRange, teamRange]);
+
   const filtered = useMemo(() => {
-    const constrained = applyConstraints(startups, constraints);
+    const constrained = applyConstraints(startups, activeConstraints);
     const q = query.trim().toLowerCase();
     if (!q) return constrained;
     return constrained.filter(
@@ -96,7 +143,7 @@ export default function StartupsClient({
         (s.industry ?? "").toLowerCase().includes(q) ||
         (s.location ?? "").toLowerCase().includes(q),
     );
-  }, [startups, constraints, query]);
+  }, [startups, activeConstraints, query]);
 
   const activeLocations = useMemo(
     () =>
@@ -220,7 +267,35 @@ export default function StartupsClient({
   }
 
   function handleRemoveConstraint(id: string) {
+    // Field-filter chips clear their panel selection; everything else (map
+    // location pins) is a plain constraint removed by id.
+    if (id === "industries") {
+      setIndustries([]);
+      return;
+    }
+    if (id === "stages") {
+      setStages([]);
+      return;
+    }
+    if (id === "founded") {
+      setFoundedRange(null);
+      return;
+    }
+    if (id === "team") {
+      setTeamRange(null);
+      return;
+    }
     setConstraints((cs) => cs.filter((c) => c.id !== id));
+  }
+
+  // A slider back at both domain ends means "no bound" — store null so the
+  // field stops constraining and drops its chip.
+  function setRange(
+    setter: (range: Range | null) => void,
+    domain: Range,
+    next: Range,
+  ) {
+    setter(next[0] <= domain[0] && next[1] >= domain[1] ? null : next);
   }
 
   function handleFavoritedToggle() {
@@ -264,12 +339,31 @@ export default function StartupsClient({
       onExpandedChange={setExpanded}
       query={query}
       onQueryChange={setQuery}
+      filtersOpen={filtersOpen}
+      onFiltersToggle={setFiltersOpen}
     />
+  );
+
+  const panel = filtersOpen && (
+    <div className="pb-3">
+      <AdvancedFilters
+        industries={industries}
+        onIndustriesChange={setIndustries}
+        stages={stages}
+        onStagesChange={setStages}
+        foundedDomain={foundedDomain}
+        foundedRange={foundedRange ?? foundedDomain}
+        onFoundedChange={(r) => setRange(setFoundedRange, foundedDomain, r)}
+        teamDomain={TEAM_DOMAIN}
+        teamRange={teamRange ?? TEAM_DOMAIN}
+        onTeamChange={(r) => setRange(setTeamRange, TEAM_DOMAIN, r)}
+      />
+    </div>
   );
 
   const chips = (
     <ConstraintChips
-      constraints={constraints}
+      constraints={activeConstraints}
       onRemove={handleRemoveConstraint}
     />
   );
@@ -338,6 +432,7 @@ export default function StartupsClient({
     return (
       <div className="flex h-full flex-col overflow-hidden">
         {toolbar}
+        {panel}
         {chips}
         <div className="flex flex-1 flex-col gap-3 overflow-hidden">
           <div className="h-64 shrink-0 overflow-hidden">{mapEl}</div>
@@ -350,6 +445,7 @@ export default function StartupsClient({
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {toolbar}
+      {panel}
       {chips}
 
       {/* Left: list (always). Startup details expand inline in the list itself;
