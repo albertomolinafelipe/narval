@@ -38,6 +38,8 @@ import { SocialsColumn } from "./_profile/socials";
 import { MetaPills } from "./_profile/meta-pills";
 import { SetupBanner } from "./_profile/setup-banner";
 import { VerifyDomainButton } from "./_profile/verify-domain-modal";
+import { VerifyInstagramButton } from "./_profile/verify-instagram-modal";
+import { normalizeToHandle } from "@/lib/startup/social-input";
 import { Section, SocialLink } from "./_profile/ui";
 import { StartupLinks } from "./_profile/startup-links";
 
@@ -407,6 +409,16 @@ export default function StartupPageClient({
               <VerifyDomainButton
                 startupId={startup.id}
                 defaultWebsite={startup.website ?? undefined}
+              />
+            )}
+            {isOwner && !startup.instagram_verified && (
+              <VerifyInstagramButton
+                startupId={startup.id}
+                defaultHandle={
+                  startup.instagram
+                    ? normalizeToHandle(startup.instagram, "https://instagram.com/").handle
+                    : undefined
+                }
               />
             )}
             {isOwner &&

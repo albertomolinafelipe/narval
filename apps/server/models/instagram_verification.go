@@ -16,7 +16,7 @@ import (
 // since the admin must read it to match the incoming DM.
 type InstagramVerification struct {
 	ID        string    `gorm:"type:uuid;primaryKey"   json:"id"`
-	StartupID string    `gorm:"not null;uniqueIndex"   json:"startup_id"`
+	StartupID string    `gorm:"type:uuid;not null;uniqueIndex" json:"startup_id"`
 	Handle    string    `gorm:"not null"               json:"handle"`
 	Code      string    `gorm:"not null"               json:"code"`
 	Verified  bool      `gorm:"not null;default:false" json:"verified"`
