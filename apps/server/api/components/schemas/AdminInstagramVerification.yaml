@@ -1,0 +1,34 @@
+type: object
+description: A pending or verified Instagram challenge as shown in the admin console.
+required:
+  - id
+  - startup_id
+  - startup_name
+  - handle
+  - code
+  - status
+  - created_at
+properties:
+  id:
+    type: string
+    format: uuid
+  startup_id:
+    type: string
+    format: uuid
+  startup_name:
+    type: string
+    description: Name of the claiming startup, for display in the console.
+  handle:
+    type: string
+    description: The claimed Instagram handle the DM should come from.
+  code:
+    type: string
+    description: The correlation token the startup was told to DM.
+  status:
+    type: string
+    enum:
+      - pending
+      - verified
+  created_at:
+    type: string
+    format: date-time

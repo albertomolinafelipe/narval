@@ -6,7 +6,7 @@ import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
 import Link from "next/link";
 import Image from "next/image";
-import { AlertCircle, Plus, User } from "lucide-react";
+import { AlertCircle, BadgeCheck, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createAdminStartup } from "@/lib/api/client";
 import { useAuthModal } from "../auth/auth-modal-context";
@@ -169,6 +169,16 @@ export default function UserMenu() {
                 <Plus className="h-4 w-4" />
                 {creating ? "Creating…" : "New profile"}
               </button>
+            )}
+            {user.is_admin && (
+              <Link
+                href="/admin/instagram-verifications"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition hover:bg-bg-subtle"
+              >
+                <BadgeCheck className="h-4 w-4" />
+                Instagram verifications
+              </Link>
             )}
             {hasProfile && (
               <Link

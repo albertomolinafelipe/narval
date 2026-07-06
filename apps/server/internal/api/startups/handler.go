@@ -361,11 +361,27 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 	// Snapshot the image-bearing JSON fields before applying the update so we can
 	// clean up blobs the owner removed (a deleted screenshot or founder photo).
 	oldGallery, oldFounders := st.Gallery, st.Founders
+	oldInstagram := st.Instagram
 	applyStartupFields(&st, &req)
+
+	// Editing the Instagram handle invalidates any verification: a verified badge
+	// must never outlive the exact handle it was granted for. Clear the flag here
+	// and drop any in-progress or completed challenge below.
+	instagramChanged := instagramHandleKey(oldInstagram) != instagramHandleKey(st.Instagram)
+	if instagramChanged {
+		st.InstagramVerified = false
+	}
 
 	if err := h.DB.Save(&st).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to update startup"})
 		return
+	}
+
+	if instagramChanged {
+		if err := h.DB.Where("startup_id = ?", startupID).
+			Delete(&models.InstagramVerification{}).Error; err != nil {
+			h.Logger.Printf("UpdateStartup: failed to clear instagram verification: %v", err)
+		}
 	}
 
 	// Remove orphaned screenshot / founder-photo blobs dropped by this update.
@@ -646,47 +662,48 @@ func (h *Handler) UploadStartupScreenshot(c *gin.Context) {
 func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]interface{} {
 	// Convert to map to add dynamic field
 	response := map[string]interface{}{
-		"id":                s.ID,
-		"name":              s.Name,
-		"tagline":           s.Tagline,
-		"description":       s.Description,
-		"about":             s.About,
-		"video_url":         s.VideoURL,
-		"milestones":        s.Milestones,
-		"website":           s.Website,
-		"verified_domain":   s.VerifiedDomain,
-		"logo_url":          s.LogoURL,
-		"stage":             s.Stage,
-		"industry":          s.Industry,
-		"team_size":         s.TeamSize,
-		"location":          s.Location,
-		"founded_year":      s.FoundedYear,
-		"tech_stack":        s.TechStack,
-		"banner_image":      s.BannerImage,
-		"product_links":     s.ProductLinks,
-		"gallery":           s.Gallery,
-		"product_status":    s.ProductStatus,
-		"features":          s.Features,
-		"linkedin":          s.Linkedin,
-		"twitter":           s.Twitter,
-		"github":            s.Github,
-		"instagram":         s.Instagram,
-		"is_raising":        s.IsRaising,
-		"current_round":     s.CurrentRound,
-		"funding_ask":       s.FundingAsk,
-		"funding_use":       s.FundingUse,
-		"is_hiring":         s.IsHiring,
-		"open_roles":        s.OpenRoles,
-		"contributing_text": s.ContributingText,
-		"contact_general":   s.ContactGeneral,
-		"contact_funding":   s.ContactFunding,
-		"contact_talent":    s.ContactTalent,
-		"owner_id":          s.OwnerID,
-		"owner_email":       s.OwnerEmail,
-		"profile_setup":     s.ProfileSetup,
-		"claimed":           s.Claimed,
-		"created_at":        s.CreatedAt,
-		"updated_at":        s.UpdatedAt,
+		"id":                 s.ID,
+		"name":               s.Name,
+		"tagline":            s.Tagline,
+		"description":        s.Description,
+		"about":              s.About,
+		"video_url":          s.VideoURL,
+		"milestones":         s.Milestones,
+		"website":            s.Website,
+		"verified_domain":    s.VerifiedDomain,
+		"instagram_verified": s.InstagramVerified,
+		"logo_url":           s.LogoURL,
+		"stage":              s.Stage,
+		"industry":           s.Industry,
+		"team_size":          s.TeamSize,
+		"location":           s.Location,
+		"founded_year":       s.FoundedYear,
+		"tech_stack":         s.TechStack,
+		"banner_image":       s.BannerImage,
+		"product_links":      s.ProductLinks,
+		"gallery":            s.Gallery,
+		"product_status":     s.ProductStatus,
+		"features":           s.Features,
+		"linkedin":           s.Linkedin,
+		"twitter":            s.Twitter,
+		"github":             s.Github,
+		"instagram":          s.Instagram,
+		"is_raising":         s.IsRaising,
+		"current_round":      s.CurrentRound,
+		"funding_ask":        s.FundingAsk,
+		"funding_use":        s.FundingUse,
+		"is_hiring":          s.IsHiring,
+		"open_roles":         s.OpenRoles,
+		"contributing_text":  s.ContributingText,
+		"contact_general":    s.ContactGeneral,
+		"contact_funding":    s.ContactFunding,
+		"contact_talent":     s.ContactTalent,
+		"owner_id":           s.OwnerID,
+		"owner_email":        s.OwnerEmail,
+		"profile_setup":      s.ProfileSetup,
+		"claimed":            s.Claimed,
+		"created_at":         s.CreatedAt,
+		"updated_at":         s.UpdatedAt,
 	}
 
 	// Parse founders JSON into array so clients receive structured data.

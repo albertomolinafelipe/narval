@@ -1,0 +1,94 @@
+get:
+  operationId: getInstagramVerification
+  summary: Get the current Instagram verification challenge for a startup
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    '200':
+      description: The in-progress or completed verification
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/InstagramVerification.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Not the owner of this startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found, or no verification in progress
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+post:
+  operationId: startInstagramVerification
+  summary: Lock an Instagram handle and get the code to DM the company account
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StartInstagramVerificationRequest.yaml
+  responses:
+    '201':
+      description: Handle locked; returns the code and DM link
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/InstagramVerification.yaml
+    '400':
+      description: Invalid or missing handle
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Not the owner of this startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: >-
+        A verification is already locked for this startup, or the handle is
+        already verified by another startup. An admin must reset it to change.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

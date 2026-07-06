@@ -48,4 +48,13 @@ paths:
     $ref: paths/startups_{id}_verify-domain.yaml
   /startups/{id}/verify-domain/confirm:
     $ref: paths/startups_{id}_verify-domain_confirm.yaml
+  /startups/{id}/verify-instagram:
+    $ref: paths/startups_{id}_verify-instagram.yaml
+
+  /admin/instagram-verifications:
+    $ref: paths/admin_instagram-verifications.yaml
+  /admin/instagram-verifications/{id}/confirm:
+    $ref: paths/admin_instagram-verifications_{id}_confirm.yaml
+  /admin/instagram-verifications/{id}/reset:
+    $ref: paths/admin_instagram-verifications_{id}_reset.yaml
 

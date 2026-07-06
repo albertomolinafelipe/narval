@@ -106,6 +106,7 @@ export const zStartup = z.object({
   milestones: z.string().optional(),
   website: z.string().optional(),
   verified_domain: z.string().optional(),
+  instagram_verified: z.boolean().optional(),
   logo_url: z.string().optional(),
   stage: zStage.optional(),
   industry: zIndustry.optional(),
@@ -218,6 +219,35 @@ export const zStartDomainVerificationRequest = z.object({
 
 export const zConfirmDomainVerificationRequest = z.object({
   code: z.string(),
+});
+
+/**
+ * A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms.
+ */
+export const zInstagramVerification = z.object({
+  id: z.uuid(),
+  startup_id: z.uuid(),
+  handle: z.string(),
+  code: z.string(),
+  status: z.enum(["pending", "verified"]),
+  created_at: z.iso.datetime(),
+});
+
+export const zStartInstagramVerificationRequest = z.object({
+  handle: z.string(),
+});
+
+/**
+ * A pending or verified Instagram challenge as shown in the admin console.
+ */
+export const zAdminInstagramVerification = z.object({
+  id: z.uuid(),
+  startup_id: z.uuid(),
+  startup_name: z.string(),
+  handle: z.string(),
+  code: z.string(),
+  status: z.enum(["pending", "verified"]),
+  created_at: z.iso.datetime(),
 });
 
 /**
@@ -388,3 +418,54 @@ export const zConfirmDomainVerificationPath = z.object({
  * Domain verified; returns the updated startup
  */
 export const zConfirmDomainVerificationResponse = zStartup;
+
+export const zGetInstagramVerificationPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * The in-progress or completed verification
+ */
+export const zGetInstagramVerificationResponse = zInstagramVerification;
+
+export const zStartInstagramVerificationBody =
+  zStartInstagramVerificationRequest;
+
+export const zStartInstagramVerificationPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Handle locked; returns the code and DM link
+ */
+export const zStartInstagramVerificationResponse = zInstagramVerification;
+
+export const zListInstagramVerificationsQuery = z.object({
+  status: z.enum(["pending", "verified"]).optional(),
+});
+
+/**
+ * List of verifications
+ */
+export const zListInstagramVerificationsResponse = z.array(
+  zAdminInstagramVerification,
+);
+
+export const zConfirmInstagramVerificationPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Verification confirmed; the startup's Instagram is now verified
+ */
+export const zConfirmInstagramVerificationResponse =
+  zAdminInstagramVerification;
+
+export const zResetInstagramVerificationPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Verification cleared; the startup can lock a new handle
+ */
+export const zResetInstagramVerificationResponse = z.void();

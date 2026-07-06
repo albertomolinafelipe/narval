@@ -31,5 +31,6 @@ func Migrate(db *gorm.DB) error {
 		&models.StartupFavorite{},
 		&models.StartupBoost{},
 		&models.DomainVerification{},
+		&models.InstagramVerification{},
 	)
 }

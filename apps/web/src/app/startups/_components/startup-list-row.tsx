@@ -2,6 +2,7 @@ import { Globe, BadgeCheck } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { Avatar } from "@/app/_components/shared/list-panel";
+import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import { parseProductLinks } from "@/lib/startup/product-links";
 
@@ -38,6 +39,7 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
           <p className="flex items-center gap-1 text-sm font-medium text-text">
             <span className="truncate">{s.name}</span>
             {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
+            {s.instagram_verified && <InstagramGradientIcon size={13} className="shrink-0" />}
           </p>
           {s.verified
             ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>

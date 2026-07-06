@@ -1,0 +1,9 @@
+type: object
+required:
+  - handle
+properties:
+  handle:
+    type: string
+    description: >-
+      Instagram handle to verify, with or without a leading @ (e.g. "gonarval").
+      Locked to the startup once submitted; only an admin can reset it.

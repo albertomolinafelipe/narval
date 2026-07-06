@@ -29,6 +29,11 @@ properties:
   verified_domain:
     type: string
     description: Verified domain (read-only, set at verification; empty if unverified)
+  instagram_verified:
+    type: boolean
+    description: >-
+      Whether the current Instagram handle has been verified via DM. Read-only;
+      set at verification and cleared automatically if the handle is edited.
   logo_url:
     type: string
   stage:

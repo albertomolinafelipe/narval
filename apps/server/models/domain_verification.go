@@ -15,7 +15,7 @@ import (
 // a new challenge replaces any previous one.
 type DomainVerification struct {
 	ID        string    `gorm:"type:uuid;primaryKey"   json:"id"`
-	StartupID string    `gorm:"not null;uniqueIndex"   json:"startup_id"`
+	StartupID string    `gorm:"type:uuid;not null;uniqueIndex" json:"startup_id"`
 	Domain    string    `gorm:"not null"               json:"domain"`
 	Email     string    `gorm:"not null"               json:"email"`
 	CodeHash  string    `gorm:"not null"               json:"-"`

@@ -18,6 +18,9 @@ import type {
   ConfirmDomainVerificationData,
   ConfirmDomainVerificationErrors,
   ConfirmDomainVerificationResponses,
+  ConfirmInstagramVerificationData,
+  ConfirmInstagramVerificationErrors,
+  ConfirmInstagramVerificationResponses,
   CreateStartupData,
   CreateStartupErrors,
   CreateStartupResponses,
@@ -32,6 +35,9 @@ import type {
   FavoriteStartupResponses,
   GetHealthData,
   GetHealthResponses,
+  GetInstagramVerificationData,
+  GetInstagramVerificationErrors,
+  GetInstagramVerificationResponses,
   GetMeData,
   GetMeErrors,
   GetMeResponses,
@@ -40,6 +46,9 @@ import type {
   GetStartupResponses,
   GetStatsData,
   GetStatsResponses,
+  ListInstagramVerificationsData,
+  ListInstagramVerificationsErrors,
+  ListInstagramVerificationsResponses,
   ListStartupsData,
   ListStartupsResponses,
   LoginData,
@@ -54,9 +63,15 @@ import type {
   RegisterData,
   RegisterErrors,
   RegisterResponses,
+  ResetInstagramVerificationData,
+  ResetInstagramVerificationErrors,
+  ResetInstagramVerificationResponses,
   StartDomainVerificationData,
   StartDomainVerificationErrors,
   StartDomainVerificationResponses,
+  StartInstagramVerificationData,
+  StartInstagramVerificationErrors,
+  StartInstagramVerificationResponses,
   UnfavoriteStartupData,
   UnfavoriteStartupErrors,
   UnfavoriteStartupResponses,
@@ -476,4 +491,116 @@ export const confirmDomainVerification = <ThrowOnError extends boolean = false>(
       "Content-Type": "application/json",
       ...options.headers,
     },
+  });
+
+/**
+ * Get the current Instagram verification challenge for a startup
+ */
+export const getInstagramVerification = <ThrowOnError extends boolean = false>(
+  options: Options<GetInstagramVerificationData, ThrowOnError>,
+): RequestResult<
+  GetInstagramVerificationResponses,
+  GetInstagramVerificationErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetInstagramVerificationResponses,
+    GetInstagramVerificationErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/startups/{id}/verify-instagram",
+    ...options,
+  });
+
+/**
+ * Lock an Instagram handle and get the code to DM the company account
+ */
+export const startInstagramVerification = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<StartInstagramVerificationData, ThrowOnError>,
+): RequestResult<
+  StartInstagramVerificationResponses,
+  StartInstagramVerificationErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    StartInstagramVerificationResponses,
+    StartInstagramVerificationErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/startups/{id}/verify-instagram",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * List Instagram verifications for the admin console
+ */
+export const listInstagramVerifications = <
+  ThrowOnError extends boolean = false,
+>(
+  options?: Options<ListInstagramVerificationsData, ThrowOnError>,
+): RequestResult<
+  ListInstagramVerificationsResponses,
+  ListInstagramVerificationsErrors,
+  ThrowOnError
+> =>
+  (options?.client ?? client).get<
+    ListInstagramVerificationsResponses,
+    ListInstagramVerificationsErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/instagram-verifications",
+    ...options,
+  });
+
+/**
+ * Confirm a startup's Instagram after matching the DM (admin only)
+ */
+export const confirmInstagramVerification = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ConfirmInstagramVerificationData, ThrowOnError>,
+): RequestResult<
+  ConfirmInstagramVerificationResponses,
+  ConfirmInstagramVerificationErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ConfirmInstagramVerificationResponses,
+    ConfirmInstagramVerificationErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/instagram-verifications/{id}/confirm",
+    ...options,
+  });
+
+/**
+ * Reset a verification, unlocking the handle (admin only)
+ */
+export const resetInstagramVerification = <
+  ThrowOnError extends boolean = false,
+>(
+  options: Options<ResetInstagramVerificationData, ThrowOnError>,
+): RequestResult<
+  ResetInstagramVerificationResponses,
+  ResetInstagramVerificationErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    ResetInstagramVerificationResponses,
+    ResetInstagramVerificationErrors,
+    ThrowOnError
+  >({
+    security: [{ scheme: "bearer", type: "http" }],
+    url: "/admin/instagram-verifications/{id}/reset",
+    ...options,
   });

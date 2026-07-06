@@ -301,6 +301,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/startups/{id}/verify-instagram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the current Instagram verification challenge for a startup */
+        get: operations["getInstagramVerification"];
+        put?: never;
+        /** Lock an Instagram handle and get the code to DM the company account */
+        post: operations["startInstagramVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instagram-verifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Instagram verifications for the admin console */
+        get: operations["listInstagramVerifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instagram-verifications/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm a startup's Instagram after matching the DM (admin only) */
+        post: operations["confirmInstagramVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instagram-verifications/{id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset a verification, unlocking the handle (admin only) */
+        post: operations["resetInstagramVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -392,6 +461,8 @@ export interface components {
             website?: string;
             /** @description Verified domain (read-only, set at verification; empty if unverified) */
             verified_domain?: string;
+            /** @description Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited. */
+            instagram_verified?: boolean;
             logo_url?: string;
             stage?: components["schemas"]["Stage"];
             industry?: components["schemas"]["Industry"];
@@ -525,6 +596,45 @@ export interface components {
         ConfirmDomainVerificationRequest: {
             /** @description The one-time code delivered to the work email. */
             code: string;
+        };
+        /** @description A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms. */
+        InstagramVerification: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            startup_id: string;
+            /** @description The locked Instagram handle being verified (normalized, no leading @). */
+            handle: string;
+            /** @description Correlation token the startup must DM to the company account (e.g. "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record. */
+            code: string;
+            /**
+             * @description pending until an admin confirms the DM; verified once matched.
+             * @enum {string}
+             */
+            status: "pending" | "verified";
+            /** Format: date-time */
+            created_at: string;
+        };
+        StartInstagramVerificationRequest: {
+            /** @description Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it. */
+            handle: string;
+        };
+        /** @description A pending or verified Instagram challenge as shown in the admin console. */
+        AdminInstagramVerification: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            startup_id: string;
+            /** @description Name of the claiming startup, for display in the console. */
+            startup_name: string;
+            /** @description The claimed Instagram handle the DM should come from. */
+            handle: string;
+            /** @description The correlation token the startup was told to DM. */
+            code: string;
+            /** @enum {string} */
+            status: "pending" | "verified";
+            /** Format: date-time */
+            created_at: string;
         };
     };
     responses: never;
@@ -1464,6 +1574,265 @@ export interface operations {
                 };
             };
             /** @description Startup not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getInstagramVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The in-progress or completed verification */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramVerification"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not the owner of this startup */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Startup not found, or no verification in progress */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startInstagramVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartInstagramVerificationRequest"];
+            };
+        };
+        responses: {
+            /** @description Handle locked; returns the code and DM link */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstagramVerification"];
+                };
+            };
+            /** @description Invalid or missing handle */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not the owner of this startup */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Startup not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A verification is already locked for this startup, or the handle is already verified by another startup. An admin must reset it to change. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listInstagramVerifications: {
+        parameters: {
+            query?: {
+                /** @description Filter by status. Omit to return all. */
+                status?: "pending" | "verified";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of verifications */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminInstagramVerification"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    confirmInstagramVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The verification id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification confirmed; the startup's Instagram is now verified */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminInstagramVerification"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Verification not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    resetInstagramVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The verification id. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification cleared; the startup can lock a new handle */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Admin access required */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Verification not found */
             404: {
                 headers: {
                     [name: string]: unknown;
