@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Check, Copy, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BadgeCheck, Check, Copy, ExternalLink } from "lucide-react";
 import { SiInstagram } from "react-icons/si";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,15 +16,24 @@ import {
   getInstagramVerification,
   startInstagramVerification,
 } from "@/lib/api/gen";
+import { getInstagramVerificationQueryKey } from "@/lib/api/gen/@tanstack/react-query.gen";
 import type { InstagramVerification } from "@/lib/api/gen";
 
 // The company account startups DM their code to. ig.me/m opens a DM directly.
 const COMPANY_HANDLE = "gonarval";
 const COMPANY_DM_URL = `https://ig.me/m/${COMPANY_HANDLE}`;
 
-// Instagram's brand gradient, applied to the glyph via an SVG fill so the icon
-// reads as Instagram rather than a flat monochrome mark.
-function InstagramIcon({ size = 16 }: { size?: number }) {
+// The Instagram glyph. With gradient=true it wears Instagram's brand ramp; with
+// gradient=false it inherits the button's text color (used for the verified /
+// pending states, which recolor the same icon rather than swapping it out).
+function InstagramIcon({
+  size = 16,
+  gradient = true,
+}: {
+  size?: number;
+  gradient?: boolean;
+}) {
+  if (!gradient) return <SiInstagram size={size} />;
   return (
     <>
       <svg width={0} height={0} className="absolute" aria-hidden>
@@ -176,71 +184,156 @@ function InstructionsStep({ verification }: { verification: InstagramVerificatio
   );
 }
 
-// ─── Trigger + modal ─────────────────────────────────────────────────────────
+// ─── Verified panel (shown when already verified) ────────────────────────────
+
+function VerifiedStep({ handle }: { handle: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+        <BadgeCheck size={18} className="shrink-0" />
+        <span>
+          <span className="font-medium">@{handle}</span> is verified.
+        </span>
+      </div>
+      <p className="text-xs text-text-muted">
+        Editing your Instagram handle removes this verification. Ask an admin to
+        reset it if you need to change it.
+      </p>
+    </div>
+  );
+}
+
+// ─── Modal body ──────────────────────────────────────────────────────────────
 
 type Step =
-  | { name: "loading" }
+  | { name: "verified"; handle: string }
   | { name: "handle" }
   | { name: "instructions"; verification: InstagramVerification };
 
-export function VerifyInstagramButton({
+// Rendered only while the dialog is open (radix unmounts content on close), so
+// its step is freshly seeded from the current state on every open.
+function ModalBody({
   startupId,
+  verified,
+  verification,
   defaultHandle,
+  onStarted,
 }: {
   startupId: string;
+  verified: boolean;
+  verification: InstagramVerification | null | undefined;
   defaultHandle?: string;
+  onStarted: (v: InstagramVerification) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState<Step>({ name: "loading" });
-  const router = useRouter();
-
-  // On open, resume an existing challenge if one is already in progress.
-  useEffect(() => {
-    if (!open) return;
-    let active = true;
-    setStep({ name: "loading" });
-    getInstagramVerification({ path: { id: startupId } }).then(({ data }) => {
-      if (!active) return;
-      setStep(data ? { name: "instructions", verification: data } : { name: "handle" });
-    });
-    return () => {
-      active = false;
-    };
-  }, [open, startupId]);
-
-  function onStarted(verification: InstagramVerification) {
-    setStep({ name: "instructions", verification });
-    router.refresh();
-  }
+  const [step, setStep] = useState<Step>(
+    verified
+      ? { name: "verified", handle: defaultHandle ?? "" }
+      : verification?.status === "pending"
+        ? { name: "instructions", verification }
+        : { name: "handle" },
+  );
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-        <InstagramIcon size={16} />
-        Verify Instagram
+      <DialogHeader>
+        <DialogTitle>Verify your Instagram</DialogTitle>
+        <DialogDescription>
+          {step.name === "handle" && "Confirm the handle you control to earn a verified badge."}
+          {step.name === "instructions" && "DM us the code to finish verifying."}
+          {step.name === "verified" && "Your Instagram handle is verified."}
+        </DialogDescription>
+      </DialogHeader>
+
+      {step.name === "handle" && (
+        <HandleStep
+          startupId={startupId}
+          defaultHandle={defaultHandle}
+          onStarted={(v) => {
+            setStep({ name: "instructions", verification: v });
+            onStarted(v);
+          }}
+        />
+      )}
+      {step.name === "instructions" && (
+        <InstructionsStep verification={step.verification} />
+      )}
+      {step.name === "verified" && <VerifiedStep handle={step.handle} />}
+    </>
+  );
+}
+
+// ─── Trigger + modal ─────────────────────────────────────────────────────────
+
+export function VerifyInstagramButton({
+  startupId,
+  verified,
+  defaultHandle,
+}: {
+  startupId: string;
+  verified: boolean;
+  defaultHandle?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Owner-side lookup of the current challenge, shared by cache. Only needed
+  // while unverified — a verified startup's state is already known.
+  const { data: verification } = useQuery({
+    queryKey: getInstagramVerificationQueryKey({ path: { id: startupId } }),
+    enabled: !verified,
+    retry: false,
+    queryFn: async () => {
+      const { data } = await getInstagramVerification({ path: { id: startupId } });
+      return data ?? null;
+    },
+  });
+
+  const pending = !verified && verification?.status === "pending";
+
+  const trigger = verified
+    ? {
+        className: "border-success/40 text-success hover:bg-success/10 hover:text-success",
+        icon: <InstagramIcon size={16} gradient={false} />,
+        label: "Verified",
+      }
+    : pending
+      ? {
+          className: "text-text-muted",
+          icon: <InstagramIcon size={16} gradient={false} />,
+          label: "Pending",
+        }
+      : {
+          className: "",
+          icon: <InstagramIcon size={16} />,
+          label: "Verify Instagram",
+        };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className={trigger.className}
+        onClick={() => setOpen(true)}
+      >
+        {trigger.icon}
+        {trigger.label}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Verify your Instagram</DialogTitle>
-            <DialogDescription>
-              {step.name === "handle" && "Confirm the handle you control to earn a verified badge."}
-              {step.name === "instructions" && "DM us the code to finish verifying."}
-              {step.name === "loading" && "Loading…"}
-            </DialogDescription>
-          </DialogHeader>
-
-          {step.name === "handle" && (
-            <HandleStep
-              startupId={startupId}
-              defaultHandle={defaultHandle}
-              onStarted={onStarted}
-            />
-          )}
-          {step.name === "instructions" && (
-            <InstructionsStep verification={step.verification} />
-          )}
+          <ModalBody
+            startupId={startupId}
+            verified={verified}
+            verification={verification}
+            defaultHandle={defaultHandle}
+            onStarted={() =>
+              // Refresh the shared query so the trigger flips to pending.
+              queryClient.invalidateQueries({
+                queryKey: getInstagramVerificationQueryKey({ path: { id: startupId } }),
+              })
+            }
+          />
         </DialogContent>
       </Dialog>
     </>

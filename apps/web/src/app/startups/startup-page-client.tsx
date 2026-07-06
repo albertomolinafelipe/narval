@@ -411,9 +411,10 @@ export default function StartupPageClient({
                 defaultWebsite={startup.website ?? undefined}
               />
             )}
-            {isOwner && !startup.instagram_verified && (
+            {isOwner && (
               <VerifyInstagramButton
                 startupId={startup.id}
+                verified={!!startup.instagram_verified}
                 defaultHandle={
                   startup.instagram
                     ? normalizeToHandle(startup.instagram, "https://instagram.com/").handle
