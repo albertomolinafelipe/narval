@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
-import { fetchStartup } from "@/lib/api/client";
+import { getStartupById } from "@/lib/api/startups";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -13,9 +13,9 @@ interface Props {
 export default async function StartupDetailPage({ params }: Props) {
   const { id } = await params;
 
-  // Prefetch the startup on the server for initial render
-  // SuperTokens session is cookie-based (credentials: "include" is already set in fetchStartup)
-  const startup = await fetchStartup(id);
+  // Prefetch the startup on the server for initial render. Runs unauthenticated
+  // server-side; the client detail hook refetches with the user's session.
+  const startup = await getStartupById(id);
 
   if (!startup) notFound();
 

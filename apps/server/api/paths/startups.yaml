@@ -1,6 +1,23 @@
 get:
   operationId: listStartups
   summary: List all startup accounts (public)
+  parameters:
+    - name: favorited
+      in: query
+      description: When true, return only startups favorited by the authenticated user (requires auth).
+      required: false
+      schema:
+        type: boolean
+    - name: sort
+      in: query
+      description: Sort order for the list.
+      required: false
+      schema:
+        type: string
+        enum:
+          - recent
+          - trending
+        default: recent
   responses:
     '200':
       description: List of startups

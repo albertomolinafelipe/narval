@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
-import { fetchStartup } from "@/lib/api/client";
+import { getStartupById } from "@/lib/api/startups";
 import ClaimBanner from "./claim-banner";
 
 interface Props {
@@ -15,7 +15,7 @@ interface Props {
 export default async function StartupEditPage({ params }: Props) {
   const { id } = await params;
 
-  const startup = await fetchStartup(id);
+  const startup = await getStartupById(id);
 
   if (!startup) notFound();
 

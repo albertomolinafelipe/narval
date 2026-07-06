@@ -44,7 +44,9 @@ func (s *server) GetMe(c *gin.Context)        { s.auth.GetMe(c) }
 func (s *server) GetHealth(c *gin.Context)    { s.health.GetHealth(c) }
 func (s *server) GetStats(c *gin.Context)     { s.stats.GetStats(c) }
 
-func (s *server) ListStartups(c *gin.Context)  { s.startups.ListStartups(c) }
+func (s *server) ListStartups(c *gin.Context, params ListStartupsParams) {
+	s.startups.ListStartups(c)
+}
 func (s *server) CreateStartup(c *gin.Context) { s.startups.CreateStartup(c) }
 func (s *server) GetStartup(c *gin.Context, id string) {
 	s.startups.GetStartup(c, id)

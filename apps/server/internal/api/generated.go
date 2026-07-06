@@ -62,6 +62,12 @@ const (
 	StageSeriesB    Stage = "series-b"
 )
 
+// Defines values for ListStartupsParamsSort.
+const (
+	Recent   ListStartupsParamsSort = "recent"
+	Trending ListStartupsParamsSort = "trending"
+)
+
 // AccountType defines model for AccountType.
 type AccountType string
 
@@ -339,6 +345,18 @@ type WebsiteCheckResponse struct {
 	Available bool `json:"available"`
 }
 
+// ListStartupsParams defines parameters for ListStartups.
+type ListStartupsParams struct {
+	// Favorited When true, return only startups favorited by the authenticated user (requires auth).
+	Favorited *bool `form:"favorited,omitempty" json:"favorited,omitempty"`
+
+	// Sort Sort order for the list.
+	Sort *ListStartupsParamsSort `form:"sort,omitempty" json:"sort,omitempty"`
+}
+
+// ListStartupsParamsSort defines parameters for ListStartups.
+type ListStartupsParamsSort string
+
 // CheckStartupWebsiteParams defines parameters for CheckStartupWebsite.
 type CheckStartupWebsiteParams struct {
 	Url string `form:"url" json:"url"`
@@ -409,7 +427,7 @@ type ServerInterface interface {
 	GetHealth(c *gin.Context)
 	// List all startup accounts (public)
 	// (GET /startups)
-	ListStartups(c *gin.Context)
+	ListStartups(c *gin.Context, params ListStartupsParams)
 	// Create a new startup account
 	// (POST /startups)
 	CreateStartup(c *gin.Context)
@@ -561,6 +579,27 @@ func (siw *ServerInterfaceWrapper) GetHealth(c *gin.Context) {
 // ListStartups operation middleware
 func (siw *ServerInterfaceWrapper) ListStartups(c *gin.Context) {
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListStartupsParams
+
+	// ------------- Optional query parameter "favorited" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "favorited", c.Request.URL.Query(), &params.Favorited)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter favorited: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// ------------- Optional query parameter "sort" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sort", c.Request.URL.Query(), &params.Sort)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter sort: %w", err), http.StatusBadRequest)
+		return
+	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		middleware(c)
 		if c.IsAborted() {
@@ -568,7 +607,7 @@ func (siw *ServerInterfaceWrapper) ListStartups(c *gin.Context) {
 		}
 	}
 
-	siw.Handler.ListStartups(c)
+	siw.Handler.ListStartups(c, params)
 }
 
 // CreateStartup operation middleware
