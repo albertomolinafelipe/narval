@@ -337,7 +337,7 @@ export default function StartupPageClient({
           hasImage={!!banner}
           aspect={16 / 4}
           rounded="rounded-2xl max-md:rounded-none"
-          className="mb-8 bg-bg-subtle max-md:-mx-6"
+          className="mb-8 bg-bg-subtle max-md:-mx-4"
         >
           {banner ? (
             <div className="relative w-full" style={{ aspectRatio: "16/4" }}>
