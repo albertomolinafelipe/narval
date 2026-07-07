@@ -150,9 +150,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
     if (founders.length === 0) return null;
     return (
       <Section title="Founders">
-        <div className="flex flex-wrap gap-4 max-md:justify-between md:grid md:grid-cols-[repeat(auto-fill,minmax(100px,130px))]">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-[repeat(auto-fill,minmax(100px,130px))]">
           {founders.map((f, i) => (
-            <div key={i} className="flex flex-col gap-2 max-md:w-[150px]">
+            <div key={i} className="flex min-w-0 flex-col gap-2">
               <Photo name={f.name} url={f.photo_url} />
               <div>
                 <p className="break-words text-sm font-medium text-text">{f.name}</p>
@@ -207,9 +207,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
 
   return (
     <Section title="Founders">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 200px))", gap: "1.25rem" }}>
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-[repeat(auto-fill,minmax(160px,200px))]">
         {draft.map((f, i) => (
-          <div key={i} className="flex flex-col gap-2">
+          <div key={i} className="flex min-w-0 flex-col gap-2">
             <div className="relative">
               <EditablePhoto
                 startupId={startup.id}
