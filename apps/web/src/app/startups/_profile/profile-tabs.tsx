@@ -53,25 +53,29 @@ export function ProfileTabs({ startup }: { startup: Startup }) {
 
   return (
     <div className="flex flex-col">
-      {/* Tab bar */}
-      <div className="flex border-b border-border">
-        {visibleTabs.map((tab) => {
-          const isActive = tab.id === active;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActive(tab.id)}
-              className={`-mb-px border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
-                isActive
-                  ? "border-brand text-text"
-                  : "border-transparent text-text-muted hover:text-text"
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
+      {/* Tab bar — scrolls horizontally when the tabs overflow (mobile).
+          Scrollbar is hidden; a right-edge fade hints at more tabs. */}
+      <div className="relative">
+        <div className="no-scrollbar flex overflow-x-auto overflow-y-hidden border-b border-border">
+          {visibleTabs.map((tab) => {
+            const isActive = tab.id === active;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActive(tab.id)}
+                className={`-mb-px shrink-0 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition sm:px-4 ${
+                  isActive
+                    ? "border-brand text-text"
+                    : "border-transparent text-text-muted hover:text-text"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-bg to-transparent" />
       </div>
 
       {/* Panel */}

@@ -155,6 +155,15 @@ body {
 
 /*  Reusable utilities  */
 
+/* Hide scrollbars while keeping the element scrollable */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
 /* Input / textarea base */
 .input {
   width: 100%;

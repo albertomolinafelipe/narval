@@ -119,8 +119,8 @@ export function EditableImage({
             (or while busy) so the spinner stays visible during the request.
             Icon-only buttons so they fit even on a small logo. */}
         <div
-          className={`absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 backdrop-blur-sm transition-opacity ${
-            busy ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          className={`absolute inset-0 flex items-center justify-center gap-1.5 bg-black/25 transition-opacity md:bg-black/40 md:backdrop-blur-sm ${
+            busy ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
           }`}
         >
           {busy ? (

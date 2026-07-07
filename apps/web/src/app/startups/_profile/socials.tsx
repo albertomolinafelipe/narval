@@ -8,6 +8,7 @@ import { components } from "@/lib/api/generated";
 import { parseProductLinks } from "@/lib/startup/product-links";
 import { normalizeToHandle } from "@/lib/startup/social-input";
 import PrefixInput from "@/app/_components/shared/prefix-input";
+import { Button } from "@/components/ui/button";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
 
@@ -283,8 +284,8 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
   if (!isOwner && present.length === 0 && !startup.website) return null;
 
   return (
-    <div className="flex shrink-0 flex-col items-start gap-3">
-      <span className="text-xs font-semibold uppercase tracking-wider text-text-subtle">
+    <div className="flex shrink-0 flex-col items-start gap-3 max-md:w-full max-md:flex-row max-md:flex-wrap max-md:items-center max-md:gap-4">
+      <span className="text-xs font-semibold uppercase tracking-wider text-text-subtle max-md:hidden">
         Links
       </span>
       <EditableWebsite value={startup.website ?? ""} />
@@ -298,12 +299,17 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
         />
       ))}
       {isOwner && missing.length > 0 && (
-        <div className="relative">
-          <button type="button" onClick={() => setMenuOpen((o) => !o)}
-            className="flex items-center gap-1 text-xs text-text-subtle transition hover:text-text"
+        <div className="relative max-md:-mt-1 max-md:self-start">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Add link"
+            className="px-0 hover:bg-transparent hover:text-brand/80"
           >
-            <Plus size={14} /> Add
-          </button>
+            <Plus size={18} /> <span className="max-md:hidden">Add</span>
+          </Button>
           {menuOpen && (
             <div className="absolute right-0 z-10 mt-1 rounded-lg border border-border bg-bg p-1 shadow-lg">
               {missing.map((def) => (

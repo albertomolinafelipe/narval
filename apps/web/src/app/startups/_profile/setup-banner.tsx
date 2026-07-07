@@ -30,7 +30,7 @@ export function SetupBanner() {
   };
 
   return (
-    <div className="relative mb-8 overflow-hidden rounded-2xl border border-border bg-bg-raised px-6 py-5 shadow-sm max-md:-mx-6 max-md:rounded-none">
+    <div className="relative mb-8 overflow-hidden rounded-2xl border border-border bg-bg-raised px-6 py-5 shadow-sm max-md:-mx-4 max-md:rounded-none">
       <BackgroundBlobs />
       <div className="relative z-10 flex items-center gap-4 max-sm:flex-col max-sm:items-start">
         <Image

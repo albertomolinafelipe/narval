@@ -85,8 +85,8 @@ function EditablePhoto({
       <div className="group relative w-full overflow-hidden rounded-lg" style={{ aspectRatio: "3/4" }}>
         <Photo name={name} url={url} />
         <div
-          className={`absolute inset-0 flex items-center justify-center gap-2 bg-black/40 backdrop-blur-sm transition-opacity ${
-            busy ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+          className={`absolute inset-0 flex items-center justify-center gap-2 bg-black/25 transition-opacity md:bg-black/40 md:backdrop-blur-sm ${
+            busy ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
           }`}
         >
           {busy ? (
@@ -150,12 +150,12 @@ export function FoundersSection({ startup }: { startup: Startup }) {
     if (founders.length === 0) return null;
     return (
       <Section title="Founders">
-        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(100px, 130px))" }}>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-[repeat(auto-fill,minmax(100px,130px))]">
           {founders.map((f, i) => (
-            <div key={i} className="flex flex-col gap-2">
+            <div key={i} className="flex min-w-0 flex-col gap-2">
               <Photo name={f.name} url={f.photo_url} />
               <div>
-                <p className="truncate text-sm font-medium text-text">{f.name}</p>
+                <p className="break-words text-sm font-medium text-text">{f.name}</p>
                 {f.linkedin && (
                   <a
                     href={linkedinHref(f.linkedin)}
@@ -207,9 +207,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
 
   return (
     <Section title="Founders">
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 200px))", gap: "1.25rem" }}>
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-[repeat(auto-fill,minmax(160px,200px))]">
         {draft.map((f, i) => (
-          <div key={i} className="flex flex-col gap-2">
+          <div key={i} className="flex min-w-0 flex-col gap-2">
             <div className="relative">
               <EditablePhoto
                 startupId={startup.id}

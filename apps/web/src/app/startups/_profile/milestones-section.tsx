@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import {
   Banknote,
   Check,
-  GripVertical,
   Link2,
   Loader2,
   Package,
@@ -50,6 +49,8 @@ const MAX_TEXT = 100;
 const TEXT_COUNTER_THRESHOLD = 20;
 /** Width of one timeline column (rem); the connector line insets by half this so it spans circle centers. */
 const TIMELINE_ITEM_REM = 10;
+/** Trim the empty half-slot before the first circle and after the last one. */
+const TIMELINE_EDGE_TRIM_REM = 1.5;
 
 type Icon = ComponentType<{ size?: number; className?: string }>;
 
@@ -100,7 +101,6 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
 
   const [draft, setDraft] = useState<MilestoneData>(() => JSON.parse(savedJson));
   const [saving, setSaving] = useState(false);
-  const dragIndex = useRef<number | null>(null);
 
   useEffect(() => {
     setDraft(JSON.parse(savedJson));
@@ -144,21 +144,6 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
   const toggleAchieved = (i: number) =>
     setDraft((d) => ({ ...d, achieved: d.achieved === i + 1 ? i : i + 1 }));
 
-  const onDragStart = (i: number) => { dragIndex.current = i; };
-  const onDrop = (toIndex: number) => {
-    const from = dragIndex.current;
-    if (from === null || from === toIndex) return;
-    setDraft((d) => {
-      const items = [...d.items];
-      const [moved] = items.splice(from, 1);
-      items.splice(toIndex, 0, moved);
-      // Recalculate achieved frontier after reorder.
-      const achieved = Math.max(0, Math.min(items.length, d.achieved));
-      return { items, achieved };
-    });
-    dragIndex.current = null;
-  };
-
   const onSave = async () => {
     setSaving(true);
     try {
@@ -179,76 +164,55 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
           return (
             <div
               key={i}
-              draggable
-              onDragStart={() => onDragStart(i)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDrop(i)}
-              className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle/30 p-2"
+              className="flex flex-col gap-2 rounded-lg border border-border bg-bg-subtle/30 p-2"
             >
-              {/* Drag handle */}
-              <GripVertical size={15} className="shrink-0 cursor-grab text-text-subtle active:cursor-grabbing" />
+              {/* Top row: marker, category, link, remove */}
+              <div className="flex items-center gap-2">
+                {/* Accomplished marker */}
+                <button
+                  type="button"
+                  onClick={() => toggleAchieved(i)}
+                  aria-label={done ? "Mark not accomplished" : "Mark accomplished up to here"}
+                  title="Accomplished up to here"
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
+                    done
+                      ? "border-brand bg-brand text-white opacity-80"
+                      : "border-border text-text-subtle hover:border-brand"
+                  }`}
+                >
+                  {done && <Check size={16} strokeWidth={3} />}
+                </button>
 
-              {/* Accomplished marker */}
-              <button
-                type="button"
-                onClick={() => toggleAchieved(i)}
-                aria-label={done ? "Mark not accomplished" : "Mark accomplished up to here"}
-                title="Accomplished up to here"
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                  done
-                    ? "border-brand bg-brand text-white opacity-80"
-                    : "border-border text-text-subtle hover:border-brand"
-                }`}
-              >
-                {done && <Check size={16} strokeWidth={3} />}
-              </button>
+                {/* Category */}
+                <Select
+                  value={m.category}
+                  onValueChange={(val) => setItem(i, { category: val as MilestoneCategory })}
+                >
+                  <SelectTrigger className="w-32 shrink-0">
+                    {(() => {
+                      const cat = CATEGORIES.find((c) => c.value === m.category);
+                      const Icon = cat?.Icon ?? Trophy;
+                      return (
+                        <span className="flex items-center gap-1.5">
+                          <Icon size={13} className="shrink-0 text-brand" />
+                          <span>{cat?.label ?? m.category}</span>
+                        </span>
+                      );
+                    })()}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        <span className="flex items-center gap-1.5">
+                          <c.Icon size={13} className="shrink-0" />
+                          {c.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-              {/* Category */}
-              <Select
-                value={m.category}
-                onValueChange={(val) => setItem(i, { category: val as MilestoneCategory })}
-              >
-                <SelectTrigger className="w-32 shrink-0">
-                  {(() => {
-                    const cat = CATEGORIES.find((c) => c.value === m.category);
-                    const Icon = cat?.Icon ?? Trophy;
-                    return (
-                      <span className="flex items-center gap-1.5">
-                        <Icon size={13} className="shrink-0 text-brand" />
-                        <span>{cat?.label ?? m.category}</span>
-                      </span>
-                    );
-                  })()}
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map((c) => (
-                    <SelectItem key={c.value} value={c.value}>
-                      <span className="flex items-center gap-1.5">
-                        <c.Icon size={13} className="shrink-0" />
-                        {c.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {/* Text + link share remaining space equally */}
-              <div className="flex min-w-0 flex-1 items-center gap-2">
-                <div className="relative min-w-0 flex-1">
-                  <input
-                    value={m.text}
-                    placeholder="Milestone (e.g. Launched MVP)"
-                    onChange={(e) => setItem(i, { text: e.target.value })}
-                    className={`${inputClass} min-w-0 w-full pr-9`}
-                    maxLength={MAX_TEXT}
-                  />
-                  {m.text.length > MAX_TEXT - TEXT_COUNTER_THRESHOLD && (
-                    <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs ${m.text.length >= MAX_TEXT ? "text-danger" : "text-text-subtle"}`}>
-                      {MAX_TEXT - m.text.length}
-                    </span>
-                  )}
-                </div>
-
+                {/* Link */}
                 <div className="relative min-w-0 flex-1">
                   <Link2
                     size={13}
@@ -261,17 +225,33 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
                     className={`${inputClass} w-full pl-7`}
                   />
                 </div>
+
+                {/* Remove */}
+                <button
+                  type="button"
+                  onClick={() => removeItem(i)}
+                  aria-label="Remove milestone"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-subtle transition hover:bg-danger/10 hover:text-danger"
+                >
+                  <X size={15} />
+                </button>
               </div>
 
-              {/* Remove */}
-              <button
-                type="button"
-                onClick={() => removeItem(i)}
-                aria-label="Remove milestone"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-text-subtle transition hover:bg-danger/10 hover:text-danger"
-              >
-                <X size={15} />
-              </button>
+              {/* Text — full width below */}
+              <div className="relative">
+                <input
+                  value={m.text}
+                  placeholder="Milestone (e.g. Launched MVP)"
+                  onChange={(e) => setItem(i, { text: e.target.value })}
+                  className={`${inputClass} w-full pr-9`}
+                  maxLength={MAX_TEXT}
+                />
+                {m.text.length > MAX_TEXT - TEXT_COUNTER_THRESHOLD && (
+                  <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs ${m.text.length >= MAX_TEXT ? "text-danger" : "text-text-subtle"}`}>
+                    {MAX_TEXT - m.text.length}
+                  </span>
+                )}
+              </div>
             </div>
           );
         })}
@@ -305,22 +285,23 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
 /** Read-only horizontal scrollable timeline. */
 function Timeline({ data }: { data: MilestoneData }) {
   return (
-    <div className="relative">
-      {/* Fade edges hint there's more to scroll */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-bg to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-bg to-transparent" />
-
+    <div className="w-fit max-w-full pt-2">
       <ScrollArea className="w-full pb-5">
-        <div className="relative inline-flex min-w-full">
+        <div className="relative inline-flex">
           {/* Connector line: from center of first circle to center of last */}
           <div
             className="absolute top-4 h-px bg-border"
-            style={{ left: `${TIMELINE_ITEM_REM / 2}rem`, right: `${TIMELINE_ITEM_REM / 2}rem` }}
+            style={{
+              left: `${TIMELINE_ITEM_REM / 2 - TIMELINE_EDGE_TRIM_REM}rem`,
+              right: `${TIMELINE_ITEM_REM / 2 - TIMELINE_EDGE_TRIM_REM}rem`,
+            }}
           />
 
           <ol className="relative flex items-start">
           {data.items.map((m, i) => {
             const done = i < data.achieved;
+            const isFirst = i === 0;
+            const isLast = i === data.items.length - 1;
             const Icon = categoryIcon(m.category);
             const href = m.link
               ? m.link.startsWith("http") ? m.link : `https://${m.link}`
@@ -329,7 +310,11 @@ function Timeline({ data }: { data: MilestoneData }) {
             return (
               <li
                 key={i}
-                style={{ width: `${TIMELINE_ITEM_REM}rem` }}
+                style={{
+                  width: `${TIMELINE_ITEM_REM}rem`,
+                  marginLeft: isFirst ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
+                  marginRight: isLast ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
+                }}
                 className="flex shrink-0 flex-col items-center gap-2 pb-3"
               >
                 {/* Circle */}
