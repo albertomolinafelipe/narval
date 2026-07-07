@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import {
   Banknote,
   Check,
-  GripVertical,
   Link2,
   Loader2,
   Package,
@@ -102,7 +101,6 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
 
   const [draft, setDraft] = useState<MilestoneData>(() => JSON.parse(savedJson));
   const [saving, setSaving] = useState(false);
-  const dragIndex = useRef<number | null>(null);
 
   useEffect(() => {
     setDraft(JSON.parse(savedJson));
@@ -146,21 +144,6 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
   const toggleAchieved = (i: number) =>
     setDraft((d) => ({ ...d, achieved: d.achieved === i + 1 ? i : i + 1 }));
 
-  const onDragStart = (i: number) => { dragIndex.current = i; };
-  const onDrop = (toIndex: number) => {
-    const from = dragIndex.current;
-    if (from === null || from === toIndex) return;
-    setDraft((d) => {
-      const items = [...d.items];
-      const [moved] = items.splice(from, 1);
-      items.splice(toIndex, 0, moved);
-      // Recalculate achieved frontier after reorder.
-      const achieved = Math.max(0, Math.min(items.length, d.achieved));
-      return { items, achieved };
-    });
-    dragIndex.current = null;
-  };
-
   const onSave = async () => {
     setSaving(true);
     try {
@@ -181,15 +164,8 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
           return (
             <div
               key={i}
-              draggable
-              onDragStart={() => onDragStart(i)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDrop(i)}
               className="flex items-center gap-2 rounded-lg border border-border bg-bg-subtle/30 p-2"
             >
-              {/* Drag handle */}
-              <GripVertical size={15} className="shrink-0 cursor-grab text-text-subtle active:cursor-grabbing" />
-
               {/* Accomplished marker */}
               <button
                 type="button"
