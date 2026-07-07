@@ -370,7 +370,7 @@ export default function StartupPageClient({
           >
             <Avatar entity={startup} size={18} />
           </EditableImage>
-          <div className="min-w-0 flex-1 max-md:order-last max-md:w-full max-md:flex-none">
+          <div className="min-w-0 flex-1 max-md:order-3 max-md:w-full max-md:flex-none">
             <h1 className="flex items-center gap-2 text-2xl font-bold text-text">
               {startup.name}
               {startup.verified && (
@@ -404,71 +404,76 @@ export default function StartupPageClient({
               className="mt-0.5 block break-words text-sm text-text-muted"
             />
           </div>
-          <div className="flex shrink-0 items-center gap-2 max-md:ml-auto">
-            {isOwner && !startup.verified && (
-              <VerifyDomainButton
-                startupId={startup.id}
-                defaultWebsite={startup.website ?? undefined}
-              />
-            )}
+          <div className="flex shrink-0 items-center gap-2 max-md:contents">
+            {/* Owner controls — drop to their own row below the name on mobile */}
             {isOwner && (
-              <VerifyInstagramButton
-                startupId={startup.id}
-                verified={!!startup.instagram_verified}
-                defaultHandle={
-                  startup.instagram
-                    ? normalizeToHandle(startup.instagram, "https://instagram.com/").handle
-                    : undefined
-                }
-              />
+              <div className="flex items-center gap-2 max-md:order-2 max-md:w-full max-md:justify-start">
+                {!startup.verified && (
+                  <VerifyDomainButton
+                    startupId={startup.id}
+                    defaultWebsite={startup.website ?? undefined}
+                  />
+                )}
+                <VerifyInstagramButton
+                  startupId={startup.id}
+                  verified={!!startup.instagram_verified}
+                  defaultHandle={
+                    startup.instagram
+                      ? normalizeToHandle(startup.instagram, "https://instagram.com/").handle
+                      : undefined
+                  }
+                />
+                {editable ? (
+                  <Button asChild variant="soft" size="sm">
+                    <Link href={startupPath(startup)}>
+                      <Eye size={16} />
+                      Done
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={startupEditPath(startup)}>
+                      <Pencil size={16} />
+                      Edit
+                    </Link>
+                  </Button>
+                )}
+              </div>
             )}
-            {isOwner &&
-              (editable ? (
-                <Button asChild variant="soft" size="sm">
-                  <Link href={startupPath(startup)}>
-                    <Eye size={16} />
-                    Done
-                  </Link>
-                </Button>
-              ) : (
-                <Button asChild variant="outline" size="sm">
-                  <Link href={startupEditPath(startup)}>
-                    <Pencil size={16} />
-                    Edit
-                  </Link>
-                </Button>
-              ))}
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={copied ? "Copied!" : "Share"}
-              title={copied ? "Copied!" : "Share"}
-              onClick={handleShare}
-            >
-              {copied ? <Check size={16} /> : <Share2 size={16} />}
-            </Button>
-            <Button
-              variant={startup.is_favorited ? "soft" : "ghost"}
-              size="icon"
-              aria-label={
-                startup.is_favorited
-                  ? "Remove from favorites"
-                  : "Add to favorites"
-              }
-              title={
-                startup.is_favorited
-                  ? "Remove from favorites"
-                  : "Add to favorites"
-              }
-              onClick={handleFavorite}
-              disabled={favoriteMutation.isPending}
-            >
-              <Star
-                size={16}
-                fill={startup.is_favorited ? "currentColor" : "none"}
-              />
-            </Button>
-            <BoostButton startup={startup} showCount={true} size="large" />
+            {/* Primary actions — stay on the logo's row on mobile */}
+            <div className="flex items-center gap-2 max-md:order-1 max-md:ml-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={copied ? "Copied!" : "Share"}
+                title={copied ? "Copied!" : "Share"}
+                onClick={handleShare}
+              >
+                {copied ? <Check size={16} /> : <Share2 size={16} />}
+              </Button>
+              <Button
+                variant={startup.is_favorited ? "soft" : "ghost"}
+                size="icon"
+                aria-label={
+                  startup.is_favorited
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
+                title={
+                  startup.is_favorited
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
+                onClick={handleFavorite}
+                disabled={favoriteMutation.isPending}
+              >
+                <Star
+                  size={16}
+                  fill={startup.is_favorited ? "currentColor" : "none"}
+                />
+              </Button>
+              <BoostButton startup={startup} showCount={true} size="large" />
+            </div>
           </div>
         </div>
 

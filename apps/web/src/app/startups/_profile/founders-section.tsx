@@ -150,9 +150,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
     if (founders.length === 0) return null;
     return (
       <Section title="Founders">
-        <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(100px, 130px))" }}>
+        <div className="flex flex-wrap gap-4 max-md:justify-between md:grid md:grid-cols-[repeat(auto-fill,minmax(100px,130px))]">
           {founders.map((f, i) => (
-            <div key={i} className="flex flex-col gap-2">
+            <div key={i} className="flex flex-col gap-2 max-md:w-[150px]">
               <Photo name={f.name} url={f.photo_url} />
               <div>
                 <p className="break-words text-sm font-medium text-text">{f.name}</p>

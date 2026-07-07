@@ -50,6 +50,8 @@ const MAX_TEXT = 100;
 const TEXT_COUNTER_THRESHOLD = 20;
 /** Width of one timeline column (rem); the connector line insets by half this so it spans circle centers. */
 const TIMELINE_ITEM_REM = 10;
+/** Trim the empty half-slot before the first circle and after the last one. */
+const TIMELINE_EDGE_TRIM_REM = 1.5;
 
 type Icon = ComponentType<{ size?: number; className?: string }>;
 
@@ -305,22 +307,23 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
 /** Read-only horizontal scrollable timeline. */
 function Timeline({ data }: { data: MilestoneData }) {
   return (
-    <div className="relative">
-      {/* Fade edges hint there's more to scroll */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-16 bg-gradient-to-r from-bg to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-16 bg-gradient-to-l from-bg to-transparent" />
-
+    <div className="w-fit max-w-full pt-2">
       <ScrollArea className="w-full pb-5">
-        <div className="relative inline-flex min-w-full">
+        <div className="relative inline-flex">
           {/* Connector line: from center of first circle to center of last */}
           <div
             className="absolute top-4 h-px bg-border"
-            style={{ left: `${TIMELINE_ITEM_REM / 2}rem`, right: `${TIMELINE_ITEM_REM / 2}rem` }}
+            style={{
+              left: `${TIMELINE_ITEM_REM / 2 - TIMELINE_EDGE_TRIM_REM}rem`,
+              right: `${TIMELINE_ITEM_REM / 2 - TIMELINE_EDGE_TRIM_REM}rem`,
+            }}
           />
 
           <ol className="relative flex items-start">
           {data.items.map((m, i) => {
             const done = i < data.achieved;
+            const isFirst = i === 0;
+            const isLast = i === data.items.length - 1;
             const Icon = categoryIcon(m.category);
             const href = m.link
               ? m.link.startsWith("http") ? m.link : `https://${m.link}`
@@ -329,7 +332,11 @@ function Timeline({ data }: { data: MilestoneData }) {
             return (
               <li
                 key={i}
-                style={{ width: `${TIMELINE_ITEM_REM}rem` }}
+                style={{
+                  width: `${TIMELINE_ITEM_REM}rem`,
+                  marginLeft: isFirst ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
+                  marginRight: isLast ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
+                }}
                 className="flex shrink-0 flex-col items-center gap-2 pb-3"
               >
                 {/* Circle */}
