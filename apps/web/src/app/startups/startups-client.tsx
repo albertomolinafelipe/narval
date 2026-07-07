@@ -38,6 +38,9 @@ const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 // selected startup and scroll position.
 const LIST_STATE_KEY = "startups:list-state";
 
+// Collapse animation duration (ms). Keep in sync with `drop-close` in globals.css.
+const CLOSE_MS = 240;
+
 // Team size uses a fixed non-linear scale, so its slider bounds are constant
 // (not derived from the list). The top stop is an open-ended "1000+".
 const TEAM_TOP = TEAM_SCALE[TEAM_SCALE.length - 1];
@@ -76,6 +79,8 @@ export default function StartupsClient({
   const listRef = useRef<HTMLUListElement>(null);
   const scrollTopRef = useRef(0);
   const selectedIdRef = useRef<Startup["id"] | null>(null);
+  // The open row's <li>, so we can bring its header to the top when expanding.
+  const selectedRowRef = useRef<HTMLLIElement>(null);
   // Id restored from storage: its row renders already-open (no drop-in
   // animation). Cleared as soon as the user interacts.
   const [restoreOpenId, setRestoreOpenId] = useState<Startup["id"] | null>(
@@ -163,8 +168,6 @@ export default function StartupsClient({
   }
 
   // Keep a row rendered while it plays its `drop-close` animation, then drop it.
-  // Keep CLOSE_MS in sync with the `drop-close` duration in globals.css.
-  const CLOSE_MS = 240;
   function startClosing(id: Startup["id"]) {
     setClosingId(id);
     if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -247,6 +250,41 @@ export default function StartupsClient({
       }),
     );
   }, [startups]);
+
+  // When a row opens, a previously-open row above it collapses and can push the
+  // clicked header up out of view. Once the expand/collapse animations settle,
+  // gently scroll the opened header to the top of the list if it isn't fully
+  // visible. Skipped for a row restored from storage (that sets its own scroll).
+  useEffect(() => {
+    if (selected == null || restoreOpenId === selected.id) return;
+    let raf = 0;
+    const t = setTimeout(() => {
+      const li = selectedRowRef.current;
+      const ul = listRef.current;
+      if (!li || !ul) return;
+      const liRect = li.getBoundingClientRect();
+      const ulRect = ul.getBoundingClientRect();
+      if (liRect.top >= ulRect.top && liRect.top < ulRect.bottom) return;
+      // Custom eased scroll so the movement is slower/gentler than the browser's
+      // native smooth scroll.
+      const from = ul.scrollTop;
+      const to = from + liRect.top - ulRect.top;
+      const started = performance.now();
+      const DURATION = 550;
+      const ease = (x: number) =>
+        x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+      const step = (now: number) => {
+        const p = Math.min(1, (now - started) / DURATION);
+        ul.scrollTop = from + (to - from) * ease(p);
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    }, CLOSE_MS);
+    return () => {
+      clearTimeout(t);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [selected, restoreOpenId]);
 
   function handleStartupClick(startup: Startup) {
     // Any manual interaction ends the "restored" state, so rows animate again.
@@ -399,7 +437,11 @@ export default function StartupsClient({
           // Render as the inline card while selected, and keep rendering it
           // through its collapse animation (closingId) before the row returns.
           selected?.id === s.id || closingId === s.id ? (
-            <li key={s.id} className="border-b border-border last:border-b-0">
+            <li
+              key={s.id}
+              ref={selected?.id === s.id ? selectedRowRef : undefined}
+              className="border-b border-border last:border-b-0"
+            >
               {inlineDetail(s)}
             </li>
           ) : (
