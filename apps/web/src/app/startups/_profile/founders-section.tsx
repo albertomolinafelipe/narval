@@ -155,7 +155,7 @@ export function FoundersSection({ startup }: { startup: Startup }) {
             <div key={i} className="flex flex-col gap-2">
               <Photo name={f.name} url={f.photo_url} />
               <div>
-                <p className="truncate text-sm font-medium text-text">{f.name}</p>
+                <p className="break-words text-sm font-medium text-text">{f.name}</p>
                 {f.linkedin && (
                   <a
                     href={linkedinHref(f.linkedin)}

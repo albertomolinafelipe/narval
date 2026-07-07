@@ -283,8 +283,8 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
   if (!isOwner && present.length === 0 && !startup.website) return null;
 
   return (
-    <div className="flex shrink-0 flex-col items-start gap-3">
-      <span className="text-xs font-semibold uppercase tracking-wider text-text-subtle">
+    <div className="flex shrink-0 flex-col items-start gap-3 max-md:w-full max-md:flex-row max-md:flex-wrap max-md:items-center max-md:gap-4">
+      <span className="text-xs font-semibold uppercase tracking-wider text-text-subtle max-md:hidden">
         Links
       </span>
       <EditableWebsite value={startup.website ?? ""} />

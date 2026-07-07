@@ -327,7 +327,7 @@ export default function StartupPageClient({
 
   return (
     <ProfileEditProvider startupId={startup.id} isOwner={canEdit}>
-      <div className="mx-auto max-w-7xl px-[var(--page-px)] py-8">
+      <div className="mx-auto max-w-7xl px-[var(--page-px)] py-8 max-md:pt-0">
         {/*  Setup invitation (owner, profile not yet published)  */}
         {isOwner && !startup.profile_setup && <SetupBanner />}
 
@@ -473,7 +473,7 @@ export default function StartupPageClient({
         </div>
 
         {/*  Meta pills + description (left)  |  Links (right)  */}
-        <div className="mb-8 flex items-start justify-between gap-6">
+        <div className="mb-8 flex items-start justify-between gap-6 max-md:flex-col max-md:gap-4">
           <div className="min-w-0 max-w-4xl flex-1">
             {/*  Meta pills  */}
             <div className="mb-4">
