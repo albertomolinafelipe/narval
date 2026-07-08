@@ -22,7 +22,8 @@ const activeSwitch = "border-brand bg-brand hover:bg-brand-hover";
 
 // Pill treatment for the segmented sort control: fully rounded, softer border,
 // and a brand-filled active segment.
-const viewToggleBox = "rounded-full border-border/60 bg-bg-subtle p-1 shadow-none";
+const viewToggleBox =
+  "rounded-full border-border/60 bg-bg-subtle p-1 shadow-none";
 const viewToggleItem =
   "rounded-full px-3 py-1 data-[state=on]:bg-brand data-[state=on]:text-brand-fg data-[state=on]:shadow-sm";
 

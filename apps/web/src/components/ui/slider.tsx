@@ -14,8 +14,7 @@ const Slider = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, ...props }, ref) => {
   // One thumb per value; fall back to a single thumb when uncontrolled.
-  const thumbCount =
-    props.value?.length ?? props.defaultValue?.length ?? 1;
+  const thumbCount = props.value?.length ?? props.defaultValue?.length ?? 1;
 
   return (
     <SliderPrimitive.Root

@@ -48,10 +48,12 @@ export default function GoogleCallbackPage() {
 
         {state.status === "no-account" && (
           <>
-            <h1 className="text-lg font-semibold text-text">No account found</h1>
+            <h1 className="text-lg font-semibold text-text">
+              No account found
+            </h1>
             <p className="text-sm text-text-muted">
-              We couldn&apos;t find an account for that Google email. Create one to
-              get started.
+              We couldn&apos;t find an account for that Google email. Create one
+              to get started.
             </p>
             <Button asChild className="w-full">
               <Link href="/">Back to Narval</Link>
@@ -61,7 +63,9 @@ export default function GoogleCallbackPage() {
 
         {state.status === "error" && (
           <>
-            <h1 className="text-lg font-semibold text-text">Something went wrong</h1>
+            <h1 className="text-lg font-semibold text-text">
+              Something went wrong
+            </h1>
             <p className="text-sm text-text-muted">{state.message}</p>
             <Button asChild variant="outline" className="w-full">
               <Link href="/">Back home</Link>

@@ -38,7 +38,10 @@ export function EditableSource({ value }: { value: string }) {
   if (!edit.editing) {
     const inner = (
       <>
-        {createElement(providerIcon(value), { size: 16, className: "shrink-0" })}
+        {createElement(providerIcon(value), {
+          size: 16,
+          className: "shrink-0",
+        })}
         <span className="truncate">{stripScheme(value)}</span>
       </>
     );

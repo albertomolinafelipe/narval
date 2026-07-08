@@ -38,7 +38,12 @@ func createTestStartup(t *testing.T, ownerID, ownerEmail, name, website string) 
 
 	var body map[string]any
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
-	return body["id"].(string)
+	id := body["id"].(string)
+
+	// Publish the profile — the public list only contains profile_setup = true.
+	require.NoError(t, testDB.Model(&models.Startup{}).Where("id = ?", id).
+		Update("profile_setup", true).Error)
+	return id
 }
 
 // createTestUser creates a user and returns their ID and email.

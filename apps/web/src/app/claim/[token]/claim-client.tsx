@@ -28,9 +28,12 @@ export default function ClaimClient({ token }: { token: string }) {
   if (loadError) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-2 bg-bg px-6 text-center">
-        <h1 className="text-lg font-semibold text-text">This claim link is no longer valid</h1>
+        <h1 className="text-lg font-semibold text-text">
+          This claim link is no longer valid
+        </h1>
         <p className="text-sm text-text-muted">
-          It may have already been claimed. Ask whoever sent it for a fresh link.
+          It may have already been claimed. Ask whoever sent it for a fresh
+          link.
         </p>
       </div>
     );
@@ -95,8 +98,12 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
         body: JSON.stringify({ email: email.trim(), code: c }),
       });
       if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { message?: string };
-        throw new Error(body.message ?? "Verification failed. Please try again.");
+        const body = (await res.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        throw new Error(
+          body.message ?? "Verification failed. Please try again.",
+        );
       }
       // Full reload so the new session + user context load, then land on the
       // editable profile the claimant now owns.
@@ -114,11 +121,15 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
         This profile for {shell.name} was set up for you
       </p>
       <p className="mt-0.5 text-xs text-text-muted">
-        Verify your email to take ownership — then you can edit everything below.
+        Verify your email to take ownership — then you can edit everything
+        below.
       </p>
 
       {step === "email" ? (
-        <form onSubmit={sendCode} className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <form
+          onSubmit={sendCode}
+          className="mt-3 flex flex-col gap-2 sm:flex-row"
+        >
           <input
             type="email"
             placeholder="you@company.com"
@@ -138,7 +149,8 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
       ) : (
         <div className="mt-3 flex flex-col gap-2">
           <p className="text-xs text-text-muted">
-            A 6-digit code was sent to <span className="font-medium text-text">{email}</span>
+            A 6-digit code was sent to{" "}
+            <span className="font-medium text-text">{email}</span>
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input

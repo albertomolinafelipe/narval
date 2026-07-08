@@ -7,9 +7,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// BoostLifetime is how long a boost counts as active before it expires and is
+// purged by the hourly cleanup.
+const BoostLifetime = 7 * 24 * time.Hour
+
 // StartupBoost represents a user's boost of a startup.
-// Boosts are temporary signals of interest/attention that expire after 30 days.
-// UserID stores the Keycloak ID (not a UUID)
+// Boosts are temporary signals of interest/attention that expire after BoostLifetime.
+// UserID stores the local users.id.
 type StartupBoost struct {
 	ID        string    `gorm:"type:uuid;primaryKey"                                             json:"id"`
 	UserID    string    `gorm:"type:varchar(255);not null;index:idx_user_startup_boost"         json:"user_id"`
@@ -24,7 +28,7 @@ func (b *StartupBoost) BeforeCreate(tx *gorm.DB) error {
 		b.ID = uuid.NewString()
 	}
 	if b.ExpiresAt.IsZero() {
-		b.ExpiresAt = time.Now().Add(30 * 24 * time.Hour)
+		b.ExpiresAt = time.Now().Add(BoostLifetime)
 	}
 	return nil
 }

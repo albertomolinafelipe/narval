@@ -699,7 +699,6 @@ func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]i
 		"contact_funding":    s.ContactFunding,
 		"contact_talent":     s.ContactTalent,
 		"owner_id":           s.OwnerID,
-		"owner_email":        s.OwnerEmail,
 		"profile_setup":      s.ProfileSetup,
 		"claimed":            s.Claimed,
 		"created_at":         s.CreatedAt,

@@ -141,7 +141,7 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
 
       trackAuth("login", { success: true });
       identifySession(email);
-      
+
       // Reload to update session
       window.location.reload();
       onSuccess?.();
@@ -207,7 +207,9 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
           inputMode="numeric"
           placeholder="123456"
           value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          onChange={(e) =>
+            setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+          }
           required
           autoComplete="one-time-code"
           className="input text-center text-lg tracking-widest"

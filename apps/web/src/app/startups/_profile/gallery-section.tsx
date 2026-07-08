@@ -35,7 +35,11 @@ function Frame({ url }: { url: string }) {
   return (
     <div className="h-full w-full bg-bg-subtle" style={{ aspectRatio: "9/16" }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="Product screenshot" className="h-full w-full object-cover" />
+      <img
+        src={url}
+        alt="Product screenshot"
+        className="h-full w-full object-cover"
+      />
     </div>
   );
 }
@@ -57,12 +61,8 @@ export function GallerySection({ startup }: { startup: Startup }) {
   // Viewer: always 4 slots, empty bg for missing ones. Click opens lightbox.
   if (!isOwner) {
     if (urls.length === 0) return null;
-    return (
-      <ViewerGallery urls={urls} />
-    );
+    return <ViewerGallery urls={urls} />;
   }
-
-  const atLimit = urls.length >= MAX_SCREENSHOTS;
 
   const persist = async (next: string[]) => {
     setBusy(true);
@@ -227,8 +227,12 @@ function ViewerGallery({ urls }: { urls: string[] }) {
               <Frame url={urls[i]} />
             </button>
           ) : (
-            <div key={i} className="rounded-xl bg-bg-subtle" style={{ aspectRatio: "9/16" }} />
-          )
+            <div
+              key={i}
+              className="rounded-xl bg-bg-subtle"
+              style={{ aspectRatio: "9/16" }}
+            />
+          ),
         )}
       </div>
 

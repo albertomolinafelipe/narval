@@ -44,13 +44,33 @@ export function getStartupSocials(s: Startup): StartupLink[] {
       Icon: Mail,
     });
   if (s.linkedin)
-    links.push({ id: "linkedin", label: "LinkedIn", href: s.linkedin, Icon: SiLinkedin });
+    links.push({
+      id: "linkedin",
+      label: "LinkedIn",
+      href: s.linkedin,
+      Icon: SiLinkedin,
+    });
   if (s.twitter)
-    links.push({ id: "twitter", label: "X / Twitter", href: s.twitter, Icon: SiX });
+    links.push({
+      id: "twitter",
+      label: "X / Twitter",
+      href: s.twitter,
+      Icon: SiX,
+    });
   if (s.instagram)
-    links.push({ id: "instagram", label: "Instagram", href: s.instagram, Icon: SiInstagram });
+    links.push({
+      id: "instagram",
+      label: "Instagram",
+      href: s.instagram,
+      Icon: SiInstagram,
+    });
   if (s.github)
-    links.push({ id: "github", label: "GitHub", href: s.github, Icon: SiGithub });
+    links.push({
+      id: "github",
+      label: "GitHub",
+      href: s.github,
+      Icon: SiGithub,
+    });
   return links;
 }
 
@@ -59,10 +79,25 @@ export function getStartupProductLinks(s: Startup): StartupLink[] {
   const links = parseProductLinks(s.product_links);
   const out: StartupLink[] = [];
   if (links.web)
-    out.push({ id: "web", label: "Try it online", href: links.web, Icon: Globe });
+    out.push({
+      id: "web",
+      label: "Try it online",
+      href: links.web,
+      Icon: Globe,
+    });
   if (links.ios)
-    out.push({ id: "ios", label: "App Store", href: links.ios, Icon: SiAppstore });
+    out.push({
+      id: "ios",
+      label: "App Store",
+      href: links.ios,
+      Icon: SiAppstore,
+    });
   if (links.android)
-    out.push({ id: "android", label: "Google Play", href: links.android, Icon: SiGoogleplay });
+    out.push({
+      id: "android",
+      label: "Google Play",
+      href: links.android,
+      Icon: SiGoogleplay,
+    });
   return out;
 }

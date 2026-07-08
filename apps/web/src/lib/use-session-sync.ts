@@ -21,10 +21,10 @@ export function useSessionSync() {
 
     import("supertokens-auth-react/recipe/session").then((Session) => {
       if (cleanup) return;
-      
+
       Session.doesSessionExist().then((currentExists) => {
         if (cleanup) return;
-        
+
         const prevExists = prevExistsRef.current;
 
         // When session state changes (login or logout), invalidate queries

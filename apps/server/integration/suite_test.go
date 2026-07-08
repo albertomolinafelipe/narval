@@ -13,8 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/narval/server/internal/api"
 	"github.com/narval/server/internal/config"
+	"github.com/narval/server/internal/db"
 	"github.com/narval/server/internal/testutil"
-	"github.com/narval/server/models"
 	"github.com/redis/go-redis/v9"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	tcredis "github.com/testcontainers/testcontainers-go/modules/redis"
@@ -79,14 +79,8 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if err := testDB.AutoMigrate(
-		&models.User{},
-		&models.Startup{},
-		&models.Investor{},
-		&models.RegistrationDraft{},
-		&models.StartupFavorite{},
-		&models.StartupBoost{},
-	); err != nil {
+	// Same migration set as production startup, so the schema can't drift.
+	if err := db.Migrate(testDB); err != nil {
 		fmt.Fprintf(os.Stderr, "failed to run migrations: %v\n", err)
 		os.Exit(1)
 	}
@@ -113,7 +107,7 @@ func TestMain(m *testing.M) {
 func truncateTables(t *testing.T) {
 	t.Helper()
 	t.Cleanup(func() {
-		tables := []string{"startup_boosts", "startup_favorites", "registration_drafts", "startups", "investors", "users"}
+		tables := []string{"startup_boosts", "startup_favorites", "registration_drafts", "domain_verifications", "instagram_verifications", "startups", "users"}
 		for _, tbl := range tables {
 			if err := testDB.Exec("TRUNCATE TABLE " + tbl + " CASCADE").Error; err != nil {
 				t.Logf("warning: truncate %s: %v", tbl, err)

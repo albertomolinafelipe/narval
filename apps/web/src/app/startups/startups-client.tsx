@@ -111,9 +111,7 @@ export default function StartupsClient({
   // excluded; the upper bound is forced above the lower so the slider is valid
   // even when every startup shares one value.
   const foundedDomain = useMemo<Range>(() => {
-    const years = startups
-      .map((s) => s.founded_year ?? 0)
-      .filter((y) => y > 0);
+    const years = startups.map((s) => s.founded_year ?? 0).filter((y) => y > 0);
     if (years.length === 0) return [2000, new Date().getFullYear()];
     const lo = Math.min(...years);
     return [lo, Math.max(...years, lo + 1)];

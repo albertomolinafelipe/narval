@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -47,7 +46,7 @@ func TestDomainVerification_HappyPath(t *testing.T) {
 	h.Mailer = mailer
 	st := models.Startup{Name: "Acme", OwnerID: "owner-1", OwnerEmail: "owner@acme.io"}
 	require.NoError(t, db.Create(&st).Error)
-	id := openapi_types.UUID(uuid.MustParse(st.ID))
+	id := uuid.MustParse(st.ID)
 
 	// Start
 	w, c := postJSON(t, "/verify-domain", `{"website":"acme.io","email_prefix":"you"}`,
@@ -82,7 +81,7 @@ func TestDomainVerification_WrongCode(t *testing.T) {
 	h.Mailer = &captureMailer{}
 	st := models.Startup{Name: "Acme", OwnerID: "owner-1", OwnerEmail: "owner@acme.io"}
 	require.NoError(t, db.Create(&st).Error)
-	id := openapi_types.UUID(uuid.MustParse(st.ID))
+	id := uuid.MustParse(st.ID)
 
 	_, c := postJSON(t, "/verify-domain", `{"website":"acme.io","email_prefix":"you"}`,
 		func(c *gin.Context) { setUserContext(c, "owner-1", "owner@acme.io") })
@@ -105,7 +104,7 @@ func TestDomainVerification_Guards(t *testing.T) {
 	h.Mailer = &captureMailer{}
 	st := models.Startup{Name: "Acme", OwnerID: "owner-1", OwnerEmail: "owner@acme.io"}
 	require.NoError(t, db.Create(&st).Error)
-	id := openapi_types.UUID(uuid.MustParse(st.ID))
+	id := uuid.MustParse(st.ID)
 
 	cases := []struct {
 		name, body string
@@ -141,7 +140,7 @@ func TestDomainVerification_DomainTakenByOther(t *testing.T) {
 	require.NoError(t, db.Create(&other).Error)
 	st := models.Startup{Name: "Acme", OwnerID: "owner-1", OwnerEmail: "owner@acme.io"}
 	require.NoError(t, db.Create(&st).Error)
-	id := openapi_types.UUID(uuid.MustParse(st.ID))
+	id := uuid.MustParse(st.ID)
 
 	w, c := postJSON(t, "/verify-domain", `{"website":"acme.io","email_prefix":"you"}`,
 		func(c *gin.Context) { setUserContext(c, "owner-1", "owner@acme.io") })

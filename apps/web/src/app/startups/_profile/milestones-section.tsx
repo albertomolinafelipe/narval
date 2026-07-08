@@ -16,7 +16,12 @@ import {
 } from "lucide-react";
 import { components } from "@/lib/api/generated";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Section } from "./ui";
 import { useProfileEdit } from "./edit-context";
@@ -24,12 +29,7 @@ import { useProfileEdit } from "./edit-context";
 type Startup = components["schemas"]["Startup"];
 
 type MilestoneCategory =
-  | "launch"
-  | "funding"
-  | "product"
-  | "team"
-  | "growth"
-  | "award";
+  "launch" | "funding" | "product" | "team" | "growth" | "award";
 
 interface Milestone {
   text: string;
@@ -73,7 +73,10 @@ function parseMilestones(raw?: string): MilestoneData {
   try {
     const data = JSON.parse(raw);
     const items: Milestone[] = Array.isArray(data?.items) ? data.items : [];
-    const achieved = Math.max(0, Math.min(items.length, Number(data?.achieved) || 0));
+    const achieved = Math.max(
+      0,
+      Math.min(items.length, Number(data?.achieved) || 0),
+    );
     return { items, achieved };
   } catch {
     return { items: [], achieved: 0 };
@@ -89,7 +92,10 @@ function clean(data: MilestoneData): MilestoneData {
       category: m.category,
     }))
     .filter((m) => m.text);
-  return { items, achieved: Math.max(0, Math.min(items.length, data.achieved)) };
+  return {
+    items,
+    achieved: Math.max(0, Math.min(items.length, data.achieved)),
+  };
 }
 
 const inputClass =
@@ -99,7 +105,9 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
   const { isOwner, save } = useProfileEdit();
   const savedJson = JSON.stringify(parseMilestones(startup.milestones));
 
-  const [draft, setDraft] = useState<MilestoneData>(() => JSON.parse(savedJson));
+  const [draft, setDraft] = useState<MilestoneData>(() =>
+    JSON.parse(savedJson),
+  );
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -172,7 +180,11 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
                 <button
                   type="button"
                   onClick={() => toggleAchieved(i)}
-                  aria-label={done ? "Mark not accomplished" : "Mark accomplished up to here"}
+                  aria-label={
+                    done
+                      ? "Mark not accomplished"
+                      : "Mark accomplished up to here"
+                  }
                   title="Accomplished up to here"
                   className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
                     done
@@ -186,11 +198,15 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
                 {/* Category */}
                 <Select
                   value={m.category}
-                  onValueChange={(val) => setItem(i, { category: val as MilestoneCategory })}
+                  onValueChange={(val) =>
+                    setItem(i, { category: val as MilestoneCategory })
+                  }
                 >
                   <SelectTrigger className="w-32 shrink-0">
                     {(() => {
-                      const cat = CATEGORIES.find((c) => c.value === m.category);
+                      const cat = CATEGORIES.find(
+                        (c) => c.value === m.category,
+                      );
                       const Icon = cat?.Icon ?? Trophy;
                       return (
                         <span className="flex items-center gap-1.5">
@@ -247,7 +263,9 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
                   maxLength={MAX_TEXT}
                 />
                 {m.text.length > MAX_TEXT - TEXT_COUNTER_THRESHOLD && (
-                  <span className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs ${m.text.length >= MAX_TEXT ? "text-danger" : "text-text-subtle"}`}>
+                  <span
+                    className={`pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs ${m.text.length >= MAX_TEXT ? "text-danger" : "text-text-subtle"}`}
+                  >
                     {MAX_TEXT - m.text.length}
                   </span>
                 )}
@@ -269,7 +287,12 @@ export function MilestonesSection({ startup }: { startup: Startup }) {
 
       {dirty && (
         <div className="mt-4 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={saving}
+          >
             Cancel
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
@@ -298,58 +321,66 @@ function Timeline({ data }: { data: MilestoneData }) {
           />
 
           <ol className="relative flex items-start">
-          {data.items.map((m, i) => {
-            const done = i < data.achieved;
-            const isFirst = i === 0;
-            const isLast = i === data.items.length - 1;
-            const Icon = categoryIcon(m.category);
-            const href = m.link
-              ? m.link.startsWith("http") ? m.link : `https://${m.link}`
-              : null;
+            {data.items.map((m, i) => {
+              const done = i < data.achieved;
+              const isFirst = i === 0;
+              const isLast = i === data.items.length - 1;
+              const Icon = categoryIcon(m.category);
+              const href = m.link
+                ? m.link.startsWith("http")
+                  ? m.link
+                  : `https://${m.link}`
+                : null;
 
-            return (
-              <li
-                key={i}
-                style={{
-                  width: `${TIMELINE_ITEM_REM}rem`,
-                  marginLeft: isFirst ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
-                  marginRight: isLast ? `-${TIMELINE_EDGE_TRIM_REM}rem` : undefined,
-                }}
-                className="flex shrink-0 flex-col items-center gap-2 pb-3"
-              >
-                {/* Circle */}
-                <span
-                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
-                    done
-                      ? "border-brand bg-brand text-white"
-                      : "border-border bg-bg text-text-muted"
-                  }`}
+              return (
+                <li
+                  key={i}
+                  style={{
+                    width: `${TIMELINE_ITEM_REM}rem`,
+                    marginLeft: isFirst
+                      ? `-${TIMELINE_EDGE_TRIM_REM}rem`
+                      : undefined,
+                    marginRight: isLast
+                      ? `-${TIMELINE_EDGE_TRIM_REM}rem`
+                      : undefined,
+                  }}
+                  className="flex shrink-0 flex-col items-center gap-2 pb-3"
                 >
-                  <Icon size={14} />
-                </span>
+                  {/* Circle */}
+                  <span
+                    className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
+                      done
+                        ? "border-brand bg-brand text-white"
+                        : "border-border bg-bg text-text-muted"
+                    }`}
+                  >
+                    <Icon size={14} />
+                  </span>
 
-                {/* Label */}
-                <div className="w-full px-1 text-center">
-                  {href ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`line-clamp-3 text-xs underline decoration-dotted underline-offset-2 transition hover:text-brand ${
-                        done ? "text-text" : "text-text-muted"
-                      }`}
-                    >
-                      {m.text}
-                    </a>
-                  ) : (
-                    <span className={`line-clamp-3 text-xs ${done ? "text-text" : "text-text-muted"}`}>
-                      {m.text}
-                    </span>
-                  )}
-                </div>
-              </li>
-            );
-          })}
+                  {/* Label */}
+                  <div className="w-full px-1 text-center">
+                    {href ? (
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`line-clamp-3 text-xs underline decoration-dotted underline-offset-2 transition hover:text-brand ${
+                          done ? "text-text" : "text-text-muted"
+                        }`}
+                      >
+                        {m.text}
+                      </a>
+                    ) : (
+                      <span
+                        className={`line-clamp-3 text-xs ${done ? "text-text" : "text-text-muted"}`}
+                      >
+                        {m.text}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </div>
       </ScrollArea>

@@ -8,12 +8,12 @@ const UserContext = createContext<UserContextValue | undefined>(undefined);
 
 /**
  * UserProvider - Manages user authentication state and profile data
- * 
+ *
  * This provider:
  * 1. Wraps SuperTokens session management (checked client-side only)
  * 2. Fetches user profile data from /auth/me when authenticated
  * 3. Provides a consistent API for components via useUser() hook
- * 
+ *
  * Usage:
  *   Wrap your app with <UserProvider> in providers.tsx
  */
@@ -25,7 +25,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   // Handle SuperTokens session check client-side only
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
+
     import("supertokens-auth-react/recipe/session").then((Session) => {
       Session.doesSessionExist().then((exists) => {
         setSessionExists(exists);
@@ -33,22 +33,26 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       });
     });
   }, []);
-  
+
   // Fetch user profile when session exists
-  const { data: user = null, isLoading: isUserLoading, refetch } = useQuery<User | null>({
+  const {
+    data: user = null,
+    isLoading: isUserLoading,
+    refetch,
+  } = useQuery<User | null>({
     queryKey: ["user-profile"],
     queryFn: async () => {
       const res = await fetch("/api/proxy/auth/me", {
         credentials: "include",
       });
-      
+
       if (!res.ok) {
         if (res.status === 401) {
           return null;
         }
         throw new Error("Failed to fetch user profile");
       }
-      
+
       return res.json();
     },
     enabled: !sessionLoading && sessionExists,

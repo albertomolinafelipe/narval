@@ -34,12 +34,20 @@ export default function ClaimBanner({ id }: { id: string }) {
     <div className="mx-auto mt-4 max-w-5xl rounded-xl border border-[var(--color-wip-text)] bg-[var(--color-wip-text)]/10 px-4 py-3">
       <p className="text-sm font-medium text-text">Unclaimed profile</p>
       <p className="mt-0.5 text-xs text-text-muted">
-        Save both links. Send the claim link to the startup; keep the edit link to
-        return here. You lose edit access the moment they claim it.
+        Save both links. Send the claim link to the startup; keep the edit link
+        to return here. You lose edit access the moment they claim it.
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <CopyButton label="Copy claim link" icon={<Link2 className="h-4 w-4" />} value={claimUrl} />
-        <CopyButton label="Copy edit link" icon={<Copy className="h-4 w-4" />} value={editUrl} />
+        <CopyButton
+          label="Copy claim link"
+          icon={<Link2 className="h-4 w-4" />}
+          value={claimUrl}
+        />
+        <CopyButton
+          label="Copy edit link"
+          icon={<Copy className="h-4 w-4" />}
+          value={editUrl}
+        />
       </div>
     </div>
   );

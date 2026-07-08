@@ -122,12 +122,16 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// SuperTokens middleware - handles SuperTokens routes automatically
-	r.Use(func(c *gin.Context) {
-		supertokens.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			c.Next()
-		})).ServeHTTP(c.Writer, c.Request)
-	})
+	// SuperTokens middleware - handles SuperTokens routes automatically.
+	// Skipped in the test env: integration tests never call supertokens.Init and
+	// authenticate via the dev bearer shortcut in middleware.Auth instead.
+	if cfg.Env != "test" {
+		r.Use(func(c *gin.Context) {
+			supertokens.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				c.Next()
+			})).ServeHTTP(c.Writer, c.Request)
+		})
+	}
 
 	authMiddleware := middleware.Auth(cfg)
 	optionalAuthMiddleware := middleware.OptionalAuth(cfg)

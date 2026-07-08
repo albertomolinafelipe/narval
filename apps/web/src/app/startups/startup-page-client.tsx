@@ -82,7 +82,7 @@ export default function StartupPageClient({
   // Mutations
   const favoriteMutation = useFavoriteMutation();
 
-  const isOwner = user?.email === startup.owner_email;
+  const isOwner = user?.id === startup.owner_id;
   const [copied, setCopied] = useState(false);
 
   function handleShare() {
@@ -419,7 +419,10 @@ export default function StartupPageClient({
                   verified={!!startup.instagram_verified}
                   defaultHandle={
                     startup.instagram
-                      ? normalizeToHandle(startup.instagram, "https://instagram.com/").handle
+                      ? normalizeToHandle(
+                          startup.instagram,
+                          "https://instagram.com/",
+                        ).handle
                       : undefined
                   }
                 />

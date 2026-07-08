@@ -15,12 +15,14 @@ function SessionSyncProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function SuperTokensWrapper({ children }: { children: React.ReactNode }) {
+export default function SuperTokensWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <UserProvider>
-      <SessionSyncProvider>
-        {children}
-      </SessionSyncProvider>
+      <SessionSyncProvider>{children}</SessionSyncProvider>
     </UserProvider>
   );
 }

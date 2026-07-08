@@ -4,1843 +4,1864 @@
  */
 
 export interface paths {
-    "/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health check */
-        get: operations["getHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/health": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/stats": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Aggregate directory counts (startups + users) */
-        get: operations["getStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Health check */
+    get: operations["getHealth"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/stats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Login with username and password */
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Aggregate directory counts (startups + users) */
+    get: operations["getStats"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/login": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Begin registration for all account types — sends a verification code
-         * @description Unified registration endpoint. For account_type="user", provide email and nickname. For account_type="startup", provide name and email. Domain verification happens later from the profile, not at signup.
-         */
-        post: operations["register"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Login with username and password */
+    post: operations["login"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/register": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/verify": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Verify email code and complete account creation */
-        post: operations["verify"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Begin registration for all account types — sends a verification code
+     * @description Unified registration endpoint. For account_type="user", provide email and nickname. For account_type="startup", provide name and email. Domain verification happens later from the profile, not at signup.
+     */
+    post: operations["register"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/verify": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Logout (invalidate session) */
-        post: operations["logout"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Verify email code and complete account creation */
+    post: operations["verify"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/logout": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Refresh access token using refresh token */
-        post: operations["refreshToken"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Logout (invalidate session) */
+    post: operations["logout"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/refresh": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get current authenticated user's profile */
-        get: operations["getMe"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Refresh access token using refresh token */
+    post: operations["refreshToken"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all startup accounts (public) */
-        get: operations["listStartups"];
-        put?: never;
-        /** Create a new startup account */
-        post: operations["createStartup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get current authenticated user's profile */
+    get: operations["getMe"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/check-website": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Check whether a website URL is already registered by a startup */
-        get: operations["checkStartupWebsite"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List all startup accounts (public) */
+    get: operations["listStartups"];
+    put?: never;
+    /** Create a new startup account */
+    post: operations["createStartup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/check-website": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get a startup by UUID or verified domain (public) */
-        get: operations["getStartup"];
-        /** Update the authenticated user's startup profile */
-        put: operations["updateStartup"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Check whether a website URL is already registered by a startup */
+    get: operations["checkStartupWebsite"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/logo": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload a logo image for the startup */
-        post: operations["uploadStartupLogo"];
-        /** Remove the logo image for the startup */
-        delete: operations["deleteStartupLogo"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get a startup by UUID or verified domain (public) */
+    get: operations["getStartup"];
+    /** Update the authenticated user's startup profile */
+    put: operations["updateStartup"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/logo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/banner": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload or replace the banner image for the startup */
-        post: operations["uploadStartupBanner"];
-        /** Remove the banner image for the startup */
-        delete: operations["deleteStartupBanner"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Upload a logo image for the startup */
+    post: operations["uploadStartupLogo"];
+    /** Remove the logo image for the startup */
+    delete: operations["deleteStartupLogo"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/banner": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/bookmark": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Favorite a startup for the authenticated user */
-        post: operations["favoriteStartup"];
-        /** Remove favorite from a startup for the authenticated user */
-        delete: operations["unfavoriteStartup"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Upload or replace the banner image for the startup */
+    post: operations["uploadStartupBanner"];
+    /** Remove the banner image for the startup */
+    delete: operations["deleteStartupBanner"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/bookmark": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/boost": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Boost a startup (irreversible, expires after 7 days) */
-        post: operations["boostStartup"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Favorite a startup for the authenticated user */
+    post: operations["favoriteStartup"];
+    /** Remove favorite from a startup for the authenticated user */
+    delete: operations["unfavoriteStartup"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/boost": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/verify-domain": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Start domain verification for a startup — emails a one-time code */
-        post: operations["startDomainVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Boost a startup (irreversible, expires after 7 days) */
+    post: operations["boostStartup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/verify-domain": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/verify-domain/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm domain verification with the one-time code */
-        post: operations["confirmDomainVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Start domain verification for a startup — emails a one-time code */
+    post: operations["startDomainVerification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/verify-domain/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/startups/{id}/verify-instagram": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get the current Instagram verification challenge for a startup */
-        get: operations["getInstagramVerification"];
-        put?: never;
-        /** Lock an Instagram handle and get the code to DM the company account */
-        post: operations["startInstagramVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Confirm domain verification with the one-time code */
+    post: operations["confirmDomainVerification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/verify-instagram": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/admin/instagram-verifications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Instagram verifications for the admin console */
-        get: operations["listInstagramVerifications"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** Get the current Instagram verification challenge for a startup */
+    get: operations["getInstagramVerification"];
+    put?: never;
+    /** Lock an Instagram handle and get the code to DM the company account */
+    post: operations["startInstagramVerification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/instagram-verifications": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/admin/instagram-verifications/{id}/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Confirm a startup's Instagram after matching the DM (admin only) */
-        post: operations["confirmInstagramVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /** List Instagram verifications for the admin console */
+    get: operations["listInstagramVerifications"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/instagram-verifications/{id}/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/admin/instagram-verifications/{id}/reset": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset a verification, unlocking the handle (admin only) */
-        post: operations["resetInstagramVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /** Confirm a startup's Instagram after matching the DM (admin only) */
+    post: operations["confirmInstagramVerification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/instagram-verifications/{id}/reset": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    get?: never;
+    put?: never;
+    /** Reset a verification, unlocking the handle (admin only) */
+    post: operations["resetInstagramVerification"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        Stats: {
-            /** @description Total startups, including unpublished drafts. */
-            total_startups: number;
-            /** @description Startups with a completed (published) profile. */
-            published_startups: number;
-            /** @description Domain-verified startups. */
-            verified_startups: number;
-            /** @description Total registered users. */
-            total_users: number;
-        };
-        LoginRequest: {
-            username: string;
-            password: string;
-        };
-        TokenResponse: {
-            access_token: string;
-            /** @example Bearer */
-            token_type: string;
-            /** @description Seconds until expiry */
-            expires_in: number;
-            refresh_token?: string;
-        };
-        Error: {
-            code: string;
-            message: string;
-        };
-        /** @enum {string} */
-        AccountType: "user" | "startup";
-        RegisterRequest: {
-            account_type: components["schemas"]["AccountType"];
-            password: string;
-            /**
-             * Format: email
-             * @description Required when account_type is "user"
-             */
-            email?: string;
-            /** @description Required when account_type is "user" */
-            nickname?: string;
-            /** @description Required when account_type is "startup". Startups register with a plain email and verify their domain later from the profile. */
-            name?: string;
-        };
-        VerifyRequest: {
-            /** Format: email */
-            email?: string;
-            code?: string;
-        };
-        UserProfile: {
-            /** Format: uuid */
-            id: string;
-            /** @description External authentication system user ID (e.g., SuperTokens user ID) */
-            auth_user_id: string;
-            email: string;
-            nickname: string;
-            account_type: components["schemas"]["AccountType"];
-            /** Format: date-time */
-            created_at: string;
-        };
-        RefreshRequest: {
-            /** @description The refresh token obtained from login */
-            refresh_token: string;
-        };
-        /** @enum {string} */
-        Stage: "idea" | "pre-seed" | "seed" | "series-a" | "series-b" | "growth" | "profitable";
-        /** @enum {string} */
-        Industry: "AI/ML" | "FinTech" | "HealthTech" | "Climate Tech" | "EdTech" | "SaaS" | "Marketplace" | "Developer Tools" | "Hardware" | "Consumer" | "Deep Tech" | "Logistics" | "Legal Tech" | "HR Tech" | "Other";
-        /** @enum {string} */
-        FundingRound: "pre-seed" | "seed" | "series-a" | "series-b" | "bridge";
-        Founder: {
-            name: string;
-            photo_url?: string;
-            linkedin?: string;
-        };
-        Startup: {
-            /** Format: uuid */
-            id: string;
-            name: string;
-            tagline?: string;
-            description?: string;
-            /** @description Long-form markdown pitch shown on the Overview tab */
-            about?: string;
-            /** @description YouTube URL embedded on the Overview tab */
-            video_url?: string;
-            /** @description JSON object: {"items":[{"text","link","category"}],"achieved":n} shown on the Overview tab */
-            milestones?: string;
-            website?: string;
-            /** @description Verified domain (read-only, set at verification; empty if unverified) */
-            verified_domain?: string;
-            /** @description Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited. */
-            instagram_verified?: boolean;
-            logo_url?: string;
-            stage?: components["schemas"]["Stage"];
-            industry?: components["schemas"]["Industry"];
-            team_size?: number;
-            location?: string;
-            founded_year?: number;
-            tech_stack?: string;
-            /** @description URL of the banner image */
-            banner_image?: string;
-            /** @description JSON object with product links: {"web":"...","ios":"...","android":"..."} */
-            product_links?: string;
-            /** @description JSON array of vertical product screenshot URLs (max 4): ["url1","url2"] */
-            gallery?: string;
-            /** @description Launch status shown on the Product tab: coming-soon | waitlist | beta | live (empty = none) */
-            product_status?: string;
-            /** @description JSON array of key product features shown on the Product tab: [{"title","description"}] */
-            features?: string;
-            linkedin?: string;
-            twitter?: string;
-            github?: string;
-            instagram?: string;
-            is_raising?: boolean;
-            current_round?: components["schemas"]["FundingRound"];
-            funding_ask?: string;
-            funding_use?: string;
-            is_hiring?: boolean;
-            /** @description Comma-separated list of open roles */
-            open_roles?: string;
-            /** @description Markdown describing how to contribute */
-            contributing_text?: string;
-            contact_general?: string;
-            contact_funding?: string;
-            contact_talent?: string;
-            owner_id: string;
-            owner_email: string;
-            /** @description Whether the startup profile has been fully set up (defaults to false) */
-            profile_setup?: boolean;
-            /** Format: date-time */
-            created_at: string;
-            /** Format: date-time */
-            updated_at?: string;
-            /** @description Whether the current authenticated user has favorited this startup (only present when authenticated) */
-            is_favorited?: boolean;
-            /** @description Whether the startup registered via the domain+work-email path */
-            verified?: boolean;
-            /** @description Total number of active boosts for this startup (boosts expire after 7 days) */
-            boost_count?: number;
-            /** @description Whether the current authenticated user has an active boost for this startup (only present when authenticated) */
-            has_boosted?: boolean;
-            founders?: components["schemas"]["Founder"][];
-        };
-        CreateStartupRequest: {
-            name: string;
-            tagline?: string;
-            description?: string;
-            website?: string;
-            stage?: components["schemas"]["Stage"];
-            industry?: components["schemas"]["Industry"];
-            team_size?: number;
-            location?: string;
-            founded_year?: number;
-            tech_stack?: string;
-            product_links?: string;
-            linkedin?: string;
-            twitter?: string;
-            github?: string;
-            instagram?: string;
-            is_raising?: boolean;
-            current_round?: components["schemas"]["FundingRound"];
-            funding_ask?: string;
-            funding_use?: string;
-            is_hiring?: boolean;
-            open_roles?: string;
-            contact_general?: string;
-            contact_funding?: string;
-            contact_talent?: string;
-        };
-        WebsiteCheckResponse: {
-            available: boolean;
-        };
-        UpdateStartupRequest: {
-            name?: string;
-            tagline?: string;
-            description?: string;
-            /** @description Long-form markdown pitch shown on the Overview tab */
-            about?: string;
-            /** @description YouTube URL embedded on the Overview tab */
-            video_url?: string;
-            /** @description JSON object: {"items":[{"text","link","category"}],"achieved":n} */
-            milestones?: string;
-            website?: string;
-            stage?: components["schemas"]["Stage"];
-            industry?: components["schemas"]["Industry"];
-            team_size?: number;
-            location?: string;
-            founded_year?: number;
-            tech_stack?: string;
-            product_links?: string;
-            /** @description JSON-encoded array of product screenshot URLs (max 4) */
-            gallery?: string;
-            /** @description Launch status: coming-soon | waitlist | beta | live (empty = none) */
-            product_status?: string;
-            /** @description JSON-encoded array of key product features: [{"title","description"}] */
-            features?: string;
-            linkedin?: string;
-            twitter?: string;
-            github?: string;
-            instagram?: string;
-            is_raising?: boolean;
-            current_round?: components["schemas"]["FundingRound"];
-            funding_ask?: string;
-            funding_use?: string;
-            is_hiring?: boolean;
-            open_roles?: string;
-            /** @description Markdown describing how to contribute */
-            contributing_text?: string;
-            contact_general?: string;
-            contact_funding?: string;
-            contact_talent?: string;
-            /** @description Set to true to mark the profile as complete and visible in public listings */
-            profile_setup?: boolean;
-            /** @description JSON-encoded array of founders ({name, photo_url, linkedin}) */
-            founders?: string;
-        };
-        StartDomainVerificationRequest: {
-            /** @description The company website/domain to verify (e.g. acme.com). */
-            website: string;
-            /** @description Local part (before @) of an address at the domain the code is sent to, e.g. "you" for you@acme.com. */
-            email_prefix: string;
-        };
-        ConfirmDomainVerificationRequest: {
-            /** @description The one-time code delivered to the work email. */
-            code: string;
-        };
-        /** @description A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms. */
-        InstagramVerification: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            startup_id: string;
-            /** @description The locked Instagram handle being verified (normalized, no leading @). */
-            handle: string;
-            /** @description Correlation token the startup must DM to the company account (e.g. "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record. */
-            code: string;
-            /**
-             * @description pending until an admin confirms the DM; verified once matched.
-             * @enum {string}
-             */
-            status: "pending" | "verified";
-            /** Format: date-time */
-            created_at: string;
-        };
-        StartInstagramVerificationRequest: {
-            /** @description Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it. */
-            handle: string;
-        };
-        /** @description A pending or verified Instagram challenge as shown in the admin console. */
-        AdminInstagramVerification: {
-            /** Format: uuid */
-            id: string;
-            /** Format: uuid */
-            startup_id: string;
-            /** @description Name of the claiming startup, for display in the console. */
-            startup_name: string;
-            /** @description The claimed Instagram handle the DM should come from. */
-            handle: string;
-            /** @description The correlation token the startup was told to DM. */
-            code: string;
-            /** @enum {string} */
-            status: "pending" | "verified";
-            /** Format: date-time */
-            created_at: string;
-        };
+  schemas: {
+    Stats: {
+      /** @description Total startups, including unpublished drafts. */
+      total_startups: number;
+      /** @description Startups with a completed (published) profile. */
+      published_startups: number;
+      /** @description Domain-verified startups. */
+      verified_startups: number;
+      /** @description Total registered users. */
+      total_users: number;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    LoginRequest: {
+      username: string;
+      password: string;
+    };
+    TokenResponse: {
+      access_token: string;
+      /** @example Bearer */
+      token_type: string;
+      /** @description Seconds until expiry */
+      expires_in: number;
+      refresh_token?: string;
+    };
+    Error: {
+      code: string;
+      message: string;
+    };
+    /** @enum {string} */
+    AccountType: "user" | "startup";
+    RegisterRequest: {
+      account_type: components["schemas"]["AccountType"];
+      password: string;
+      /**
+       * Format: email
+       * @description Required when account_type is "user"
+       */
+      email?: string;
+      /** @description Required when account_type is "user" */
+      nickname?: string;
+      /** @description Required when account_type is "startup". Startups register with a plain email and verify their domain later from the profile. */
+      name?: string;
+    };
+    VerifyRequest: {
+      /** Format: email */
+      email?: string;
+      code?: string;
+    };
+    UserProfile: {
+      /** Format: uuid */
+      id: string;
+      /** @description External authentication system user ID (e.g., SuperTokens user ID) */
+      auth_user_id: string;
+      email: string;
+      nickname: string;
+      account_type: components["schemas"]["AccountType"];
+      /** Format: date-time */
+      created_at: string;
+    };
+    RefreshRequest: {
+      /** @description The refresh token obtained from login */
+      refresh_token: string;
+    };
+    /** @enum {string} */
+    Stage:
+      | "idea"
+      | "pre-seed"
+      | "seed"
+      | "series-a"
+      | "series-b"
+      | "growth"
+      | "profitable";
+    /** @enum {string} */
+    Industry:
+      | "AI/ML"
+      | "FinTech"
+      | "HealthTech"
+      | "Climate Tech"
+      | "EdTech"
+      | "SaaS"
+      | "Marketplace"
+      | "Developer Tools"
+      | "Hardware"
+      | "Consumer"
+      | "Deep Tech"
+      | "Logistics"
+      | "Legal Tech"
+      | "HR Tech"
+      | "Other";
+    /** @enum {string} */
+    FundingRound: "pre-seed" | "seed" | "series-a" | "series-b" | "bridge";
+    Founder: {
+      name: string;
+      photo_url?: string;
+      linkedin?: string;
+    };
+    Startup: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      tagline?: string;
+      description?: string;
+      /** @description Long-form markdown pitch shown on the Overview tab */
+      about?: string;
+      /** @description YouTube URL embedded on the Overview tab */
+      video_url?: string;
+      /** @description JSON object: {"items":[{"text","link","category"}],"achieved":n} shown on the Overview tab */
+      milestones?: string;
+      website?: string;
+      /** @description Verified domain (read-only, set at verification; empty if unverified) */
+      verified_domain?: string;
+      /** @description Whether the current Instagram handle has been verified via DM. Read-only; set at verification and cleared automatically if the handle is edited. */
+      instagram_verified?: boolean;
+      logo_url?: string;
+      stage?: components["schemas"]["Stage"];
+      industry?: components["schemas"]["Industry"];
+      team_size?: number;
+      location?: string;
+      founded_year?: number;
+      tech_stack?: string;
+      /** @description URL of the banner image */
+      banner_image?: string;
+      /** @description JSON object with product links: {"web":"...","ios":"...","android":"..."} */
+      product_links?: string;
+      /** @description JSON array of vertical product screenshot URLs (max 4): ["url1","url2"] */
+      gallery?: string;
+      /** @description Launch status shown on the Product tab: coming-soon | waitlist | beta | live (empty = none) */
+      product_status?: string;
+      /** @description JSON array of key product features shown on the Product tab: [{"title","description"}] */
+      features?: string;
+      linkedin?: string;
+      twitter?: string;
+      github?: string;
+      instagram?: string;
+      is_raising?: boolean;
+      current_round?: components["schemas"]["FundingRound"];
+      funding_ask?: string;
+      funding_use?: string;
+      is_hiring?: boolean;
+      /** @description Comma-separated list of open roles */
+      open_roles?: string;
+      /** @description Markdown describing how to contribute */
+      contributing_text?: string;
+      contact_general?: string;
+      contact_funding?: string;
+      contact_talent?: string;
+      owner_id: string;
+      /** @description Whether the startup profile has been fully set up (defaults to false) */
+      profile_setup?: boolean;
+      /** Format: date-time */
+      created_at: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /** @description Whether the current authenticated user has favorited this startup (only present when authenticated) */
+      is_favorited?: boolean;
+      /** @description Whether the startup registered via the domain+work-email path */
+      verified?: boolean;
+      /** @description Total number of active boosts for this startup (boosts expire after 7 days) */
+      boost_count?: number;
+      /** @description Whether the current authenticated user has an active boost for this startup (only present when authenticated) */
+      has_boosted?: boolean;
+      founders?: components["schemas"]["Founder"][];
+    };
+    CreateStartupRequest: {
+      name: string;
+      tagline?: string;
+      description?: string;
+      website?: string;
+      stage?: components["schemas"]["Stage"];
+      industry?: components["schemas"]["Industry"];
+      team_size?: number;
+      location?: string;
+      founded_year?: number;
+      tech_stack?: string;
+      product_links?: string;
+      linkedin?: string;
+      twitter?: string;
+      github?: string;
+      instagram?: string;
+      is_raising?: boolean;
+      current_round?: components["schemas"]["FundingRound"];
+      funding_ask?: string;
+      funding_use?: string;
+      is_hiring?: boolean;
+      open_roles?: string;
+      contact_general?: string;
+      contact_funding?: string;
+      contact_talent?: string;
+    };
+    WebsiteCheckResponse: {
+      available: boolean;
+    };
+    UpdateStartupRequest: {
+      name?: string;
+      tagline?: string;
+      description?: string;
+      /** @description Long-form markdown pitch shown on the Overview tab */
+      about?: string;
+      /** @description YouTube URL embedded on the Overview tab */
+      video_url?: string;
+      /** @description JSON object: {"items":[{"text","link","category"}],"achieved":n} */
+      milestones?: string;
+      website?: string;
+      stage?: components["schemas"]["Stage"];
+      industry?: components["schemas"]["Industry"];
+      team_size?: number;
+      location?: string;
+      founded_year?: number;
+      tech_stack?: string;
+      product_links?: string;
+      /** @description JSON-encoded array of product screenshot URLs (max 4) */
+      gallery?: string;
+      /** @description Launch status: coming-soon | waitlist | beta | live (empty = none) */
+      product_status?: string;
+      /** @description JSON-encoded array of key product features: [{"title","description"}] */
+      features?: string;
+      linkedin?: string;
+      twitter?: string;
+      github?: string;
+      instagram?: string;
+      is_raising?: boolean;
+      current_round?: components["schemas"]["FundingRound"];
+      funding_ask?: string;
+      funding_use?: string;
+      is_hiring?: boolean;
+      open_roles?: string;
+      /** @description Markdown describing how to contribute */
+      contributing_text?: string;
+      contact_general?: string;
+      contact_funding?: string;
+      contact_talent?: string;
+      /** @description Set to true to mark the profile as complete and visible in public listings */
+      profile_setup?: boolean;
+      /** @description JSON-encoded array of founders ({name, photo_url, linkedin}) */
+      founders?: string;
+    };
+    StartDomainVerificationRequest: {
+      /** @description The company website/domain to verify (e.g. acme.com). */
+      website: string;
+      /** @description Local part (before @) of an address at the domain the code is sent to, e.g. "you" for you@acme.com. */
+      email_prefix: string;
+    };
+    ConfirmDomainVerificationRequest: {
+      /** @description The one-time code delivered to the work email. */
+      code: string;
+    };
+    /** @description A startup's Instagram verification challenge. The startup DMs the code from the handle they claim to the company Instagram account; an admin then matches the incoming DM in the console and confirms. */
+    InstagramVerification: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      startup_id: string;
+      /** @description The locked Instagram handle being verified (normalized, no leading @). */
+      handle: string;
+      /** @description Correlation token the startup must DM to the company account (e.g. "NRVL-A1B2"). Not a secret — it only ties the incoming DM to this record. */
+      code: string;
+      /**
+       * @description pending until an admin confirms the DM; verified once matched.
+       * @enum {string}
+       */
+      status: "pending" | "verified";
+      /** Format: date-time */
+      created_at: string;
+    };
+    StartInstagramVerificationRequest: {
+      /** @description Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it. */
+      handle: string;
+    };
+    /** @description A pending or verified Instagram challenge as shown in the admin console. */
+    AdminInstagramVerification: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      startup_id: string;
+      /** @description Name of the claiming startup, for display in the console. */
+      startup_name: string;
+      /** @description The claimed Instagram handle the DM should come from. */
+      handle: string;
+      /** @description The correlation token the startup was told to DM. */
+      code: string;
+      /** @enum {string} */
+      status: "pending" | "verified";
+      /** Format: date-time */
+      created_at: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    getHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @example ok */
-                        status?: string;
-                    };
-                };
-            };
-        };
+  getHealth: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    getStats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Directory counts */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Stats"];
-                };
-            };
+        content: {
+          "application/json": {
+            /** @example ok */
+            status?: string;
+          };
         };
+      };
     };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description Tokens issued */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Invalid credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  getStats: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    register: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Directory counts */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["Stats"];
         };
-        responses: {
-            /** @description Verification code sent; proceed to /auth/verify */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Email or website already registered */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+      };
     };
-    verify: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["VerifyRequest"];
-            };
-        };
-        responses: {
-            /** @description Account created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfile"];
-                };
-            };
-            /** @description Invalid or expired code */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Email already registered */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  login: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Logged out */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["LoginRequest"];
+      };
     };
-    refreshToken: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Tokens issued */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RefreshRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
-        responses: {
-            /** @description New tokens issued */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TokenResponse"];
-                };
-            };
-            /** @description Missing or invalid request body */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Invalid or expired refresh token */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+      };
+      /** @description Invalid credentials */
+      401: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    getMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Current user profile */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfile"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  register: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    listStartups: {
-        parameters: {
-            query?: {
-                /** @description When true, return only startups favorited by the authenticated user (requires auth). */
-                favorited?: boolean;
-                /** @description Sort order for the list. */
-                sort?: "recent" | "trending";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of startups */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RegisterRequest"];
+      };
     };
-    createStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Verification code sent; proceed to /auth/verify */
+      202: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateStartupRequest"];
-            };
+        content?: never;
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
-        responses: {
-            /** @description Startup created */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Validation error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup name already taken */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["Error"];
         };
+      };
+      /** @description Email or website already registered */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    checkStartupWebsite: {
-        parameters: {
-            query: {
-                url: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Website check result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WebsiteCheckResponse"];
-                };
-            };
-        };
+  };
+  verify: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    getStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Startup UUID, or the verified domain of a verified startup */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Startup found */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["VerifyRequest"];
+      };
     };
-    updateStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description Account created */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UpdateStartupRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["UserProfile"];
         };
-        responses: {
-            /** @description Startup updated */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Validation error */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Forbidden – not the owner */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+      };
+      /** @description Invalid or expired code */
+      400: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Email already registered */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    uploadStartupLogo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    logo: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Logo uploaded */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Invalid file */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Forbidden – not the owner */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  logout: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    deleteStartupLogo: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Logged out */
+      204: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Logo removed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Forbidden – not the owner */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    uploadStartupBanner: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": {
-                    /** Format: binary */
-                    banner: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Banner uploaded */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Invalid file */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Forbidden – not the owner */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  refreshToken: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    deleteStartupBanner: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Banner removed */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Forbidden – not the owner */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RefreshRequest"];
+      };
     };
-    favoriteStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    responses: {
+      /** @description New tokens issued */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Startup favorited successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup already favorited (idempotent - can be treated as success) */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["TokenResponse"];
         };
+      };
+      /** @description Missing or invalid request body */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Invalid or expired refresh token */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    unfavoriteStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Favorite removed successfully */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Favorite not found (idempotent - can be treated as success) */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  getMe: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    boostStartup: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Current user profile */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Startup boosted successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description User has already boosted this startup (active boost exists) */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["UserProfile"];
         };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    startDomainVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StartDomainVerificationRequest"];
-            };
-        };
-        responses: {
-            /** @description Verification code sent to the work email */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation error (invalid domain, subdomain, or public email domain) */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not the owner of this startup */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Domain already verified by another startup */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  listStartups: {
+    parameters: {
+      query?: {
+        /** @description When true, return only startups favorited by the authenticated user (requires auth). */
+        favorited?: boolean;
+        /** @description Sort order for the list. */
+        sort?: "recent" | "trending";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    confirmDomainVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description List of startups */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ConfirmDomainVerificationRequest"];
-            };
+        content: {
+          "application/json": components["schemas"]["Startup"][];
         };
-        responses: {
-            /** @description Domain verified; returns the updated startup */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Startup"];
-                };
-            };
-            /** @description Missing code or no verification in progress */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Incorrect, expired, or too many attempts */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not the owner of this startup */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+      };
     };
-    getInstagramVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The in-progress or completed verification */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramVerification"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not the owner of this startup */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found, or no verification in progress */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  createStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    startInstagramVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StartInstagramVerificationRequest"];
-            };
-        };
-        responses: {
-            /** @description Handle locked; returns the code and DM link */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InstagramVerification"];
-                };
-            };
-            /** @description Invalid or missing handle */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Not the owner of this startup */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Startup not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description A verification is already locked for this startup, or the handle is already verified by another startup. An admin must reset it to change. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateStartupRequest"];
+      };
     };
-    listInstagramVerifications: {
-        parameters: {
-            query?: {
-                /** @description Filter by status. Omit to return all. */
-                status?: "pending" | "verified";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Startup created */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description List of verifications */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminInstagramVerification"][];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Admin access required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["Startup"];
         };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup name already taken */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
     };
-    confirmInstagramVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The verification id. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Verification confirmed; the startup's Instagram is now verified */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminInstagramVerification"];
-                };
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Admin access required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Verification not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
+  };
+  checkStartupWebsite: {
+    parameters: {
+      query: {
+        url: string;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    resetInstagramVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description The verification id. */
-                id: string;
-            };
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Website check result */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Verification cleared; the startup can lock a new handle */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Unauthorized */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Admin access required */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Verification not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["WebsiteCheckResponse"];
         };
+      };
     };
+  };
+  getStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description Startup UUID, or the verified domain of a verified startup */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Startup found */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  updateStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateStartupRequest"];
+      };
+    };
+    responses: {
+      /** @description Startup updated */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  uploadStartupLogo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          /** Format: binary */
+          logo: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Logo uploaded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Invalid file */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deleteStartupLogo: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Logo removed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  uploadStartupBanner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          /** Format: binary */
+          banner: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Banner uploaded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Invalid file */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  deleteStartupBanner: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Banner removed */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  favoriteStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Startup favorited successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup already favorited (idempotent - can be treated as success) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  unfavoriteStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Favorite removed successfully */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Favorite not found (idempotent - can be treated as success) */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  boostStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Startup boosted successfully */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description User has already boosted this startup (active boost exists) */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  startDomainVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StartDomainVerificationRequest"];
+      };
+    };
+    responses: {
+      /** @description Verification code sent to the work email */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation error (invalid domain, subdomain, or public email domain) */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Not the owner of this startup */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Domain already verified by another startup */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  confirmDomainVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ConfirmDomainVerificationRequest"];
+      };
+    };
+    responses: {
+      /** @description Domain verified; returns the updated startup */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description Missing code or no verification in progress */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Incorrect, expired, or too many attempts */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Not the owner of this startup */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getInstagramVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The in-progress or completed verification */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstagramVerification"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Not the owner of this startup */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found, or no verification in progress */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  startInstagramVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StartInstagramVerificationRequest"];
+      };
+    };
+    responses: {
+      /** @description Handle locked; returns the code and DM link */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstagramVerification"];
+        };
+      };
+      /** @description Invalid or missing handle */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Not the owner of this startup */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description A verification is already locked for this startup, or the handle is already verified by another startup. An admin must reset it to change. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  listInstagramVerifications: {
+    parameters: {
+      query?: {
+        /** @description Filter by status. Omit to return all. */
+        status?: "pending" | "verified";
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description List of verifications */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminInstagramVerification"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Admin access required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  confirmInstagramVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The verification id. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Verification confirmed; the startup's Instagram is now verified */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AdminInstagramVerification"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Admin access required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Verification not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  resetInstagramVerification: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description The verification id. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Verification cleared; the startup can lock a new handle */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Admin access required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Verification not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
 }

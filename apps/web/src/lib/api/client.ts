@@ -103,11 +103,17 @@ export async function startDomainVerification(
       code?: string;
     };
     if (body.code === "SUBDOMAIN_NOT_ALLOWED")
-      throw new Error("Use your root domain (e.g. example.com, not app.example.com).");
+      throw new Error(
+        "Use your root domain (e.g. example.com, not app.example.com).",
+      );
     if (body.code === "PUBLIC_DOMAIN")
-      throw new Error("That's a personal email provider. Use your company domain.");
+      throw new Error(
+        "That's a personal email provider. Use your company domain.",
+      );
     if (response.status === 409)
-      throw new Error(body.message ?? "This domain is already verified by another startup.");
+      throw new Error(
+        body.message ?? "This domain is already verified by another startup.",
+      );
     throw new Error(body.message ?? "Failed to start verification.");
   }
 
@@ -133,7 +139,9 @@ export async function confirmDomainVerification(
   );
 
   if (!response.ok) {
-    const body = (await response.json().catch(() => ({}))) as { message?: string };
+    const body = (await response.json().catch(() => ({}))) as {
+      message?: string;
+    };
     throw new Error(body.message ?? "Verification failed.");
   }
 
@@ -182,7 +190,9 @@ export async function getClaimStartup(token: string): Promise<Startup> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.message || "This claim link is invalid or already used");
+    throw new Error(
+      body.message || "This claim link is invalid or already used",
+    );
   }
   return response.json();
 }

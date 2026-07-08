@@ -37,10 +37,11 @@ export function GoogleButton({
           JSON.stringify(intent),
         )}; path=/; max-age=600; samesite=lax`;
       }
-      const url = await ThirdParty.getAuthorisationURLWithQueryParamsAndSetState({
-        thirdPartyId: "google",
-        frontendRedirectURI: `${window.location.origin}/auth/callback/google`,
-      });
+      const url =
+        await ThirdParty.getAuthorisationURLWithQueryParamsAndSetState({
+          thirdPartyId: "google",
+          frontendRedirectURI: `${window.location.origin}/auth/callback/google`,
+        });
       window.location.assign(url);
     } catch {
       setLoading(false);

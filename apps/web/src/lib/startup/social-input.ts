@@ -15,7 +15,10 @@ export interface NormalizedHandle {
   error: string | null;
 }
 
-export function normalizeToHandle(input: string, prefix: string): NormalizedHandle {
+export function normalizeToHandle(
+  input: string,
+  prefix: string,
+): NormalizedHandle {
   const raw = input.trim();
   if (!raw) return { handle: "", error: null };
 

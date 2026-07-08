@@ -27,7 +27,8 @@ function parseFeatures(raw?: string): Feature[] {
     return data
       .map((f) => ({
         title: typeof f?.title === "string" ? f.title : "",
-        description: typeof f?.description === "string" ? f.description : undefined,
+        description:
+          typeof f?.description === "string" ? f.description : undefined,
       }))
       .filter((f) => f.title || f.description);
   } catch {
@@ -81,7 +82,8 @@ export function FeaturesSection({ startup }: { startup: Startup }) {
     if (atLimit) return;
     setDraft((d) => [...d, { title: "", description: "" }]);
   };
-  const removeItem = (i: number) => setDraft((d) => d.filter((_, j) => j !== i));
+  const removeItem = (i: number) =>
+    setDraft((d) => d.filter((_, j) => j !== i));
 
   const onSave = async () => {
     setSaving(true);
@@ -144,7 +146,12 @@ export function FeaturesSection({ startup }: { startup: Startup }) {
 
       {dirty && (
         <div className="mt-4 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={saving}
+          >
             Cancel
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving}>
