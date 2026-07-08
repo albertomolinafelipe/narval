@@ -27,4 +27,5 @@ formatters:
   
   settings:
     goimports:
-      local-prefixes: github.com/narval/server
+      local-prefixes:
+        - github.com/narval/server

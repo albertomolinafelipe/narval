@@ -18,7 +18,7 @@
             go_1_25
             golangci-lint
             air                # hot reload (make dev-api)
-            oapi-codegen       # go generate ./...
+            # oapi-codegen runs via `go run` (pinned by go.mod), not from PATH
 
             # Web frontend
             nodejs_22
@@ -29,6 +29,7 @@
           ];
 
           shellHook = ''
+            git config core.hooksPath .githooks
             echo "narval dev shell — go $(go version | cut -d' ' -f3), node $(node --version)"
           '';
         };
