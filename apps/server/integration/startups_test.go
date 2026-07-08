@@ -181,13 +181,13 @@ func TestListStartups_ProfileSetupFilter(t *testing.T) {
 	const owner1ID = "startup-filter-1"
 	const owner2ID = "startup-filter-2"
 	user1 := models.User{
-		KeycloakID:  owner1ID,
+		AuthUserID:  owner1ID,
 		Email:       "owner1@filter.io",
 		Nickname:    "Owner 1",
 		AccountType: models.AccountTypeStartup,
 	}
 	user2 := models.User{
-		KeycloakID:  owner2ID,
+		AuthUserID:  owner2ID,
 		Email:       "owner2@filter.io",
 		Nickname:    "Owner 2",
 		AccountType: models.AccountTypeStartup,
@@ -227,7 +227,7 @@ func TestListStartups_ProfileSetupFilter(t *testing.T) {
 	assert.Len(t, startups, 1, "unauthenticated users should only see complete profiles")
 	assert.Equal(t, "Complete Startup", startups[0]["name"])
 
-	// List startups as owner1 - should see both (their own incomplete + complete)
+	// List startups as owner1 - incomplete profiles stay hidden even from their owner.
 	req2, _ := http.NewRequest(http.MethodGet, testServer.URL+"/api/v1/startups", nil)
 	req2.Header.Set("Authorization", authHeader(owner1ID, "owner1@filter.io"))
 	resp2, err := http.DefaultClient.Do(req2)
@@ -237,5 +237,6 @@ func TestListStartups_ProfileSetupFilter(t *testing.T) {
 
 	var startupsAuth []map[string]any
 	require.NoError(t, json.NewDecoder(resp2.Body).Decode(&startupsAuth))
-	assert.Len(t, startupsAuth, 2, "owners should see their own incomplete profile + all complete profiles")
+	assert.Len(t, startupsAuth, 1, "the list only ever contains complete profiles")
+	assert.Equal(t, "Complete Startup", startupsAuth[0]["name"])
 }

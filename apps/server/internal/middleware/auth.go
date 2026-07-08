@@ -27,12 +27,15 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
-		// Dev shortcut: "dev:<auth_user_id>:<email>" — accepted in test environments only.
+		// Dev shortcut: "dev:<user_id>:<email>" — accepted in test environments only.
+		// The id doubles as auth user id and DB user id; tests create users with both
+		// set to the same value.
 		if cfg.Env == "test" && authHeader != "" && strings.HasPrefix(authHeader, "Bearer dev:") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			parts := strings.SplitN(token, ":", 3)
 			if len(parts) == 3 {
 				c.Set(userIDKey, parts[1])
+				c.Set(dbUserIDKey, parts[1])
 				c.Set(userEmailKey, parts[2])
 				return
 			}
@@ -103,12 +106,13 @@ func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
-		// Dev shortcut: "dev:<auth_user_id>:<email>" — accepted in test environments only.
+		// Dev shortcut: "dev:<user_id>:<email>" — accepted in test environments only.
 		if cfg.Env == "test" && authHeader != "" && strings.HasPrefix(authHeader, "Bearer dev:") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			parts := strings.SplitN(token, ":", 3)
 			if len(parts) == 3 {
 				c.Set(userIDKey, parts[1])
+				c.Set(dbUserIDKey, parts[1])
 				c.Set(userEmailKey, parts[2])
 			}
 			return

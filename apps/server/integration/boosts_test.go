@@ -38,15 +38,14 @@ func TestBoostStartup_Success(t *testing.T) {
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
 	assert.Equal(t, "startup boosted", body["message"])
 
-	// Verify boost exists in DB and has correct expiration (30 days).
+	// Verify boost exists in DB and expires after the configured lifetime.
 	var boost models.StartupBoost
 	err = testDB.Where("user_id = ? AND startup_id = ?", userID, startupID).First(&boost).Error
 	require.NoError(t, err)
 	assert.Equal(t, userID, boost.UserID)
 	assert.Equal(t, startupID, boost.StartupID)
 
-	// Check that expires_at is approximately 30 days from now.
-	expectedExpiry := time.Now().Add(30 * 24 * time.Hour)
+	expectedExpiry := time.Now().Add(models.BoostLifetime)
 	assert.WithinDuration(t, expectedExpiry, boost.ExpiresAt, 5*time.Second)
 }
 
@@ -69,7 +68,8 @@ func TestBoostStartup_AlreadyBoosted(t *testing.T) {
 	// Try to boost again - should get 409 Conflict.
 	req2, _ := http.NewRequest(http.MethodPost, testServer.URL+"/api/v1/startups/"+startupID+"/boost", nil)
 	req2.Header.Set("Authorization", authHeader(userID, userEmail))
-	resp2, _ := http.DefaultClient.Do(req2)
+	resp2, err := http.DefaultClient.Do(req2)
+	require.NoError(t, err)
 	defer resp2.Body.Close()
 
 	assert.Equal(t, http.StatusConflict, resp2.StatusCode)
@@ -159,7 +159,8 @@ func TestStartupDetail_HasBoosted(t *testing.T) {
 	// Initially, has_boosted should be false.
 	req1, _ := http.NewRequest(http.MethodGet, testServer.URL+"/api/v1/startups/"+startupID, nil)
 	req1.Header.Set("Authorization", authHeader(userID, userEmail))
-	resp1, _ := http.DefaultClient.Do(req1)
+	resp1, err := http.DefaultClient.Do(req1)
+	require.NoError(t, err)
 	defer resp1.Body.Close()
 
 	var body1 map[string]any
@@ -175,7 +176,8 @@ func TestStartupDetail_HasBoosted(t *testing.T) {
 	// Now has_boosted should be true.
 	req3, _ := http.NewRequest(http.MethodGet, testServer.URL+"/api/v1/startups/"+startupID, nil)
 	req3.Header.Set("Authorization", authHeader(userID, userEmail))
-	resp3, _ := http.DefaultClient.Do(req3)
+	resp3, err := http.DefaultClient.Do(req3)
+	require.NoError(t, err)
 	defer resp3.Body.Close()
 
 	var body2 map[string]any
