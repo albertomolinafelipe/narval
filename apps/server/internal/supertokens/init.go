@@ -27,7 +27,7 @@ func Init(cfg *config.Config, db *gorm.DB) error {
 	apiBasePath := "/api/v1/auth"
 	websiteBasePath := "/auth"
 
-	sendEmail := func(input emaildelivery.EmailType, userContext supertokens.UserContext) error {
+	sendEmail := func(input emaildelivery.EmailType, _ supertokens.UserContext) error {
 		otp := ""
 		if input.PasswordlessLogin.UserInputCode != nil {
 			otp = *input.PasswordlessLogin.UserInputCode

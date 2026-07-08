@@ -75,10 +75,6 @@ func Auth(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 func GetUserID(c *gin.Context) string {
 	v, _ := c.Get(userIDKey)
 	s, _ := v.(string)

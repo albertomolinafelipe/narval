@@ -1,7 +1,7 @@
 "use client";
 
-
 import { useState, useMemo, useRef, useEffect } from "react";
+import { useMediaQuery } from "@/lib/use-media-query";
 import Link from "next/link";
 import { useSpring, animated } from "@react-spring/web";
 import { Rocket } from "lucide-react";
@@ -43,7 +43,13 @@ function computeCompetitionRank(startups: Startup[]): Map<string, number> {
   return ranks;
 }
 
-function PodiumEntrants({ startups, size }: { startups: Startup[]; size: number }) {
+function PodiumEntrants({
+  startups,
+  size,
+}: {
+  startups: Startup[];
+  size: number;
+}) {
   const [open, setOpen] = useState(false);
 
   // 1-2 entrants: avatar with the company name under it. Fixed-width units so
@@ -128,9 +134,7 @@ function AnimatedBar({
       }`}
     >
       {isFirst && (
-        <Rocket
-          className="absolute left-1/2 top-1/2 h-1/2 w-auto -translate-x-1/2 -translate-y-1/2 -rotate-45 text-brand-fg opacity-10"
-        />
+        <Rocket className="absolute left-1/2 top-1/2 h-1/2 w-auto -translate-x-1/2 -translate-y-1/2 -rotate-45 text-brand-fg opacity-10" />
       )}
     </animated.div>
   );
@@ -178,17 +182,15 @@ export default function AwardsPage() {
 
   const podiumContainerRef = useRef<HTMLDivElement>(null);
   const [podiumH, setPodiumH] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
 
   useEffect(() => {
     const el = podiumContainerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
       setPodiumH(el.clientHeight);
-      setIsMobile(window.innerWidth < 768);
     });
     ro.observe(el);
-    setIsMobile(window.innerWidth < 768);
     return () => ro.disconnect();
   }, []);
 
@@ -198,7 +200,9 @@ export default function AwardsPage() {
         .filter((s) => (s.boost_count ?? 0) > 0 && s.industry)
         .map((s) => s.industry!),
     );
-    return ALL_SECTORS.filter((s) => s === "All" || industriesWithBoosts.has(s));
+    return ALL_SECTORS.filter(
+      (s) => s === "All" || industriesWithBoosts.has(s),
+    );
   }, [allStartups]);
 
   const filtered = useMemo(() => {
@@ -223,7 +227,9 @@ export default function AwardsPage() {
     for (const [key, arr] of byRank) byRank.set(key, shuffle(arr));
 
     const sortedRanks = [...byRank.keys()].sort((a, b) => a - b).slice(0, 3);
-    const podiumSet = new Set(sortedRanks.flatMap((r) => byRank.get(r)!.map((s) => s.id)));
+    const podiumSet = new Set(
+      sortedRanks.flatMap((r) => byRank.get(r)!.map((s) => s.id)),
+    );
 
     const podiumPositions = {
       first: byRank.get(sortedRanks[0]) ?? [],
@@ -238,7 +244,10 @@ export default function AwardsPage() {
     return { podiumPositions, rankList, ranks };
   }, [filtered]);
 
-  const maxBoostInList = Math.max(...rankList.map((s) => s.boost_count ?? 0), 1);
+  const maxBoostInList = Math.max(
+    ...rankList.map((s) => s.boost_count ?? 0),
+    1,
+  );
 
   const firstBoosts = podiumPositions.first[0]?.boost_count ?? 1;
   const secondBoosts = podiumPositions.second[0]?.boost_count ?? 0;
@@ -246,8 +255,14 @@ export default function AwardsPage() {
 
   const firstBarH = Math.round(podiumH * MAX_BAR_FRAC);
   const minBarH = Math.round(firstBarH * MIN_BAR_FRAC);
-  const secondBarH = firstBoosts > 0 ? Math.max(minBarH, Math.round((secondBoosts / firstBoosts) * firstBarH)) : minBarH;
-  const thirdBarH = firstBoosts > 0 ? Math.max(minBarH, Math.round((thirdBoosts / firstBoosts) * firstBarH)) : minBarH;
+  const secondBarH =
+    firstBoosts > 0
+      ? Math.max(minBarH, Math.round((secondBoosts / firstBoosts) * firstBarH))
+      : minBarH;
+  const thirdBarH =
+    firstBoosts > 0
+      ? Math.max(minBarH, Math.round((thirdBoosts / firstBoosts) * firstBarH))
+      : minBarH;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -275,7 +290,10 @@ export default function AwardsPage() {
             </div>
 
             {/* Podium container */}
-            <div ref={podiumContainerRef} className="flex min-h-0 flex-1 items-end gap-3 px-[var(--page-px)] pb-6">
+            <div
+              ref={podiumContainerRef}
+              className="flex min-h-0 flex-1 items-end gap-3 px-[var(--page-px)] pb-6"
+            >
               {isLoading ? (
                 <p className="text-sm text-text-muted">Loading...</p>
               ) : podiumPositions.first.length === 0 ? (
@@ -321,7 +339,8 @@ export default function AwardsPage() {
               <ul className="flex flex-col gap-2">
                 {rankList.map((startup) => {
                   const boosts = startup.boost_count ?? 0;
-                  const barPct = boosts > 0 ? (boosts / maxBoostInList) * 100 : 0;
+                  const barPct =
+                    boosts > 0 ? (boosts / maxBoostInList) * 100 : 0;
                   const rank = ranks.get(startup.id);
                   return (
                     <li key={startup.id} className="flex items-center gap-3">
@@ -338,7 +357,11 @@ export default function AwardsPage() {
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-bg-subtle">
                           <div
                             className="h-full rounded-full transition-all"
-                            style={{ width: `${barPct}%`, background: "linear-gradient(to right, var(--color-bg-subtle), var(--color-text-muted))" }}
+                            style={{
+                              width: `${barPct}%`,
+                              background:
+                                "linear-gradient(to right, var(--color-bg-subtle), var(--color-text-muted))",
+                            }}
                           />
                         </div>
                       </div>
