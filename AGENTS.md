@@ -22,13 +22,13 @@ slice, stop for manual testing, then continue. Decisions already taken:
 
 ### Fix slices
 
-1. **Security/correctness quick wins** — MinIO anonymous policy → `download`; drop
-   `owner_email` from public responses (frontend `isOwner` compares `profile_id` instead);
-   resolve the boost-expiry contradiction (code says 30 days, a comment says 7); fix the
-   stale `Claimed` model comment (shells are intentionally listed publicly, see decision
-   above).
-2. **CI hardening** — tests + lint gate the deploy on push to main; "generated code is stale"
-   diff check; run the integration suite in CI.
+1. **Security/correctness quick wins** *(done)* — MinIO anonymous policy → `download`;
+   `owner_email` removed from public responses (frontend `isOwner` compares `owner_id`);
+   boost expiry unified at 7 days (`models.BoostLifetime`); stale `Claimed`/Keycloak
+   comments fixed.
+2. **CI hardening** *(done)* — lint + generate-check + unit + integration jobs run on PRs
+   and pushes and gate the deploy; the integration suite was repaired (it had bit-rotted
+   against the Keycloak-era API) and runs via `make test-integration`.
 3. **Spec-first consolidation (backend)** — add the six unspecced routes to the OpenAPI spec
    (admin routes get a proper security scheme), regenerate, delete `lib/api/client.ts`;
    align Go handlers with generated types/enums.
@@ -48,17 +48,15 @@ slice, stop for manual testing, then continue. Decisions already taken:
 
 #### A. Bugs & security
 
-- **A1 — MinIO bucket is anonymously writable.** `mc anonymous set public`
-  (docker-compose.prod.yml:52, docker-compose.yml:64) grants anonymous read **and write** on
-  the whole bucket, exposed at `storage.gonarval.com`. Must be `mc anonymous set download`.
-- **A2 — Deploys run zero tests.** The CI `test` job is PR-only (ci.yml:11); a push to `main`
-  builds and deploys untested. No lint job, no generated-code drift check, and the
-  integration suite (`//go:build integration`, testcontainers) never runs anywhere. The
-  Makefile `ci` target references a CI job (`integration`) that does not exist.
-- **A3 — `owner_email` is public.** Every startup response includes it
-  (startups/handler.go:702); the list endpoint exposes every founder's login email. The only
-  consumer is the `isOwner` check in `startup-page-client.tsx:85`, which can use
-  `user.profile_id === startup.id`.
+- **A1 — MinIO bucket is anonymously writable.** *(Fixed: `mc anonymous set download`.)*
+  `mc anonymous set public` granted anonymous read **and write** on the whole bucket,
+  exposed at `storage.gonarval.com`.
+- **A2 — Deploys run zero tests.** *(Fixed: see the CI section.)* The CI `test` job was
+  PR-only; a push to `main` built and deployed untested, with no lint job, no
+  generated-code drift check, and the integration suite never running anywhere.
+- **A3 — `owner_email` is public.** *(Fixed: removed from the spec and responses; `isOwner`
+  compares `user.id === startup.owner_id`.)* Every startup response included the founder's
+  login email.
 - **A4 — Docs contradict the shell-visibility behavior (reframed).** `ListStartups` filters
   only `profile_setup = true` (startups/handler.go:179), while the `Claimed` model comment
   claims shells are "excluded from public reads". The behavior is the **intended** one
@@ -122,14 +120,15 @@ slice, stop for manual testing, then continue. Decisions already taken:
   photos. Rename to `Upload`.
 - **C3** — ~50 hand-rolled `gin.H{"code": ..., "message": ...}` responses; add one
   error-response helper.
-- **C4** — Dead/stale code: `middleware.boolPtr`; "UserID stores the Keycloak ID" comments on
-  `StartupFavorite`/`StartupBoost` (it is the local `users.id`); model `json` tags nothing
-  serializes.
+- **C4** — Dead/stale code: model `json` tags nothing serializes. *(The `boolPtr` helper and
+  the Keycloak-era comments were removed in slices 1–2.)*
 - **C5** — `config.Validate` only checks MinIO creds in production; `SUPERTOKENS_API_KEY`,
   `RESEND_API_KEY`, and a default `DATABASE_URL` pass silently.
 - **C6** — The pre-commit hook in `.githooks/` is inert: nothing sets `core.hooksPath`.
-- **C7** — Test coverage: the auth handler (466 lines, security-critical) has zero unit
-  tests; the web app has exactly one component test; the integration suite never runs in CI.
+- **C7** — Test coverage: the auth handler's OTP happy paths are untested (need a
+  SuperTokens testcontainer or e2e coverage); the web app has exactly one component test.
+  *(The integration suite now runs in CI and covers auth request validation, GetMe, claim
+  rejection, favorites, boosts, and startup CRUD.)*
 
 ---
 
@@ -512,12 +511,14 @@ Docker-internal only (no public ports):
 
 The Go server is **never publicly exposed** — all browser traffic goes through the Next.js proxy at `/api/proxy/[...path]`. SuperTokens browser SDK is also routed through this proxy (`apiDomain = NEXT_PUBLIC_SITE_URL`, `apiBasePath = /api/proxy/auth`).
 
-**CI/CD pipeline** (`.github/workflows/ci.yml`) — actual current behavior:
-- Pull requests → `test` (Go unit tests + Vitest) and `test-build` jobs
-- Push to `main` → `build-server` + `build-web` (generate, build images, push to GHCR),
-  then `deploy` (SSH to droplet, pull, `docker compose up -d`)
-- **Known gaps (finding A2, slice 2):** pushes to main run no tests; there is no lint job;
-  the integration suite never runs; generated-code drift is not checked.
+**CI/CD pipeline** (`.github/workflows/ci.yml`):
+- On PRs and pushes to `main`: `lint` (golangci-lint + ESLint + prettier check),
+  `generate-check` (`make generate` must produce no diff), `test` (Go unit + Vitest),
+  `integration` (testcontainers suite via `make test-integration`).
+- PRs additionally run `test-build` (Docker image build check).
+- Push to `main` additionally runs `build-server` + `build-web` (images → GHCR), then
+  `deploy` (SSH to droplet, pull, `docker compose up -d`) — gated on **all** of the above.
+- Docker builds use the committed generated code; `generate-check` is what keeps it honest.
 
 **Required GitHub repo secrets:** `DROPLET_IP`, `DEPLOY_SSH_KEY`, `NEXT_PUBLIC_MAPBOX_TOKEN`.
 
