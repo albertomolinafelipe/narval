@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "generate": "openapi-typescript ../server/api/openapi.bundled.yaml -o src/lib/api/generated.ts && openapi-ts && npx prettier --write src/lib/api/gen",
+    "generate": "openapi-typescript ../server/api/openapi.bundled.yaml -o src/lib/api/generated.ts && openapi-ts && prettier --write src/lib/api/gen src/lib/api/generated.ts",
     "fmt": "prettier --write .",
     "postinstall": "patch-package"
   },

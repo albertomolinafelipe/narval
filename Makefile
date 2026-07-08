@@ -1,6 +1,6 @@
 .PHONY: help dev dev-api dev-web down clean umami-setup server-logs web-logs \
-        seed seed-reset build test lint generate \
-        deploy deploy-logs
+        seed seed-reset build test test-integration lint lint-check generate \
+        ci deploy deploy-logs
 
 # Project Directories
 SERVER_DIR := apps/server
@@ -96,6 +96,9 @@ build: ## Build all Docker images (production)
 test: ## Run all unit tests
 	cd $(SERVER_DIR) && go test -v -short ./...
 	cd $(WEB_DIR) && npm run test
+
+test-integration: ## Run backend integration tests (requires Docker)
+	cd $(SERVER_DIR) && go test -tags integration ./integration/...
 
 lint: ## Lint and format all code
 	cd $(SERVER_DIR) && golangci-lint run --fix ./... && gofmt -w .
