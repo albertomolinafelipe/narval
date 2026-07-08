@@ -72,8 +72,14 @@ function HandleStep({
       if (code === "INSTAGRAM_TAKEN")
         setError("This handle is already verified by another startup.");
       else if (code === "ALREADY_LOCKED")
-        setError("A verification is already in progress. Ask an admin to reset it.");
-      else setError((error as { message?: string })?.message ?? "Failed to start verification.");
+        setError(
+          "A verification is already in progress. Ask an admin to reset it.",
+        );
+      else
+        setError(
+          (error as { message?: string })?.message ??
+            "Failed to start verification.",
+        );
       return;
     }
     onStarted(data);
@@ -82,7 +88,10 @@ function HandleStep({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="vi-handle" className="text-xs font-medium text-text-muted">
+        <label
+          htmlFor="vi-handle"
+          className="text-xs font-medium text-text-muted"
+        >
           Instagram handle <span className="text-danger">*</span>
         </label>
         <div className="flex items-center overflow-hidden rounded-lg border border-border bg-bg-subtle focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
@@ -104,7 +113,8 @@ function HandleStep({
           />
         </div>
         <p className="text-xs text-text-muted">
-          The handle locks once you continue — only an admin can change it later.
+          The handle locks once you continue — only an admin can change it
+          later.
         </p>
       </div>
 
@@ -119,7 +129,11 @@ function HandleStep({
 
 // ─── Step 2 — DM the code, then wait for an admin to confirm ──────────────────
 
-function InstructionsStep({ verification }: { verification: InstagramVerification }) {
+function InstructionsStep({
+  verification,
+}: {
+  verification: InstagramVerification;
+}) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -136,9 +150,11 @@ function InstructionsStep({ verification }: { verification: InstagramVerificatio
     <div className="flex flex-col gap-4">
       <ol className="flex flex-col gap-2 text-sm text-text-muted">
         <li>
-          1. From <span className="font-medium text-text">@{verification.handle}</span>,
+          1. From{" "}
+          <span className="font-medium text-text">@{verification.handle}</span>,
           open a DM to{" "}
-          <span className="font-medium text-text">@{COMPANY_HANDLE}</span> on Instagram.
+          <span className="font-medium text-text">@{COMPANY_HANDLE}</span> on
+          Instagram.
         </li>
         <li>2. Send this code as the message:</li>
       </ol>
@@ -152,7 +168,11 @@ function InstructionsStep({ verification }: { verification: InstagramVerificatio
           {verification.code}
         </span>
         <span className="flex items-center gap-1 text-xs text-text-muted">
-          {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
+          {copied ? (
+            <Check size={14} className="text-success" />
+          ) : (
+            <Copy size={14} />
+          )}
           {copied ? "Copied" : "Copy"}
         </span>
       </button>
@@ -165,8 +185,8 @@ function InstructionsStep({ verification }: { verification: InstagramVerificatio
       </Button>
 
       <p className="rounded-lg bg-bg-subtle px-3 py-2 text-xs text-text-muted">
-        We&apos;ll add your verified badge once we receive and match your DM. You can
-        close this — nothing else to do on your end.
+        We&apos;ll add your verified badge once we receive and match your DM.
+        You can close this — nothing else to do on your end.
       </p>
     </div>
   );
@@ -226,8 +246,10 @@ function ModalBody({
       <DialogHeader>
         <DialogTitle>Verify your Instagram</DialogTitle>
         <DialogDescription>
-          {step.name === "handle" && "Confirm the handle you control to earn a verified badge."}
-          {step.name === "instructions" && "DM us the code to finish verifying."}
+          {step.name === "handle" &&
+            "Confirm the handle you control to earn a verified badge."}
+          {step.name === "instructions" &&
+            "DM us the code to finish verifying."}
           {step.name === "verified" && "Your Instagram handle is verified."}
         </DialogDescription>
       </DialogHeader>
@@ -271,7 +293,9 @@ export function VerifyInstagramButton({
     enabled: !verified,
     retry: false,
     queryFn: async () => {
-      const { data } = await getInstagramVerification({ path: { id: startupId } });
+      const { data } = await getInstagramVerification({
+        path: { id: startupId },
+      });
       return data ?? null;
     },
   });
@@ -280,7 +304,8 @@ export function VerifyInstagramButton({
 
   const trigger = verified
     ? {
-        className: "border-success/40 text-success hover:bg-success/10 hover:text-success",
+        className:
+          "border-success/40 text-success hover:bg-success/10 hover:text-success",
         icon: <InstagramIcon size={16} gradient={false} />,
         label: "Verified",
       }
@@ -318,7 +343,9 @@ export function VerifyInstagramButton({
             onStarted={() =>
               // Refresh the shared query so the trigger flips to pending.
               queryClient.invalidateQueries({
-                queryKey: getInstagramVerificationQueryKey({ path: { id: startupId } }),
+                queryKey: getInstagramVerificationQueryKey({
+                  path: { id: startupId },
+                }),
               })
             }
           />

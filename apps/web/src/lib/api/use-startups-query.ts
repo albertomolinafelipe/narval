@@ -13,11 +13,7 @@ import {
   uploadStartupBanner,
   uploadStartupLogo,
 } from "./gen";
-import type {
-  ListStartupsData,
-  Startup,
-  UpdateStartupRequest,
-} from "./gen";
+import type { ListStartupsData, Startup, UpdateStartupRequest } from "./gen";
 import {
   getStartupOptions,
   getStartupQueryKey,
@@ -33,7 +29,8 @@ type ListFilters = { favorited?: boolean };
 // Newest first — the server's default order and the `recent` sort.
 function createdDesc(a: Startup, b: Startup): number {
   return (
-    new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+    new Date(b.created_at ?? 0).getTime() -
+    new Date(a.created_at ?? 0).getTime()
   );
 }
 
@@ -44,7 +41,8 @@ function sortStartups(list: Startup[], sort: SortOrder): Startup[] {
   const copy = [...list];
   if (sort === "trending") {
     copy.sort(
-      (a, b) => (b.boost_count ?? 0) - (a.boost_count ?? 0) || createdDesc(a, b),
+      (a, b) =>
+        (b.boost_count ?? 0) - (a.boost_count ?? 0) || createdDesc(a, b),
     );
   } else {
     copy.sort(createdDesc);
@@ -218,8 +216,9 @@ export function useFavoriteMutation() {
       // Removing from favorites: drop it from the favorites list. Adding is
       // left to the onSettled refetch (we lack the full object here).
       if (isFavorited) {
-        queryClient.setQueryData<Startup[]>(listKey({ favorited: true }), (old) =>
-          old?.filter((s) => s.id !== id),
+        queryClient.setQueryData<Startup[]>(
+          listKey({ favorited: true }),
+          (old) => old?.filter((s) => s.id !== id),
         );
       }
 

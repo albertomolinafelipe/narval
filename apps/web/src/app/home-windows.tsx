@@ -83,7 +83,12 @@ function MapCard({ className }: { className?: string }) {
         Startups Map
       </p>
       <div className="relative flex-1 overflow-hidden rounded-xl border border-border/60 shadow-xl">
-        <Image src="/map.png" alt="Map of startups" fill className="object-cover" />
+        <Image
+          src="/map.png"
+          alt="Map of startups"
+          fill
+          className="object-cover"
+        />
       </div>
     </div>
   );

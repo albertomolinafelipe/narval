@@ -67,6 +67,7 @@
     "jsdom": "^28.1.0",
     "openapi-typescript": "^7.13.0",
     "patch-package": "^8.0.1",
+    "prettier": "^3.9.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.0.18"

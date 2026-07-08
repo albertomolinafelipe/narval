@@ -37,7 +37,9 @@ function DomainStep({
   onNext: (website: string) => void;
 }) {
   const [website, setWebsite] = useState(defaultWebsite ?? "");
-  const [status, setStatus] = useState<"idle" | "checking" | "taken" | "ok">("idle");
+  const [status, setStatus] = useState<"idle" | "checking" | "taken" | "ok">(
+    "idle",
+  );
   const [error, setError] = useState("");
 
   async function check(url: string): Promise<boolean> {
@@ -56,9 +58,14 @@ function DomainStep({
         setStatus("idle");
         return false;
       }
-      const body = (await res.json()) as { available: boolean; reason?: string };
+      const body = (await res.json()) as {
+        available: boolean;
+        reason?: string;
+      };
       if (!body.available && body.reason === "subdomain") {
-        setError("Use your root domain (e.g. example.com, not app.example.com).");
+        setError(
+          "Use your root domain (e.g. example.com, not app.example.com).",
+        );
         setStatus("taken");
         return false;
       }
@@ -84,7 +91,10 @@ function DomainStep({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="vd-website" className="text-xs font-medium text-text-muted">
+        <label
+          htmlFor="vd-website"
+          className="text-xs font-medium text-text-muted"
+        >
           Company domain <span className="text-danger">*</span>
         </label>
         <input
@@ -106,7 +116,9 @@ function DomainStep({
           <p className="text-xs text-text-muted">Checking…</p>
         )}
         {!error && status === "taken" && (
-          <p className="text-xs text-danger">This domain is already verified.</p>
+          <p className="text-xs text-danger">
+            This domain is already verified.
+          </p>
         )}
         {!error && status === "ok" && (
           <p className="text-xs text-brand">Domain available.</p>
@@ -150,7 +162,11 @@ function EmailStep({
     setSubmitting(true);
     setError("");
     try {
-      const { email } = await startDomainVerification(startupId, website, clean);
+      const { email } = await startDomainVerification(
+        startupId,
+        website,
+        clean,
+      );
       onSent(email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send code.");
@@ -162,7 +178,10 @@ function EmailStep({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
-        <label htmlFor="vd-email" className="text-xs font-medium text-text-muted">
+        <label
+          htmlFor="vd-email"
+          className="text-xs font-medium text-text-muted"
+        >
           Work email <span className="text-danger">*</span>
         </label>
         <div className="flex items-center overflow-hidden rounded-lg border border-border bg-bg-subtle focus-within:border-brand focus-within:ring-1 focus-within:ring-brand">
@@ -185,7 +204,8 @@ function EmailStep({
           </span>
         </div>
         <p className="text-xs text-text-muted">
-          We&apos;ll email a code to this address to confirm you control the domain.
+          We&apos;ll email a code to this address to confirm you control the
+          domain.
         </p>
       </div>
 
@@ -237,7 +257,10 @@ function CodeStep({
         <span className="font-medium text-text">{email}</span>
       </p>
       <div className="flex flex-col gap-1">
-        <label htmlFor="vd-code" className="text-xs font-medium text-text-muted">
+        <label
+          htmlFor="vd-code"
+          className="text-xs font-medium text-text-muted"
+        >
           6-digit code
         </label>
         <input
@@ -307,7 +330,8 @@ export function VerifyDomainButton({
           <DialogHeader>
             <DialogTitle>Verify your domain</DialogTitle>
             <DialogDescription>
-              {step.name === "domain" && "Confirm the domain you own to earn a verified badge."}
+              {step.name === "domain" &&
+                "Confirm the domain you own to earn a verified badge."}
               {step.name === "email" && "Enter a work email at that domain."}
               {step.name === "code" && "Enter the code we emailed you."}
             </DialogDescription>
@@ -327,7 +351,11 @@ export function VerifyDomainButton({
             />
           )}
           {step.name === "code" && (
-            <CodeStep startupId={startupId} email={step.email} onVerified={onVerified} />
+            <CodeStep
+              startupId={startupId}
+              email={step.email}
+              onVerified={onVerified}
+            />
           )}
         </DialogContent>
       </Dialog>

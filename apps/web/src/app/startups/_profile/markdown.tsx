@@ -35,9 +35,24 @@ export function MarkdownView({ text }: { text: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          h1: (p) => <h1 className="mb-2 mt-4 text-base font-semibold text-text first:mt-0" {...p} />,
-          h2: (p) => <h2 className="mb-2 mt-4 text-sm font-semibold text-text first:mt-0" {...p} />,
-          h3: (p) => <h3 className="mb-1 mt-3 text-sm font-semibold text-text first:mt-0" {...p} />,
+          h1: (p) => (
+            <h1
+              className="mb-2 mt-4 text-base font-semibold text-text first:mt-0"
+              {...p}
+            />
+          ),
+          h2: (p) => (
+            <h2
+              className="mb-2 mt-4 text-sm font-semibold text-text first:mt-0"
+              {...p}
+            />
+          ),
+          h3: (p) => (
+            <h3
+              className="mb-1 mt-3 text-sm font-semibold text-text first:mt-0"
+              {...p}
+            />
+          ),
           p: (p) => <p className="mb-2 last:mb-0" {...p} />,
           a: (p) => (
             <a
@@ -52,13 +67,22 @@ export function MarkdownView({ text }: { text: string }) {
           li: (p) => <li className="mb-0.5" {...p} />,
           strong: (p) => <strong className="font-semibold text-text" {...p} />,
           blockquote: (p) => (
-            <blockquote className="mb-2 border-l-2 border-border pl-3 italic" {...p} />
+            <blockquote
+              className="mb-2 border-l-2 border-border pl-3 italic"
+              {...p}
+            />
           ),
           code: (p) => (
-            <code className="rounded bg-bg-subtle px-1 py-0.5 font-mono text-xs" {...p} />
+            <code
+              className="rounded bg-bg-subtle px-1 py-0.5 font-mono text-xs"
+              {...p}
+            />
           ),
           pre: (p) => (
-            <pre className="mb-2 overflow-x-auto rounded-lg bg-bg-subtle p-3 text-xs" {...p} />
+            <pre
+              className="mb-2 overflow-x-auto rounded-lg bg-bg-subtle p-3 text-xs"
+              {...p}
+            />
           ),
         }}
       >
@@ -99,7 +123,9 @@ export function EditableMarkdown({
         {value ? (
           <MarkdownView text={value} />
         ) : (
-          <p className="whitespace-pre-line text-sm text-text-subtle">{placeholder}</p>
+          <p className="whitespace-pre-line text-sm text-text-subtle">
+            {placeholder}
+          </p>
         )}
         <button
           type="button"

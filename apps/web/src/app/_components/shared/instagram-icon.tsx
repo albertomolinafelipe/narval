@@ -24,7 +24,11 @@ export function InstagramGradientIcon({
           <stop offset="100%" stopColor="#4f5bd5" />
         </linearGradient>
       </svg>
-      <SiInstagram size={size} className={className} style={{ fill: "url(#ig-gradient)" }} />
+      <SiInstagram
+        size={size}
+        className={className}
+        style={{ fill: "url(#ig-gradient)" }}
+      />
     </>
   );
 }

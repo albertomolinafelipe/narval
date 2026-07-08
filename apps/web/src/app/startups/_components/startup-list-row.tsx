@@ -17,7 +17,12 @@ interface Props {
 }
 
 /** A single row in the startups list (list view). */
-export function StartupListRow({ startup: s, expanded, selected, onClick }: Props) {
+export function StartupListRow({
+  startup: s,
+  expanded,
+  selected,
+  onClick,
+}: Props) {
   const links = expanded ? parseProductLinks(s.product_links) : {};
 
   return (
@@ -38,13 +43,22 @@ export function StartupListRow({ startup: s, expanded, selected, onClick }: Prop
         <div className="min-w-0 flex-1">
           <p className="flex items-center gap-1 text-sm font-medium text-text">
             <span className="truncate">{s.name}</span>
-            {s.verified && <BadgeCheck size={13} className="shrink-0 text-brand" />}
-            {s.instagram_verified && <InstagramGradientIcon size={13} className="shrink-0" />}
+            {s.verified && (
+              <BadgeCheck size={13} className="shrink-0 text-brand" />
+            )}
+            {s.instagram_verified && (
+              <InstagramGradientIcon size={13} className="shrink-0" />
+            )}
           </p>
           {s.verified
-            ? s.website && <p className="truncate text-xs text-text-muted">{s.website}</p>
-            : s.contact_general && <p className="truncate text-xs text-text-muted">{s.contact_general}</p>
-          }
+            ? s.website && (
+                <p className="truncate text-xs text-text-muted">{s.website}</p>
+              )
+            : s.contact_general && (
+                <p className="truncate text-xs text-text-muted">
+                  {s.contact_general}
+                </p>
+              )}
           {(s.tagline || s.description) && (
             <p
               className={`mt-1 text-xs text-text-subtle max-md:hidden ${

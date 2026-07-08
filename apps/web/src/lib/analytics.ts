@@ -54,7 +54,14 @@ export function identifySession(email: string) {
  * @param additionalData - Additional context (e.g., success, accountType, error)
  */
 export function trackAuth(
-  action: "login" | "register" | "logout" | "login_code_sent" | "login_code_verified" | "register_code_sent" | "register_code_verified",
+  action:
+    | "login"
+    | "register"
+    | "logout"
+    | "login_code_sent"
+    | "login_code_verified"
+    | "register_code_sent"
+    | "register_code_verified",
   additionalData?: Record<string, unknown>,
 ) {
   trackEvent("auth", { action, ...additionalData });

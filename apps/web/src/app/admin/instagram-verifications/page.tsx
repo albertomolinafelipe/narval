@@ -143,7 +143,9 @@ export default function InstagramVerificationsAdminPage() {
   if (!user?.is_admin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg text-text">
-        <p className="text-text-muted">You don&apos;t have access to this page.</p>
+        <p className="text-text-muted">
+          You don&apos;t have access to this page.
+        </p>
         <Link href="/startups" className="text-sm text-brand hover:underline">
           ← Back to Narval
         </Link>
@@ -199,19 +201,28 @@ export default function InstagramVerificationsAdminPage() {
             <tbody>
               {query.isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-sm text-text-muted">
+                  <td
+                    colSpan={6}
+                    className="px-3 py-10 text-center text-sm text-text-muted"
+                  >
                     Loading…
                   </td>
                 </tr>
               ) : query.isError ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-sm text-danger">
+                  <td
+                    colSpan={6}
+                    className="px-3 py-10 text-center text-sm text-danger"
+                  >
                     Failed to load verifications.
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-3 py-10 text-center text-sm text-text-muted">
+                  <td
+                    colSpan={6}
+                    className="px-3 py-10 text-center text-sm text-text-muted"
+                  >
                     No {filter === "all" ? "" : filter} verifications.
                   </td>
                 </tr>

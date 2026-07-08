@@ -30,7 +30,9 @@ export default function UserMenu() {
       setOpen(false);
       router.push(`/startups/in/${id}/edit`);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : "Failed to create profile");
+      window.alert(
+        err instanceof Error ? err.message : "Failed to create profile",
+      );
     } finally {
       setCreating(false);
     }
@@ -78,7 +80,9 @@ export default function UserMenu() {
         className="max-md:px-2"
         aria-label="Sign in"
       >
-        <span className="md:hidden"><User size={18} /></span>
+        <span className="md:hidden">
+          <User size={18} />
+        </span>
         <span className="max-md:hidden">Sign in</span>
       </Button>
     );
@@ -130,11 +134,15 @@ export default function UserMenu() {
                     unoptimized
                   />
                 ) : (
-                  <span className="text-sm font-bold text-brand">{initial}</span>
+                  <span className="text-sm font-bold text-brand">
+                    {initial}
+                  </span>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="truncate text-sm font-medium text-text">{email}</p>
+                <p className="truncate text-sm font-medium text-text">
+                  {email}
+                </p>
                 {accountType && (
                   <p className="text-xs text-text-muted capitalize">
                     {accountType} account
@@ -149,7 +157,9 @@ export default function UserMenu() {
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 text-[var(--color-wip-text)] flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-text">Profile not fully set up</p>
+                  <p className="text-xs font-medium text-text">
+                    Profile not fully set up
+                  </p>
                   <p className="text-xs text-text-muted mt-0.5">
                     Complete your profile to appear in listings
                   </p>

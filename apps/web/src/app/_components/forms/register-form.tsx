@@ -26,7 +26,9 @@ function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
         data-umami-event="register-account-type"
         data-umami-event-type="user"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-text"><User size={15} /> User</span>
+        <span className="flex items-center gap-2 text-sm font-medium text-text">
+          <User size={15} /> User
+        </span>
         <span className="text-xs text-text-muted">
           Browse and discover startups on the platform.
         </span>
@@ -38,7 +40,9 @@ function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
         data-umami-event="register-account-type"
         data-umami-event-type="startup"
       >
-        <span className="flex items-center gap-2 text-sm font-medium text-text"><GiUnicorn size={15} /> Startup</span>
+        <span className="flex items-center gap-2 text-sm font-medium text-text">
+          <GiUnicorn size={15} /> Startup
+        </span>
         <span className="text-xs text-text-muted">
           Create a startup profile and get discovered.
         </span>
@@ -185,7 +189,9 @@ function UserDetailsStep({
         </Button>
 
         <OrDivider />
-        <GoogleButton intent={{ account_type: "user", name: nickname.trim() }} />
+        <GoogleButton
+          intent={{ account_type: "user", name: nickname.trim() }}
+        />
       </fieldset>
     </form>
   );
@@ -324,10 +330,5 @@ export default function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
     );
   }
 
-  return (
-    <UserVerifyStep
-      email={pendingEmail}
-      onSuccess={onSuccess}
-    />
-  );
+  return <UserVerifyStep email={pendingEmail} onSuccess={onSuccess} />;
 }

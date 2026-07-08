@@ -9,7 +9,9 @@ export async function getStartupById(id: string): Promise<Startup | null> {
   const { data, response } = await getStartup({ path: { id } });
   if (response?.status === 404) return null;
   if (!response?.ok || !data) {
-    throw new Error(`Failed to fetch startup: ${response?.status ?? "network error"}`);
+    throw new Error(
+      `Failed to fetch startup: ${response?.status ?? "network error"}`,
+    );
   }
   return data;
 }

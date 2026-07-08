@@ -26,7 +26,10 @@ function linkedinHref(value: string): string {
 /** 3:4 portrait photo with initial fallback. */
 function Photo({ name, url }: { name: string; url?: string }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-lg bg-bg-subtle" style={{ aspectRatio: "3/4" }}>
+    <div
+      className="relative w-full overflow-hidden rounded-lg bg-bg-subtle"
+      style={{ aspectRatio: "3/4" }}
+    >
       {url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={url} alt={name} className="h-full w-full object-cover" />
@@ -81,12 +84,23 @@ function EditablePhoto({
 
   return (
     <>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
-      <div className="group relative w-full overflow-hidden rounded-lg" style={{ aspectRatio: "3/4" }}>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={onFileChange}
+      />
+      <div
+        className="group relative w-full overflow-hidden rounded-lg"
+        style={{ aspectRatio: "3/4" }}
+      >
         <Photo name={name} url={url} />
         <div
           className={`absolute inset-0 flex items-center justify-center gap-2 bg-black/25 transition-opacity md:bg-black/40 md:backdrop-blur-sm ${
-            busy ? "opacity-100" : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
+            busy
+              ? "opacity-100"
+              : "opacity-100 md:opacity-0 md:group-hover:opacity-100"
           }`}
         >
           {busy ? (
@@ -155,7 +169,9 @@ export function FoundersSection({ startup }: { startup: Startup }) {
             <div key={i} className="flex min-w-0 flex-col gap-2">
               <Photo name={f.name} url={f.photo_url} />
               <div>
-                <p className="break-words text-sm font-medium text-text">{f.name}</p>
+                <p className="break-words text-sm font-medium text-text">
+                  {f.name}
+                </p>
                 {f.linkedin && (
                   <a
                     href={linkedinHref(f.linkedin)}
@@ -190,8 +206,7 @@ export function FoundersSection({ startup }: { startup: Startup }) {
     if (atLimit) return;
     setDraft((d) => [...d, { name: "", linkedin: "", photo_url: "" }]);
   };
-  const removeRow = (i: number) =>
-    setDraft((d) => d.filter((_, j) => j !== i));
+  const removeRow = (i: number) => setDraft((d) => d.filter((_, j) => j !== i));
 
   const onSave = async () => {
     setSaving(true);
@@ -288,7 +303,12 @@ export function FoundersSection({ startup }: { startup: Startup }) {
 
       {dirty && (
         <div className="mt-4 flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={saving}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={saving}
+          >
             Cancel
           </Button>
           <Button size="sm" onClick={onSave} disabled={saving || hasLinkErrors}>

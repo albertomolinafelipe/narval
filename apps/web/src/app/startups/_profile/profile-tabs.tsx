@@ -32,7 +32,12 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: "overview", label: "Overview" },
-  { id: "product", label: "Product", hideWhenEmpty: true, isEmpty: isProductEmpty },
+  {
+    id: "product",
+    label: "Product",
+    hideWhenEmpty: true,
+    isEmpty: isProductEmpty,
+  },
   { id: "metrics", label: "Metrics" },
   {
     id: "contributing",
@@ -85,10 +90,7 @@ export function ProfileTabs({ startup }: { startup: Startup }) {
         {active === "metrics" && <MetricsTab startup={startup} />}
         {active === "contributing" && <ContributingTab startup={startup} />}
         {active === "updates" && (
-          <EmptyState
-            title="Coming soon"
-            hint="Roadmap and news."
-          />
+          <EmptyState title="Coming soon" hint="Roadmap and news." />
         )}
       </div>
     </div>

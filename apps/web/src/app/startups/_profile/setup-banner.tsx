@@ -43,8 +43,8 @@ export function SetupBanner() {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-xl font-bold tracking-tight text-text">Hello 👋</p>
           <p className="max-w-2xl text-sm leading-relaxed text-text-muted">
-            Your profile is still a draft, it won&apos;t appear in public listings
-            until you publish it.
+            Your profile is still a draft, it won&apos;t appear in public
+            listings until you publish it.
             <br />
             Want ideas first? Take a look at{" "}
             <Link

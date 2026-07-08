@@ -12,7 +12,9 @@ type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 // Keys of the update request whose value matches V — lets each editor accept
 // only the fields it can actually drive.
 type FieldOf<V> = {
-  [K in keyof UpdateStartupRequest]-?: NonNullable<UpdateStartupRequest[K]> extends V
+  [K in keyof UpdateStartupRequest]-?: NonNullable<
+    UpdateStartupRequest[K]
+  > extends V
     ? K
     : never;
 }[keyof UpdateStartupRequest];
@@ -107,7 +109,9 @@ function EditShell({
         type="button"
         onClick={onStart}
         className={`group items-start rounded text-left ${
-          block ? "flex w-fit max-w-prose gap-2" : "inline-flex max-w-full gap-1"
+          block
+            ? "flex w-fit max-w-prose gap-2"
+            : "inline-flex max-w-full gap-1"
         }`}
       >
         <span className={block ? "min-w-0 flex-1" : undefined}>
@@ -128,7 +132,9 @@ function EditShell({
   }
 
   return (
-    <span className={`flex-col gap-0.5 ${fill ? "flex w-full" : "inline-flex"}`}>
+    <span
+      className={`flex-col gap-0.5 ${fill ? "flex w-full" : "inline-flex"}`}
+    >
       <span className="flex items-start gap-1">
         {input}
         <button
@@ -216,7 +222,9 @@ export function EditableText({
 
   return (
     <EditShell
-      display={display ? display(value) : <span className={className}>{value}</span>}
+      display={
+        display ? display(value) : <span className={className}>{value}</span>
+      }
       placeholder={placeholder}
       placeholderClassName={className}
       hasValue={value.length > 0}
@@ -263,26 +271,29 @@ export function EditableNumber({
   const { save } = useProfileEdit();
   const [error, setError] = useState<string | null>(null);
 
-  const edit = useInlineEdit(value != null ? String(value) : "", async (next) => {
-    setError(null);
-    const trimmed = next.trim();
-    // Clearing numbers isn't supported yet (needs nullable server fields).
-    if (trimmed === "") return;
-    const n = Number(trimmed);
-    if (!Number.isInteger(n)) {
-      setError("Enter a whole number");
-      throw new Error("invalid");
-    }
-    if (min != null && n < min) {
-      setError(`Must be ${min} or more`);
-      throw new Error("invalid");
-    }
-    if (max != null && n > max) {
-      setError(`Must be ${max} or less`);
-      throw new Error("invalid");
-    }
-    await save({ [field]: n } as UpdateStartupRequest);
-  });
+  const edit = useInlineEdit(
+    value != null ? String(value) : "",
+    async (next) => {
+      setError(null);
+      const trimmed = next.trim();
+      // Clearing numbers isn't supported yet (needs nullable server fields).
+      if (trimmed === "") return;
+      const n = Number(trimmed);
+      if (!Number.isInteger(n)) {
+        setError("Enter a whole number");
+        throw new Error("invalid");
+      }
+      if (min != null && n < min) {
+        setError(`Must be ${min} or more`);
+        throw new Error("invalid");
+      }
+      if (max != null && n > max) {
+        setError(`Must be ${max} or less`);
+        throw new Error("invalid");
+      }
+      await save({ [field]: n } as UpdateStartupRequest);
+    },
+  );
 
   const hasValue = value != null && value > 0;
   const start = () => {

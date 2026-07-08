@@ -27,8 +27,12 @@ const ALIASES: Record<string, string> = {
 
 /** Resolve a free-form tech name to a `devicon:` slug, or null if unknown. */
 function resolveSlug(name: string): string | null {
-  const normalized = name.toLowerCase().trim().replace(/[.\s/]/g, "");
-  const base = ALIASES[normalized] ?? ALIASES[name.toLowerCase().trim()] ?? normalized;
+  const normalized = name
+    .toLowerCase()
+    .trim()
+    .replace(/[.\s/]/g, "");
+  const base =
+    ALIASES[normalized] ?? ALIASES[name.toLowerCase().trim()] ?? normalized;
   if (SLUGS.has(base)) return base;
   return null;
 }

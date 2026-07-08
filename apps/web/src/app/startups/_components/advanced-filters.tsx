@@ -90,7 +90,13 @@ interface RangeFieldProps {
 }
 
 /** A labelled dual-handle slider bounding one numeric field. */
-function RangeField({ label, domain, value, onChange, scale }: RangeFieldProps) {
+function RangeField({
+  label,
+  domain,
+  value,
+  onChange,
+  scale,
+}: RangeFieldProps) {
   const last = scale ? scale.length - 1 : 0;
   const idx = (v: number) => Math.max(0, scale?.indexOf(v) ?? -1);
 

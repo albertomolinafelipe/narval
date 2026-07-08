@@ -21,7 +21,10 @@ export function youtubeId(url: string): string | null {
 /** 16:9 responsive embed. */
 function Embed({ id }: { id: string }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-xl bg-black" style={{ aspectRatio: "16/9" }}>
+    <div
+      className="relative w-full overflow-hidden rounded-xl bg-black"
+      style={{ aspectRatio: "16/9" }}
+    >
       <iframe
         src={`https://www.youtube.com/embed/${id}`}
         title="Intro video"

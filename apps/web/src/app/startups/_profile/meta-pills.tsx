@@ -2,11 +2,7 @@ import { MdLocationOn, MdGroups, MdCalendarMonth } from "react-icons/md";
 import { components } from "@/lib/api/generated";
 import { Pill } from "@/app/_components/shared/list-panel";
 import { STAGES, INDUSTRIES } from "@/lib/enums";
-import {
-  EditableSelect,
-  EditableNumber,
-  EditableLocation,
-} from "./editable";
+import { EditableSelect, EditableNumber, EditableLocation } from "./editable";
 
 type Startup = components["schemas"]["Startup"];
 
@@ -55,7 +51,10 @@ export function MetaPills({ startup }: { startup: Startup }) {
         min={1}
         className="text-sm"
         display={(v) => (
-          <Pill icon={<MdGroups size={14} />} label={`${v} ${v === 1 ? "person" : "people"}`} />
+          <Pill
+            icon={<MdGroups size={14} />}
+            label={`${v} ${v === 1 ? "person" : "people"}`}
+          />
         )}
       />
     </div>

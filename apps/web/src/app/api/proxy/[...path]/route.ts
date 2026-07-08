@@ -14,7 +14,7 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   if (contentType) headers.set("content-type", contentType);
   const auth = req.headers.get("authorization");
   if (auth) headers.set("authorization", auth);
-  
+
   // Forward cookies from browser to backend
   const cookie = req.headers.get("cookie");
   if (cookie) headers.set("cookie", cookie);
@@ -34,13 +34,13 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   const resHeaders = new Headers();
   const resContentType = upstream.headers.get("content-type");
   if (resContentType) resHeaders.set("content-type", resContentType);
-  
+
   // Forward all Set-Cookie headers from backend to browser
   const setCookieHeaders = upstream.headers.getSetCookie();
-  setCookieHeaders.forEach(cookie => {
+  setCookieHeaders.forEach((cookie) => {
     resHeaders.append("set-cookie", cookie);
   });
-  
+
   // Forward SuperTokens-specific headers
   const frontToken = upstream.headers.get("front-token");
   if (frontToken) resHeaders.set("front-token", frontToken);
@@ -48,8 +48,11 @@ async function proxy(req: NextRequest, path: string[]): Promise<NextResponse> {
   if (accessToken) resHeaders.set("st-access-token", accessToken);
   const refreshToken = upstream.headers.get("st-refresh-token");
   if (refreshToken) resHeaders.set("st-refresh-token", refreshToken);
-  const accessControlHeaders = upstream.headers.get("access-control-expose-headers");
-  if (accessControlHeaders) resHeaders.set("access-control-expose-headers", accessControlHeaders);
+  const accessControlHeaders = upstream.headers.get(
+    "access-control-expose-headers",
+  );
+  if (accessControlHeaders)
+    resHeaders.set("access-control-expose-headers", accessControlHeaders);
 
   return new NextResponse(resBody.byteLength > 0 ? resBody : null, {
     status: upstream.status,

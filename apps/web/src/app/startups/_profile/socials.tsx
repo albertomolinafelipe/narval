@@ -3,7 +3,13 @@
 import { useState, type ComponentType } from "react";
 import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
-import { SiLinkedin, SiX, SiInstagram, SiAppstore, SiGoogleplay } from "react-icons/si";
+import {
+  SiLinkedin,
+  SiX,
+  SiInstagram,
+  SiAppstore,
+  SiGoogleplay,
+} from "react-icons/si";
 import { components } from "@/lib/api/generated";
 import { parseProductLinks } from "@/lib/startup/product-links";
 import { normalizeToHandle } from "@/lib/startup/social-input";
@@ -35,7 +41,9 @@ const LINKS: LinkDef[] = [
     Icon: SiLinkedin,
     placeholder: "yourcompany",
     getValue: (s) => s.linkedin ?? "",
-    saveValue: (suffix) => ({ linkedin: suffix ? `https://linkedin.com/company/${suffix}` : "" }),
+    saveValue: (suffix) => ({
+      linkedin: suffix ? `https://linkedin.com/company/${suffix}` : "",
+    }),
   },
   {
     id: "twitter",
@@ -44,7 +52,9 @@ const LINKS: LinkDef[] = [
     Icon: SiX,
     placeholder: "yourhandle",
     getValue: (s) => s.twitter ?? "",
-    saveValue: (suffix) => ({ twitter: suffix ? `https://x.com/${suffix}` : "" }),
+    saveValue: (suffix) => ({
+      twitter: suffix ? `https://x.com/${suffix}` : "",
+    }),
   },
   {
     id: "instagram",
@@ -53,7 +63,9 @@ const LINKS: LinkDef[] = [
     Icon: SiInstagram,
     placeholder: "yourhandle",
     getValue: (s) => s.instagram ?? "",
-    saveValue: (suffix) => ({ instagram: suffix ? `https://instagram.com/${suffix}` : "" }),
+    saveValue: (suffix) => ({
+      instagram: suffix ? `https://instagram.com/${suffix}` : "",
+    }),
   },
   {
     id: "ios",
@@ -66,7 +78,8 @@ const LINKS: LinkDef[] = [
     saveValue: (suffix, s) => {
       const links = parseProductLinks(s.product_links);
       const url = suffix ? `https://apps.apple.com/${suffix}` : "";
-      if (url) links["ios"] = url; else delete links["ios"];
+      if (url) links["ios"] = url;
+      else delete links["ios"];
       return { product_links: JSON.stringify(links) };
     },
   },
@@ -81,7 +94,8 @@ const LINKS: LinkDef[] = [
     saveValue: (suffix, s) => {
       const links = parseProductLinks(s.product_links);
       const url = suffix ? `https://play.google.com/${suffix}` : "";
-      if (url) links["android"] = url; else delete links["android"];
+      if (url) links["android"] = url;
+      else delete links["android"];
       return { product_links: JSON.stringify(links) };
     },
   },
@@ -122,14 +136,19 @@ function EditableLink({
         ) : (
           <Icon size={18} className="shrink-0" />
         )}
-        <span className="truncate">{def.displayLabel ?? suffix ?? def.label}</span>
+        <span className="truncate">
+          {def.displayLabel ?? suffix ?? def.label}
+        </span>
       </>
     );
 
     if (!isOwner) {
       if (!value) return null;
       return (
-        <a href={value} target="_blank" rel="noopener noreferrer"
+        <a
+          href={value}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm text-text transition hover:text-brand/80"
         >
           {inner}
@@ -138,11 +157,16 @@ function EditableLink({
     }
 
     return (
-      <button type="button" onClick={edit.start}
+      <button
+        type="button"
+        onClick={edit.start}
         className="group flex items-center gap-2 text-sm text-text transition hover:text-brand/80"
       >
         {inner}
-        <Pencil size={13} className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100" />
+        <Pencil
+          size={13}
+          className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100"
+        />
       </button>
     );
   }
@@ -163,7 +187,11 @@ function EditableLink({
     await edit.commit(edit.draft.trim());
     onClose?.();
   };
-  const cancel = () => { setError(null); edit.cancel(); onClose?.(); };
+  const cancel = () => {
+    setError(null);
+    edit.cancel();
+    onClose?.();
+  };
 
   return (
     <div className="flex flex-col gap-1">
@@ -181,24 +209,37 @@ function EditableLink({
             setError(error);
           }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") { e.preventDefault(); commit(); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+            }
             if (e.key === "Escape") cancel();
           }}
           className="w-52 bg-bg-raised"
           inputClassName="text-xs"
         />
-        <button type="button" onClick={commit} disabled={edit.saving || !!error} aria-label="Save"
+        <button
+          type="button"
+          onClick={commit}
+          disabled={edit.saving || !!error}
+          aria-label="Save"
           className="shrink-0 rounded p-1 text-success transition hover:bg-success/10 disabled:opacity-50"
         >
           <Check size={16} />
         </button>
-        <button type="button" onClick={cancel} disabled={edit.saving} aria-label="Cancel"
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={edit.saving}
+          aria-label="Cancel"
           className="shrink-0 rounded p-1 text-danger transition hover:bg-danger/10 disabled:opacity-50"
         >
           <X size={16} />
         </button>
       </div>
-      <p className={`pl-1 text-xs ${error ? "text-danger" : "text-text-subtle"}`}>
+      <p
+        className={`pl-1 text-xs ${error ? "text-danger" : "text-text-subtle"}`}
+      >
         {error ?? "Paste the full link or just the handle"}
       </p>
     </div>
@@ -224,8 +265,10 @@ function EditableWebsite({ value }: { value: string }) {
     if (!isOwner) {
       if (!value) return null;
       return (
-        <a href={value.startsWith("http") ? value : `https://${value}`}
-          target="_blank" rel="noopener noreferrer"
+        <a
+          href={value.startsWith("http") ? value : `https://${value}`}
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-2 text-sm text-text transition hover:text-brand/80"
         >
           {inner}
@@ -234,15 +277,22 @@ function EditableWebsite({ value }: { value: string }) {
     }
 
     return (
-      <button type="button" onClick={edit.start}
+      <button
+        type="button"
+        onClick={edit.start}
         className="group flex items-center gap-2 text-sm text-text transition hover:text-brand/80"
       >
-        {value ? inner : (
+        {value ? (
+          inner
+        ) : (
           <span className="flex items-center gap-2 text-text-subtle">
             <Globe size={18} className="shrink-0" /> Add website
           </span>
         )}
-        <Pencil size={12} className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100" />
+        <Pencil
+          size={12}
+          className="shrink-0 text-text-subtle opacity-0 transition group-hover:opacity-100"
+        />
       </button>
     );
   }
@@ -250,20 +300,34 @@ function EditableWebsite({ value }: { value: string }) {
   return (
     <div className="flex items-center gap-1">
       <input
-        autoFocus value={edit.draft} disabled={edit.saving} placeholder="acme.com"
+        autoFocus
+        value={edit.draft}
+        disabled={edit.saving}
+        placeholder="acme.com"
         onChange={(e) => edit.setDraft(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); edit.commit(edit.draft.trim()); }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            edit.commit(edit.draft.trim());
+          }
           if (e.key === "Escape") edit.cancel();
         }}
         className="w-52 rounded-lg border border-border bg-bg px-2 py-1 text-sm text-text outline-none focus:border-brand"
       />
-      <button type="button" onClick={() => edit.commit(edit.draft.trim())} disabled={edit.saving} aria-label="Save"
+      <button
+        type="button"
+        onClick={() => edit.commit(edit.draft.trim())}
+        disabled={edit.saving}
+        aria-label="Save"
         className="shrink-0 rounded p-1 text-success transition hover:bg-success/10 disabled:opacity-50"
       >
         <Check size={16} />
       </button>
-      <button type="button" onClick={edit.cancel} disabled={edit.saving} aria-label="Cancel"
+      <button
+        type="button"
+        onClick={edit.cancel}
+        disabled={edit.saving}
+        aria-label="Cancel"
         className="shrink-0 rounded p-1 text-danger transition hover:bg-danger/10 disabled:opacity-50"
       >
         <X size={16} />
@@ -278,8 +342,12 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const present = LINKS.filter((l) => l.getValue(startup));
-  const addingDefs = LINKS.filter((l) => adding.includes(l.id) && !l.getValue(startup));
-  const missing = LINKS.filter((l) => !l.getValue(startup) && !adding.includes(l.id));
+  const addingDefs = LINKS.filter(
+    (l) => adding.includes(l.id) && !l.getValue(startup),
+  );
+  const missing = LINKS.filter(
+    (l) => !l.getValue(startup) && !adding.includes(l.id),
+  );
 
   if (!isOwner && present.length === 0 && !startup.website) return null;
 
@@ -294,7 +362,10 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
       ))}
       {addingDefs.map((def) => (
         <EditableLink
-          key={def.id} def={def} startup={startup} defaultEditing
+          key={def.id}
+          def={def}
+          startup={startup}
+          defaultEditing
           onClose={() => setAdding((a) => a.filter((id) => id !== def.id))}
         />
       ))}
@@ -313,8 +384,13 @@ export function SocialsColumn({ startup }: { startup: Startup }) {
           {menuOpen && (
             <div className="absolute right-0 z-10 mt-1 rounded-lg border border-border bg-bg p-1 shadow-lg">
               {missing.map((def) => (
-                <button key={def.id} type="button"
-                  onClick={() => { setAdding((a) => [...a, def.id]); setMenuOpen(false); }}
+                <button
+                  key={def.id}
+                  type="button"
+                  onClick={() => {
+                    setAdding((a) => [...a, def.id]);
+                    setMenuOpen(false);
+                  }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1 text-xs text-text transition hover:bg-bg-subtle"
                 >
                   <def.Icon size={14} /> {def.label}

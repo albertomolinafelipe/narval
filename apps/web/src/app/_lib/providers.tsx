@@ -7,10 +7,9 @@ import AuthModal from "../_components/auth/auth-modal";
 import { QueryProvider } from "@/lib/query-provider";
 
 // Dynamically import SuperTokens components to avoid SSR issues
-const SuperTokensWrapper = dynamic(
-  () => import("./supertokens-wrapper"),
-  { ssr: false }
-);
+const SuperTokensWrapper = dynamic(() => import("./supertokens-wrapper"), {
+  ssr: false,
+});
 
 interface ProvidersProps {
   children: React.ReactNode;
