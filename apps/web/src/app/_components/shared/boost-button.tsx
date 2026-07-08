@@ -24,7 +24,7 @@ export function BoostButton({
 
   const tooltipContent = boosted
     ? "You've boosted this startup"
-    : "Boost this startup to give it visibility for 30 days";
+    : "Boost this startup to give it visibility for 7 days";
 
   const isLarge = size === "large";
   const iconSize = isLarge ? 18 : 16;

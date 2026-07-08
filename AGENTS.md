@@ -79,9 +79,8 @@ slice, stop for manual testing, then continue. Decisions already taken:
 - **A9 — N+1 queries in `ListStartups`.** `startupResponse` runs three count queries per
   startup (boosts, is_favorited, has_boosted) → 3N+1 per list. The `trending` sort computes
   `active_boosts` in SQL and then discards it and re-queries per row.
-- **A10 — Boost expiry is inconsistent.** Model `BeforeCreate` sets 30 days
-  (models/startup_boost.go); a handler comment says 7 days (startups/handler.go:1021).
-  Pick one and align code + docs.
+- **A10 — Boost expiry is inconsistent.** *(Fixed: 7 days everywhere, `models.BoostLifetime`.)*
+  Model `BeforeCreate` set 30 days while a handler comment said 7.
 - **A11 — Smaller items.** No graceful shutdown (`router.Run`, unmanaged cleanup goroutines);
   `CheckStartupWebsite` and `GetStats` ignore DB errors; uploads trust the client
   Content-Type and fall back to `image/jpeg` instead of rejecting non-images; raw
@@ -332,10 +331,8 @@ Stores app-level user data. Identity (sessions, OTPs) is handled by SuperTokens.
 - Startup accounts get a `Startup` row at registration (or by claiming a shell)
 
 ### `StartupFavorite` / `StartupBoost`
-Social actions. `user_id` is the local `users.id` (not the SuperTokens id — old "Keycloak"
-comments in the models are stale, finding C4). Boosts expire — model sets 30 days at
-creation; hourly cleanup goroutine in `main.go` purges expired rows. (A handler comment
-says 7 days; resolving this is finding A10.)
+Social actions. `user_id` is the local `users.id`. Boosts expire after 7 days
+(`models.BoostLifetime`); an hourly cleanup goroutine in `main.go` purges expired rows.
 
 ### `DomainVerification` / `InstagramVerification`
 One live challenge per startup (unique `startup_id`). Domain: hashed 6-digit code emailed

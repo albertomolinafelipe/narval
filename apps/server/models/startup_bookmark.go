@@ -9,7 +9,7 @@ import (
 
 // StartupFavorite represents a user's favorite of a startup.
 // This is a many-to-many relationship between users and startups.
-// UserID stores the Keycloak ID (not a UUID)
+// UserID stores the local users.id.
 type StartupFavorite struct {
 	ID        string    `gorm:"type:uuid;primaryKey"                                      json:"id"`
 	UserID    string    `gorm:"type:varchar(255);not null;uniqueIndex:idx_user_startup"  json:"user_id"`

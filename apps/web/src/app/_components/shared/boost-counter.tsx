@@ -60,7 +60,7 @@ export function BoostCounter({ startup }: BoostCounterProps) {
           >
             {boosted
               ? "You've boosted this startup"
-              : "Boost this startup to give it visibility for 30 days"}
+              : "Boost this startup to give it visibility for 7 days"}
             <Tooltip.Arrow className="fill-border" />
           </Tooltip.Content>
         </Tooltip.Portal>

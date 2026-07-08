@@ -69,9 +69,11 @@ type Startup struct {
 	InstagramVerified bool `gorm:"default:false"           json:"instagram_verified"`
 
 	// Claimed is true for every real profile (normal registration + already
-	// handed-off shells). Admin-seeded shells start false and are excluded from
-	// public reads until a startup claims them. The "one profile per owner" rule
-	// is enforced in the claim/registration paths (accounts.bindClaim,
+	// handed-off shells). Admin-seeded shells start false. Completed shells
+	// (profile_setup = true) are publicly listed even before they are claimed —
+	// deliberate, so the directory has content pre-launch; only the claim
+	// machinery (ClaimToken) stays hidden. The "one profile per owner" rule is
+	// enforced in the claim/registration paths (accounts.bindClaim,
 	// CreateStartup), not by a DB constraint.
 	Claimed bool `gorm:"default:false"                       json:"claimed"`
 	// ClaimToken is the bearer secret in the claim link; non-empty only while a
