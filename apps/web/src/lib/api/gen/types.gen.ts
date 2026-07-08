@@ -195,7 +195,6 @@ export type Startup = {
   contact_funding?: string;
   contact_talent?: string;
   owner_id: string;
-  owner_email: string;
   /**
    * Whether the startup profile has been fully set up (defaults to false)
    */

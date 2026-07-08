@@ -277,9 +277,8 @@ type Startup struct {
 	Name       string  `json:"name"`
 
 	// OpenRoles Comma-separated list of open roles
-	OpenRoles  *string `json:"open_roles,omitempty"`
-	OwnerEmail string  `json:"owner_email"`
-	OwnerId    string  `json:"owner_id"`
+	OpenRoles *string `json:"open_roles,omitempty"`
+	OwnerId   string  `json:"owner_id"`
 
 	// ProductLinks JSON object with product links: {"web":"...","ios":"...","android":"..."}
 	ProductLinks *string `json:"product_links,omitempty"`

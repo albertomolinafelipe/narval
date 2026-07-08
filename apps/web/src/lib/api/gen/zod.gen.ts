@@ -134,7 +134,6 @@ export const zStartup = z.object({
   contact_funding: z.string().optional(),
   contact_talent: z.string().optional(),
   owner_id: z.string(),
-  owner_email: z.string(),
   profile_setup: z.boolean().optional(),
   created_at: z.iso.datetime(),
   updated_at: z.iso.datetime().optional(),

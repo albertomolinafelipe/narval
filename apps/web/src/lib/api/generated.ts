@@ -497,7 +497,6 @@ export interface components {
             contact_funding?: string;
             contact_talent?: string;
             owner_id: string;
-            owner_email: string;
             /** @description Whether the startup profile has been fully set up (defaults to false) */
             profile_setup?: boolean;
             /** Format: date-time */
