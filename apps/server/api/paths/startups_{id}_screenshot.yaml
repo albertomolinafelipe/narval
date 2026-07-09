@@ -1,0 +1,58 @@
+post:
+  operationId: uploadStartupScreenshot
+  summary: Upload a product screenshot and get back its public URL
+  description: >-
+    The caller stores the URL inside the startup's gallery JSON array; this
+    endpoint does not modify the startup itself.
+  security:
+    - bearerAuth: []
+  parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - screenshot
+          properties:
+            screenshot:
+              type: string
+              format: binary
+  responses:
+    '200':
+      description: Screenshot uploaded
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/UploadUrlResponse.yaml
+    '400':
+      description: Invalid file
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Forbidden – not the owner
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: Startup not found
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

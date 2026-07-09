@@ -5,7 +5,8 @@ import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 import { Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
-import { uploadScreenshot } from "@/lib/api/client";
+import { uploadStartupScreenshot } from "@/lib/api/gen";
+import { unwrap } from "@/lib/api/unwrap";
 import { components } from "@/lib/api/generated";
 import { Section } from "./ui";
 import { EditableImage } from "./editable-image";
@@ -89,7 +90,17 @@ export function GallerySection({ startup }: { startup: Startup }) {
   const onCropComplete = async (blob: Blob) => {
     setBusy(true);
     try {
-      const url = await uploadScreenshot(startup.id, blob);
+      // Wrap in a File so the multipart part carries a filename — Go's
+      // FormFile() ignores nameless parts.
+      const screenshot = new File([blob], "screenshot.jpg", {
+        type: blob.type || "image/jpeg",
+      });
+      const { url } = await unwrap(
+        uploadStartupScreenshot({
+          path: { id: startup.id },
+          body: { screenshot },
+        }),
+      );
       await save({ gallery: JSON.stringify([...urls, url]) });
       closeCropper();
     } catch {

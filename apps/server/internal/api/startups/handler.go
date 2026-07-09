@@ -16,6 +16,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/narval/server/internal/api/common"
+	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/email"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
@@ -27,42 +28,17 @@ const (
 	maxBannerSize = 10 << 20 // 10 MiB
 )
 
-// Controlled enum values
-
-var validStages = map[string]bool{
-	"idea": true, "pre-seed": true, "seed": true,
-	"series-a": true, "series-b": true, "growth": true, "profitable": true,
-}
-
-var validRounds = map[string]bool{
-	"pre-seed": true, "seed": true,
-	"series-a": true, "series-b": true, "bridge": true,
-}
-
-var validProductStatuses = map[string]bool{
-	"coming-soon": true, "waitlist": true, "beta": true, "live": true,
-}
-
-var validIndustries = map[string]bool{
-	"AI/ML": true, "FinTech": true, "HealthTech": true, "Climate Tech": true,
-	"EdTech": true, "SaaS": true, "Marketplace": true, "Developer Tools": true,
-	"Hardware": true, "Consumer": true, "Deep Tech": true, "Logistics": true,
-	"Legal Tech": true, "HR Tech": true, "Other": true,
-}
-
 // Handler handles all /startups routes.
 type Handler struct {
 	*common.BaseHandler
-	Mailer      email.Sender
-	AdminEmails []string // emails allowed to create admin-seeded shells
+	Mailer email.Sender
 }
 
 // NewHandler creates a new startups handler.
-func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender, adminEmails []string) *Handler {
+func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender) *Handler {
 	return &Handler{
 		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),
 		Mailer:      mailer,
-		AdminEmails: adminEmails,
 	}
 }
 
@@ -94,19 +70,19 @@ func validateWebsite(raw string) error {
 }
 
 // CheckStartupWebsite validates a website and returns the normalized form.
-func (h *Handler) CheckStartupWebsite(c *gin.Context) {
-	urlParam := common.NormalizeWebsite(c.Query("url"))
+func (h *Handler) CheckStartupWebsite(c *gin.Context, params gen.CheckStartupWebsiteParams) {
+	urlParam := common.NormalizeWebsite(params.Url)
 	if urlParam == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "url required"})
 		return
 	}
 	if !common.IsRootDomain(urlParam) {
-		c.JSON(http.StatusOK, gin.H{"available": false, "reason": "subdomain"})
+		c.JSON(http.StatusOK, gen.WebsiteCheckResponse{Available: false, Reason: ptr(gen.Subdomain)})
 		return
 	}
 	var count int64
 	h.DB.Model(&models.Startup{}).Where("verified_domain = ?", urlParam).Count(&count)
-	c.JSON(http.StatusOK, gin.H{"available": count == 0})
+	c.JSON(http.StatusOK, gen.WebsiteCheckResponse{Available: count == 0})
 }
 
 // GetStartup fetches a single startup by its UUID, or — for verified startups —
@@ -137,16 +113,12 @@ func (h *Handler) GetStartup(c *gin.Context, idOrDomain string) {
 }
 
 // ListStartups returns all startup accounts.
-func (h *Handler) ListStartups(c *gin.Context) {
-	// Check for favorited filter
-	favoritedParam := c.Query("favorited")
-	filterFavorited := favoritedParam == "true"
-
-	sortParam := c.Query("sort") // "recent" (default) or "trending"
+func (h *Handler) ListStartups(c *gin.Context, params gen.ListStartupsParams) {
+	filterFavorited := params.Favorited != nil && *params.Favorited
 
 	var startupList []models.Startup
 	var query *gorm.DB
-	if sortParam == "trending" {
+	if params.Sort != nil && *params.Sort == gen.Trending {
 		query = h.DB.
 			Select("startups.*, COALESCE(b.active_boosts, 0) AS active_boosts").
 			Joins(`LEFT JOIN (
@@ -183,88 +155,25 @@ func (h *Handler) ListStartups(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startups"})
 		return
 	}
-	result := make([]interface{}, len(startupList))
+	result := make([]gen.Startup, len(startupList))
 	for i, s := range startupList {
 		result[i] = h.startupResponse(c, s)
 	}
 	c.JSON(http.StatusOK, result)
 }
 
-// startupRequest holds optional fields for create/update.
-type startupRequest struct {
-	Name             string  `json:"name"           binding:"omitempty,min=2,max=100"`
-	Tagline          *string `json:"tagline"        binding:"omitempty,max=160"`
-	Description      *string `json:"description"    binding:"omitempty,max=1000"`
-	About            *string `json:"about"          binding:"omitempty,max=5000"`
-	VideoURL         *string `json:"video_url"      binding:"omitempty,max=500"`
-	Milestones       *string `json:"milestones"     binding:"omitempty,max=20000"`
-	Website          *string `json:"website"`
-	Stage            *string `json:"stage"`
-	Industry         *string `json:"industry"`
-	TeamSize         *int    `json:"team_size"`
-	Location         *string `json:"location"`
-	FoundedYear      *int    `json:"founded_year"`
-	TechStack        *string `json:"tech_stack"`
-	ProductLinks     *string `json:"product_links"`
-	Linkedin         *string `json:"linkedin"`
-	Twitter          *string `json:"twitter"`
-	Github           *string `json:"github"`
-	Instagram        *string `json:"instagram"`
-	IsRaising        *bool   `json:"is_raising"`
-	CurrentRound     *string `json:"current_round"`
-	FundingAsk       *string `json:"funding_ask"`
-	FundingUse       *string `json:"funding_use"`
-	IsHiring         *bool   `json:"is_hiring"`
-	OpenRoles        *string `json:"open_roles"`
-	ContributingText *string `json:"contributing_text" binding:"omitempty,max=2000"`
-	ContactGeneral   *string `json:"contact_general"`
-	ContactFunding   *string `json:"contact_funding"`
-	ContactTalent    *string `json:"contact_talent"`
-	ProfileSetup     *bool   `json:"profile_setup"`
-	Founders         *string `json:"founders"`       // JSON array
-	Gallery          *string `json:"gallery"`        // JSON array of screenshot URLs
-	ProductStatus    *string `json:"product_status"` // coming-soon | waitlist | beta | live
-	Features         *string `json:"features"`       // JSON array of {title, description}
-}
-
-// validateStartupRequest checks enum values; returns an error message or "".
-func validateStartupRequest(req *startupRequest) string {
-	if req.Stage != nil && *req.Stage != "" {
-		if !validStages[*req.Stage] {
-			return fmt.Sprintf("invalid stage %q", *req.Stage)
-		}
-	}
-	if req.Industry != nil && *req.Industry != "" {
-		if !validIndustries[*req.Industry] {
-			return fmt.Sprintf("invalid industry %q", *req.Industry)
-		}
-	}
-	if req.CurrentRound != nil && *req.CurrentRound != "" {
-		if !validRounds[*req.CurrentRound] {
-			return fmt.Sprintf("invalid current_round %q", *req.CurrentRound)
-		}
-	}
-	if req.ProductStatus != nil && *req.ProductStatus != "" {
-		if !validProductStatuses[*req.ProductStatus] {
-			return fmt.Sprintf("invalid product_status %q", *req.ProductStatus)
-		}
-	}
-	return ""
-}
-
 // CreateStartup registers a new startup for the authenticated user.
+// The request validator has already enforced CreateStartupRequest (name
+// required, lengths, enums); the update type is a superset with identical
+// field names, so bind that and share applyStartupFields with UpdateStartup.
 func (h *Handler) CreateStartup(c *gin.Context) {
-	var req struct {
-		startupRequest
-		Name string `json:"name" binding:"required,min=2,max=100"`
-	}
+	var req gen.UpdateStartupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
 		return
 	}
-
-	if msg := validateStartupRequest(&req.startupRequest); msg != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": msg})
+	if req.Name == nil || *req.Name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "name is required"})
 		return
 	}
 
@@ -293,7 +202,7 @@ func (h *Handler) CreateStartup(c *gin.Context) {
 	}
 
 	s := models.Startup{
-		Name:       req.Name,
+		Name:       *req.Name,
 		OwnerID:    ownerID,
 		OwnerEmail: ownerEmail,
 		Claimed:    true,
@@ -309,7 +218,7 @@ func (h *Handler) CreateStartup(c *gin.Context) {
 		return
 	}
 
-	applyStartupFields(&s, &req.startupRequest)
+	applyStartupFields(&s, &req)
 
 	if err := h.DB.Create(&s).Error; err != nil {
 		if common.IsDuplicateKeyError(err) {
@@ -344,19 +253,14 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 		return
 	}
 
-	var req startupRequest
+	var req gen.UpdateStartupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
 		return
 	}
 
-	if msg := validateStartupRequest(&req); msg != "" {
-		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": msg})
-		return
-	}
-
-	if req.Name != "" {
-		st.Name = req.Name
+	if req.Name != nil && *req.Name != "" {
+		st.Name = *req.Name
 	}
 	// Snapshot the image-bearing JSON fields before applying the update so we can
 	// clean up blobs the owner removed (a deleted screenshot or founder photo).
@@ -561,8 +465,8 @@ func (h *Handler) DeleteStartupBanner(c *gin.Context, id openapi_types.UUID) {
 
 // UploadFounderPhoto uploads a founder photo and returns the public URL.
 // The client is responsible for storing the URL inside the founders JSON field.
-func (h *Handler) UploadFounderPhoto(c *gin.Context) {
-	startupID := c.Param("id")
+func (h *Handler) UploadFounderPhoto(c *gin.Context, id openapi_types.UUID) {
+	startupID := id.String()
 	ownerID := middleware.GetDBUserID(c)
 
 	var st models.Startup
@@ -604,13 +508,13 @@ func (h *Handler) UploadFounderPhoto(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"url": photoURL})
+	c.JSON(http.StatusOK, gen.UploadUrlResponse{Url: photoURL})
 }
 
 // UploadStartupScreenshot uploads a single product screenshot and returns its
 // public URL. The client stores the URL inside the startup's gallery JSON field.
-func (h *Handler) UploadStartupScreenshot(c *gin.Context) {
-	startupID := c.Param("id")
+func (h *Handler) UploadStartupScreenshot(c *gin.Context, id openapi_types.UUID) {
+	startupID := id.String()
 	ownerID := middleware.GetDBUserID(c)
 
 	var st models.Startup
@@ -652,84 +556,78 @@ func (h *Handler) UploadStartupScreenshot(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"url": url})
+	c.JSON(http.StatusOK, gen.UploadUrlResponse{Url: url})
 }
 
 //  Response helpers
 
-// startupResponse converts a Startup model to the API response.
-// If the user is authenticated, it includes bookmark status.
-func (h *Handler) startupResponse(c *gin.Context, s models.Startup) map[string]interface{} {
-	// Convert to map to add dynamic field
-	response := map[string]interface{}{
-		"id":                 s.ID,
-		"name":               s.Name,
-		"tagline":            s.Tagline,
-		"description":        s.Description,
-		"about":              s.About,
-		"video_url":          s.VideoURL,
-		"milestones":         s.Milestones,
-		"website":            s.Website,
-		"verified_domain":    s.VerifiedDomain,
-		"instagram_verified": s.InstagramVerified,
-		"logo_url":           s.LogoURL,
-		"stage":              s.Stage,
-		"industry":           s.Industry,
-		"team_size":          s.TeamSize,
-		"location":           s.Location,
-		"founded_year":       s.FoundedYear,
-		"tech_stack":         s.TechStack,
-		"banner_image":       s.BannerImage,
-		"product_links":      s.ProductLinks,
-		"gallery":            s.Gallery,
-		"product_status":     s.ProductStatus,
-		"features":           s.Features,
-		"linkedin":           s.Linkedin,
-		"twitter":            s.Twitter,
-		"github":             s.Github,
-		"instagram":          s.Instagram,
-		"is_raising":         s.IsRaising,
-		"current_round":      s.CurrentRound,
-		"funding_ask":        s.FundingAsk,
-		"funding_use":        s.FundingUse,
-		"is_hiring":          s.IsHiring,
-		"open_roles":         s.OpenRoles,
-		"contributing_text":  s.ContributingText,
-		"contact_general":    s.ContactGeneral,
-		"contact_funding":    s.ContactFunding,
-		"contact_talent":     s.ContactTalent,
-		"owner_id":           s.OwnerID,
-		"profile_setup":      s.ProfileSetup,
-		"claimed":            s.Claimed,
-		"created_at":         s.CreatedAt,
-		"updated_at":         s.UpdatedAt,
-	}
+// ptr returns a pointer to v. The generated response types use pointers for
+// optional fields; the API sets them all so the wire format stays identical to
+// the previous map-based response (every column always serialized).
+func ptr[T any](v T) *T { return &v }
 
-	// Parse founders JSON into array so clients receive structured data.
-	var founders []interface{}
+// startupResponse converts a Startup model to the API response.
+// If the user is authenticated, it includes bookmark and boost status.
+func (h *Handler) startupResponse(c *gin.Context, s models.Startup) gen.Startup {
+	id, _ := uuid.Parse(s.ID)
+
+	// Parse founders JSON into an array so clients receive structured data.
+	founders := []gen.Founder{}
 	if s.Founders != "" {
 		_ = json.Unmarshal([]byte(s.Founders), &founders)
 	}
-	if founders == nil {
-		founders = []interface{}{}
+
+	response := gen.Startup{
+		Id:                id,
+		Name:              s.Name,
+		OwnerId:           s.OwnerID,
+		CreatedAt:         s.CreatedAt,
+		UpdatedAt:         ptr(s.UpdatedAt),
+		Tagline:           ptr(s.Tagline),
+		Description:       ptr(s.Description),
+		About:             ptr(s.About),
+		VideoUrl:          ptr(s.VideoURL),
+		Milestones:        ptr(s.Milestones),
+		Website:           ptr(s.Website),
+		VerifiedDomain:    ptr(s.VerifiedDomain),
+		InstagramVerified: ptr(s.InstagramVerified),
+		LogoUrl:           ptr(s.LogoURL),
+		Stage:             ptr(gen.Stage(s.Stage)),
+		Industry:          ptr(gen.Industry(s.Industry)),
+		TeamSize:          ptr(s.TeamSize),
+		Location:          ptr(s.Location),
+		FoundedYear:       ptr(s.FoundedYear),
+		TechStack:         ptr(s.TechStack),
+		BannerImage:       ptr(s.BannerImage),
+		ProductLinks:      ptr(s.ProductLinks),
+		Gallery:           ptr(s.Gallery),
+		ProductStatus:     ptr(s.ProductStatus),
+		Features:          ptr(s.Features),
+		Linkedin:          ptr(s.Linkedin),
+		Twitter:           ptr(s.Twitter),
+		Github:            ptr(s.Github),
+		Instagram:         ptr(s.Instagram),
+		IsRaising:         ptr(s.IsRaising),
+		CurrentRound:      ptr(gen.FundingRound(s.CurrentRound)),
+		FundingAsk:        ptr(s.FundingAsk),
+		FundingUse:        ptr(s.FundingUse),
+		IsHiring:          ptr(s.IsHiring),
+		OpenRoles:         ptr(s.OpenRoles),
+		ContributingText:  ptr(s.ContributingText),
+		ContactGeneral:    ptr(s.ContactGeneral),
+		ContactFunding:    ptr(s.ContactFunding),
+		ContactTalent:     ptr(s.ContactTalent),
+		ProfileSetup:      ptr(s.ProfileSetup),
+		Claimed:           ptr(s.Claimed),
+		Verified:          ptr(s.Verified),
+		Founders:          &founders,
+		BoostCount:        ptr(int(h.getStartupBoostCount(s.ID))),
 	}
-	response["founders"] = founders
 
-	response["verified"] = s.Verified
-
-	// Add boost count (always visible)
-	boostCount := h.getStartupBoostCount(s.ID)
-	response["boost_count"] = boostCount
-
-	// Add favorite status if user is authenticated
-	userID := middleware.GetDBUserID(c)
-	if userID != "" {
-		isFavorited := h.isStartupFavorited(userID, s.ID)
-		response["is_favorited"] = isFavorited
-
-		// Add has_boosted status for authenticated users
-		hasBoosted := h.hasUserBoosted(userID, s.ID)
-		response["has_boosted"] = hasBoosted
+	// Personalized fields only exist for authenticated users.
+	if userID := middleware.GetDBUserID(c); userID != "" {
+		response.IsFavorited = ptr(h.isStartupFavorited(userID, s.ID))
+		response.HasBoosted = ptr(h.hasUserBoosted(userID, s.ID))
 	}
 
 	return response
@@ -750,7 +648,7 @@ func (h *Handler) isStartupFavorited(userID, startupID string) bool {
 //  Helpers
 
 // applyStartupFields applies optional pointer fields from a request to a Startup model.
-func applyStartupFields(s *models.Startup, req *startupRequest) {
+func applyStartupFields(s *models.Startup, req *gen.UpdateStartupRequest) {
 	if req.Tagline != nil {
 		s.Tagline = *req.Tagline
 	}
@@ -760,8 +658,8 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 	if req.About != nil {
 		s.About = *req.About
 	}
-	if req.VideoURL != nil {
-		s.VideoURL = *req.VideoURL
+	if req.VideoUrl != nil {
+		s.VideoURL = *req.VideoUrl
 	}
 	if req.Milestones != nil {
 		s.Milestones = *req.Milestones
@@ -770,10 +668,10 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 		s.Website = common.NormalizeWebsite(*req.Website)
 	}
 	if req.Stage != nil {
-		s.Stage = *req.Stage
+		s.Stage = string(*req.Stage)
 	}
 	if req.Industry != nil {
-		s.Industry = *req.Industry
+		s.Industry = string(*req.Industry)
 	}
 	if req.TeamSize != nil {
 		s.TeamSize = *req.TeamSize
@@ -806,7 +704,7 @@ func applyStartupFields(s *models.Startup, req *startupRequest) {
 		s.IsRaising = *req.IsRaising
 	}
 	if req.CurrentRound != nil {
-		s.CurrentRound = *req.CurrentRound
+		s.CurrentRound = string(*req.CurrentRound)
 	}
 	if req.FundingAsk != nil {
 		s.FundingAsk = *req.FundingAsk

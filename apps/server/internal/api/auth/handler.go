@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/supertokens/supertokens-golang/ingredients/emaildelivery"
 	"github.com/supertokens/supertokens-golang/recipe/passwordless"
@@ -14,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/narval/server/internal/accounts"
+	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
@@ -55,42 +57,40 @@ func (h *Handler) isAdmin(email string) bool {
 
 // Register initiates passwordless signup - creates OTP and sends via email.
 func (h *Handler) Register(c *gin.Context) {
-	var req struct {
-		AccountType string  `json:"account_type" binding:"required,oneof=user startup"`
-		Email       string  `json:"email"`    // required for both account types
-		Nickname    string  `json:"nickname"` // user path
-		Name        *string `json:"name"`     // startup path
-	}
+	var req gen.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
 		return
 	}
 
-	var email, nickname string
+	email := string(req.Email)
+	var nickname string
 
 	// Handle different registration flows. Domain verification is no longer part
 	// of signup — every account starts unverified and verifies its domain later
 	// from the profile.
-	if req.AccountType == "user" {
+	switch req.AccountType {
+	case gen.AccountTypeUser:
 		// User registration: email + nickname required
-		if req.Email == "" || req.Nickname == "" {
+		if email == "" || req.Nickname == nil || *req.Nickname == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email and nickname required for user registration"})
 			return
 		}
-		email = req.Email
-		nickname = req.Nickname
-	} else {
+		nickname = *req.Nickname
+	case gen.AccountTypeStartup:
 		// Startup registration: name + email required
 		if req.Name == nil || *req.Name == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "name is required for startup registration"})
 			return
 		}
-		if req.Email == "" {
+		if email == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email is required"})
 			return
 		}
-		email = req.Email
 		nickname = *req.Name
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "account_type must be user or startup"})
+		return
 	}
 
 	// Validate email format
@@ -161,19 +161,20 @@ func (h *Handler) Register(c *gin.Context) {
 
 // Verify consumes the OTP code and creates a user + session.
 func (h *Handler) Verify(c *gin.Context) {
-	var req struct {
-		Email            string `json:"email" binding:"required,email"`
-		Code             string `json:"code" binding:"required"`
-		PreAuthSessionID string `json:"pre_auth_session_id"`
-	}
+	var req gen.VerifyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
+		return
+	}
+	email := string(req.Email)
+	if email == "" || req.Code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "email and code are required"})
 		return
 	}
 
 	// Get registration metadata (or login flow)
 	var draft models.RegistrationDraft
-	draftErr := h.db.Where("email = ?", req.Email).First(&draft).Error
+	draftErr := h.db.Where("email = ?", email).First(&draft).Error
 
 	// Consume the OTP code via SuperTokens
 	tenantID := "public"
@@ -223,7 +224,7 @@ func (h *Handler) Verify(c *gin.Context) {
 			ClaimToken:  draft.ClaimToken,
 		}
 	}
-	user, err := accounts.LinkOrCreate(h.db, req.Email, authUserID, intent)
+	user, err := accounts.LinkOrCreate(h.db, email, authUserID, intent)
 	if err != nil {
 		switch {
 		case errors.Is(err, accounts.ErrAlreadyHasProfile):
@@ -251,35 +252,48 @@ func (h *Handler) Verify(c *gin.Context) {
 
 	h.logger.Printf("User verified and logged in: %s", user.Email)
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":           user.ID,
-		"auth_user_id": user.AuthUserID,
-		"email":        user.Email,
-		"nickname":     user.Nickname,
-		"account_type": user.AccountType,
-	})
+	c.JSON(http.StatusOK, h.userProfileResponse(&user))
+}
+
+// userProfileResponse builds the shared UserProfile payload returned by Verify
+// and GetMe.
+func (h *Handler) userProfileResponse(user *models.User) gen.UserProfile {
+	id, _ := uuid.Parse(user.ID)
+	return gen.UserProfile{
+		Id:          id,
+		AuthUserId:  user.AuthUserID,
+		Email:       user.Email,
+		Nickname:    user.Nickname,
+		AccountType: gen.AccountType(user.AccountType),
+		IsAdmin:     h.isAdmin(user.Email),
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   &user.UpdatedAt,
+	}
 }
 
 // Login initiates passwordless login - sends OTP via email.
 func (h *Handler) Login(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-	}
+	var req gen.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
+		return
+	}
+	email := string(req.Email)
+	if !isValidEmail(email) {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "invalid email format"})
 		return
 	}
 
 	// Check if user exists with this email
 	var existingUser models.User
-	if err := h.db.Where("email = ?", req.Email).First(&existingUser).Error; err != nil {
+	if err := h.db.Where("email = ?", email).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"code": "USER_NOT_FOUND", "message": "no account found with this email"})
 		return
 	}
 
 	// Create SuperTokens passwordless code
 	tenantID := "public"
-	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, req.Email, nil)
+	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, email, nil)
 	if err != nil {
 		h.logger.Printf("SuperTokens CreateCode failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
@@ -289,13 +303,13 @@ func (h *Handler) Login(c *gin.Context) {
 	// Store PreAuthSessionID and DeviceID in a temporary draft for login verification
 	// This allows the verify endpoint to find the correct session
 	draft := models.RegistrationDraft{
-		Email:            req.Email,
+		Email:            email,
 		Nickname:         existingUser.Nickname,
 		AccountType:      existingUser.AccountType,
 		PreAuthSessionID: codeResp.OK.PreAuthSessionID,
 		DeviceID:         codeResp.OK.DeviceID,
 	}
-	h.db.Where("email = ?", req.Email).Delete(&models.RegistrationDraft{})
+	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
 	if err := h.db.Create(&draft).Error; err != nil {
 		h.logger.Printf("failed to create login draft: %v", err)
 		// Non-fatal, continue with email sending
@@ -305,7 +319,7 @@ func (h *Handler) Login(c *gin.Context) {
 	userInputCode := codeResp.OK.UserInputCode
 	err = passwordless.SendEmail(emaildelivery.EmailType{
 		PasswordlessLogin: &emaildelivery.PasswordlessLoginType{
-			Email:            req.Email,
+			Email:            email,
 			UserInputCode:    &userInputCode,
 			UrlWithLinkCode:  nil, // OTP-only flow, no magic link
 			CodeLifetime:     codeResp.OK.CodeLifetime,
@@ -319,7 +333,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
-	h.logger.Printf("Login code sent to %s", req.Email)
+	h.logger.Printf("Login code sent to %s", email)
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "verification code sent to email",
 	})
@@ -330,12 +344,14 @@ func (h *Handler) Login(c *gin.Context) {
 // on a draft so Verify binds the shell to them. Works for brand-new emails and
 // existing accounts alike (unlike Register, which rejects existing emails).
 func (h *Handler) StartClaim(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-		Token string `json:"token" binding:"required"`
-	}
+	var req gen.StartClaimRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
+		return
+	}
+	email := string(req.Email)
+	if !isValidEmail(email) || req.Token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "valid email and token are required"})
 		return
 	}
 
@@ -350,7 +366,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	// account. bindClaim enforces this authoritatively, but catching it here
 	// avoids sending a code for a claim that can't complete.
 	var existing models.User
-	if err := h.db.Where("email = ?", req.Email).First(&existing).Error; err == nil {
+	if err := h.db.Where("email = ?", email).First(&existing).Error; err == nil {
 		var owned int64
 		h.db.Model(&models.Startup{}).
 			Where("owner_id = ? AND claimed = ?", existing.ID, true).
@@ -362,7 +378,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	}
 
 	tenantID := "public"
-	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, req.Email, nil)
+	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, email, nil)
 	if err != nil {
 		h.logger.Printf("StartClaim CreateCode failed: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
@@ -370,7 +386,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	}
 
 	draft := models.RegistrationDraft{
-		Email:            req.Email,
+		Email:            email,
 		Nickname:         shell.Name,
 		AccountType:      models.AccountTypeStartup,
 		Name:             shell.Name,
@@ -378,7 +394,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 		PreAuthSessionID: codeResp.OK.PreAuthSessionID,
 		DeviceID:         codeResp.OK.DeviceID,
 	}
-	h.db.Where("email = ?", req.Email).Delete(&models.RegistrationDraft{})
+	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
 	if err := h.db.Create(&draft).Error; err != nil {
 		h.logger.Printf("failed to create claim draft: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "claim failed"})
@@ -388,7 +404,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	userInputCode := codeResp.OK.UserInputCode
 	err = passwordless.SendEmail(emaildelivery.EmailType{
 		PasswordlessLogin: &emaildelivery.PasswordlessLoginType{
-			Email:            req.Email,
+			Email:            email,
 			UserInputCode:    &userInputCode,
 			UrlWithLinkCode:  nil,
 			CodeLifetime:     codeResp.OK.CodeLifetime,
@@ -421,11 +437,6 @@ func (h *Handler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})
 }
 
-// Refresh is handled by SuperTokens middleware automatically.
-func (h *Handler) Refresh(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "session refreshed"})
-}
-
 // GetMe returns the current user's profile.
 func (h *Handler) GetMe(c *gin.Context) {
 	authUserID := middleware.GetUserID(c)
@@ -440,25 +451,17 @@ func (h *Handler) GetMe(c *gin.Context) {
 		return
 	}
 
-	// Build response with base user data
-	response := gin.H{
-		"id":           user.ID,
-		"auth_user_id": user.AuthUserID,
-		"email":        user.Email,
-		"nickname":     user.Nickname,
-		"account_type": user.AccountType,
-		"is_admin":     h.isAdmin(user.Email),
-		"created_at":   user.CreatedAt,
-		"updated_at":   user.UpdatedAt,
-	}
+	response := h.userProfileResponse(&user)
 
 	// Look up profile_id and logo_url for startup accounts. Only a claimed
 	// profile is "theirs" — an admin's unclaimed shells never count here.
 	if user.AccountType == models.AccountTypeStartup {
 		var startup models.Startup
 		if err := h.db.Where("owner_id = ? AND claimed = ?", user.ID, true).First(&startup).Error; err == nil {
-			response["profile_id"] = startup.ID
-			response["logo_url"] = startup.LogoURL
+			if pid, err := uuid.Parse(startup.ID); err == nil {
+				response.ProfileId = &pid
+			}
+			response.LogoUrl = &startup.LogoURL
 		}
 	}
 

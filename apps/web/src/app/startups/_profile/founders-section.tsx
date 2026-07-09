@@ -6,7 +6,8 @@ import { SiLinkedin } from "react-icons/si";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
 import PrefixInput from "@/app/_components/shared/prefix-input";
 import { normalizeToHandle } from "@/lib/startup/social-input";
-import { uploadFounderPhoto } from "@/lib/api/client";
+import { uploadFounderPhoto } from "@/lib/api/gen";
+import { unwrap } from "@/lib/api/unwrap";
 import { components } from "@/lib/api/generated";
 import { Button } from "@/components/ui/button";
 import { Section } from "./ui";
@@ -72,8 +73,15 @@ function EditablePhoto({
   const onCropComplete = async (blob: Blob) => {
     setBusy(true);
     try {
-      const next = await uploadFounderPhoto(startupId, blob);
-      onChange(next);
+      // Wrap in a File so the multipart part carries a filename — Go's
+      // FormFile() ignores nameless parts.
+      const photo = new File([blob], "founder.jpg", {
+        type: blob.type || "image/jpeg",
+      });
+      const { url } = await unwrap(
+        uploadFounderPhoto({ path: { id: startupId }, body: { photo } }),
+      );
+      onChange(url);
       closeCropper();
     } catch {
       // keep cropper open to retry

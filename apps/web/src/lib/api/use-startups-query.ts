@@ -20,6 +20,7 @@ import {
   listStartupsOptions,
   listStartupsQueryKey,
 } from "./gen/@tanstack/react-query.gen";
+import { unwrap } from "./unwrap";
 
 export type StartupImageKind = "logo" | "banner";
 
@@ -50,23 +51,8 @@ function sortStartups(list: Startup[], sort: SortOrder): Startup[] {
   return copy;
 }
 
-// Unwrap a generated SDK result, throwing a plain Error on failure so callers
-// (and React Query) see a consistent error. Defaults are omitted from the
-// query so the request — and its cache key — match the server's behaviour.
-async function unwrap<T>(
-  result: Promise<{ data?: T; error?: unknown; response?: Response }>,
-): Promise<T> {
-  const { data, error, response } = await result;
-  if (!response?.ok || error) {
-    const message =
-      error && typeof error === "object" && "message" in error
-        ? String((error as { message: unknown }).message)
-        : `Request failed: ${response?.status ?? "network error"}`;
-    throw new Error(message);
-  }
-  return data as T;
-}
-
+// Defaults are omitted from the query so the request — and its cache key —
+// match the server's behaviour.
 function listQuery({ favorited }: ListFilters): ListStartupsData["query"] {
   const query: NonNullable<ListStartupsData["query"]> = {};
   if (favorited) query.favorited = true;

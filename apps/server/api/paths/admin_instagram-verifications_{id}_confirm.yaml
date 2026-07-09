@@ -2,7 +2,7 @@ post:
   operationId: confirmInstagramVerification
   summary: Confirm a startup's Instagram after matching the DM (admin only)
   security:
-    - bearerAuth: []
+    - adminAuth: []
   parameters:
     - name: id
       in: path

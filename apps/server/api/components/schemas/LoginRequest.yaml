@@ -1,9 +1,7 @@
 type: object
 required:
-  - username
-  - password
+  - email
 properties:
-  username:
+  email:
     type: string
-  password:
-    type: string
+    format: email

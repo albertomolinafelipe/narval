@@ -1,8 +1,11 @@
-package: api
+package: gen
 generate:
   gin-server: true
   models: true
   strict-server: false
-output: ../internal/api/generated.go
+  # Embeds the bundled spec so the router can validate requests against it
+  # (oapi-codegen gin-middleware).
+  embedded-spec: true
+output: ../internal/api/gen/generated.go
 output-options:
   skip-prune: false

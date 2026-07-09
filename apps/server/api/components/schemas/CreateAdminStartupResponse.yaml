@@ -1,0 +1,14 @@
+type: object
+required:
+  - id
+  - name
+  - claim_token
+properties:
+  id:
+    type: string
+    format: uuid
+  name:
+    type: string
+  claim_token:
+    type: string
+    description: Bearer capability for the claim link; hand it to the startup.

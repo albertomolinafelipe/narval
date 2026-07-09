@@ -1,0 +1,25 @@
+get:
+  operationId: getClaimStartup
+  summary: Fetch an unclaimed shell by its claim token (public)
+  description: >-
+    Used by the claim page to preview the profile. The token itself is the
+    capability, so no session is required.
+  parameters:
+    - name: token
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: The unclaimed startup
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Startup.yaml
+    '404':
+      description: No unclaimed startup for this link
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

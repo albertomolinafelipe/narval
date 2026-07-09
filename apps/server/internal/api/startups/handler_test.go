@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
+	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/api/startups"
 	"github.com/narval/server/models"
 )
@@ -97,7 +98,7 @@ func TestListStartups_Empty(t *testing.T) {
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/startups", nil)
 	setUserContext(c, "user-1", "user1@example.com")
 
-	h.ListStartups(c)
+	h.ListStartups(c, gen.ListStartupsParams{})
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var body []any
@@ -212,7 +213,7 @@ func TestListStartups_ReturnsAll(t *testing.T) {
 	c.Request = httptest.NewRequest(http.MethodGet, "/api/v1/startups", nil)
 	setUserContext(c, "u1", "u@e.com")
 
-	h.ListStartups(c)
+	h.ListStartups(c, gen.ListStartupsParams{})
 
 	require.Equal(t, http.StatusOK, w.Code)
 	var body []startupResp

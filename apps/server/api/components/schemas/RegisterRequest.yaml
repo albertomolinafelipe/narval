@@ -1,18 +1,14 @@
 type: object
 required:
-  - password
   - account_type
+  - email
 properties:
   account_type:
     $ref: ./AccountType.yaml
-  password:
-    type: string
-    minLength: 8
-  # For account_type = "user":
   email:
     type: string
     format: email
-    description: Required when account_type is "user"
+  # For account_type = "user":
   nickname:
     type: string
     minLength: 2

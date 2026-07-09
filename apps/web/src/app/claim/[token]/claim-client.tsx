@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
 import { Button } from "@/components/ui/button";
-import { getClaimStartup, startClaim } from "@/lib/api/client";
-import type { components } from "@/lib/api/generated";
-
-type Startup = components["schemas"]["Startup"];
+import { getClaimStartup, startClaim } from "@/lib/api/gen";
+import type { Startup } from "@/lib/api/gen";
+import { unwrap } from "@/lib/api/unwrap";
 
 const apiBase = "/api/proxy";
 
@@ -17,7 +16,7 @@ export default function ClaimClient({ token }: { token: string }) {
 
   useEffect(() => {
     let active = true;
-    getClaimStartup(token)
+    unwrap(getClaimStartup({ path: { token } }))
       .then((s) => active && setShell(s))
       .catch(() => active && setLoadError(true));
     return () => {
@@ -76,7 +75,7 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
     setSubmitting(true);
     setError("");
     try {
-      await startClaim(email.trim(), token);
+      await unwrap(startClaim({ body: { email: email.trim(), token } }));
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

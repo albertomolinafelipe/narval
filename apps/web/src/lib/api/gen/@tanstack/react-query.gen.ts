@@ -12,10 +12,13 @@ import {
   checkStartupWebsite,
   confirmDomainVerification,
   confirmInstagramVerification,
+  createAdminStartup,
   createStartup,
   deleteStartupBanner,
   deleteStartupLogo,
   favoriteStartup,
+  getClaimLink,
+  getClaimStartup,
   getHealth,
   getInstagramVerification,
   getMe,
@@ -26,15 +29,17 @@ import {
   login,
   logout,
   type Options,
-  refreshToken,
   register,
   resetInstagramVerification,
+  startClaim,
   startDomainVerification,
   startInstagramVerification,
   unfavoriteStartup,
   updateStartup,
+  uploadFounderPhoto,
   uploadStartupBanner,
   uploadStartupLogo,
+  uploadStartupScreenshot,
   verify,
 } from "../sdk.gen";
 import type {
@@ -48,6 +53,9 @@ import type {
   ConfirmInstagramVerificationData,
   ConfirmInstagramVerificationError,
   ConfirmInstagramVerificationResponse,
+  CreateAdminStartupData,
+  CreateAdminStartupError,
+  CreateAdminStartupResponse2,
   CreateStartupData,
   CreateStartupError,
   CreateStartupResponse,
@@ -59,6 +67,12 @@ import type {
   DeleteStartupLogoResponse,
   FavoriteStartupData,
   FavoriteStartupError,
+  GetClaimLinkData,
+  GetClaimLinkError,
+  GetClaimLinkResponse,
+  GetClaimStartupData,
+  GetClaimStartupError,
+  GetClaimStartupResponse,
   GetHealthData,
   GetHealthResponse,
   GetInstagramVerificationData,
@@ -79,20 +93,17 @@ import type {
   ListStartupsResponse,
   LoginData,
   LoginError,
-  LoginResponse,
   LogoutData,
-  LogoutError,
-  LogoutResponse,
-  RefreshTokenData,
-  RefreshTokenError,
-  RefreshTokenResponse,
   RegisterData,
   RegisterError,
   ResetInstagramVerificationData,
   ResetInstagramVerificationError,
   ResetInstagramVerificationResponse,
+  StartClaimData,
+  StartClaimError,
   StartDomainVerificationData,
   StartDomainVerificationError,
+  StartDomainVerificationResponse,
   StartInstagramVerificationData,
   StartInstagramVerificationError,
   StartInstagramVerificationResponse,
@@ -102,12 +113,18 @@ import type {
   UpdateStartupData,
   UpdateStartupError,
   UpdateStartupResponse,
+  UploadFounderPhotoData,
+  UploadFounderPhotoError,
+  UploadFounderPhotoResponse,
   UploadStartupBannerData,
   UploadStartupBannerError,
   UploadStartupBannerResponse,
   UploadStartupLogoData,
   UploadStartupLogoError,
   UploadStartupLogoResponse,
+  UploadStartupScreenshotData,
+  UploadStartupScreenshotError,
+  UploadStartupScreenshotResponse,
   VerifyData,
   VerifyError,
   VerifyResponse,
@@ -204,13 +221,13 @@ export const getStatsOptions = (options?: Options<GetStatsData>) =>
   });
 
 /**
- * Login with username and password
+ * Begin passwordless login — sends a verification code
  */
 export const loginMutation = (
   options?: Partial<Options<LoginData>>,
-): UseMutationOptions<LoginResponse, LoginError, Options<LoginData>> => {
+): UseMutationOptions<unknown, LoginError, Options<LoginData>> => {
   const mutationOptions: UseMutationOptions<
-    LoginResponse,
+    unknown,
     LoginError,
     Options<LoginData>
   > = {
@@ -252,7 +269,9 @@ export const registerMutation = (
 };
 
 /**
- * Verify email code and complete account creation
+ * Verify the emailed code and create the account and session
+ *
+ * Consumes the OTP for registration, login, and claim flows alike. On success a SuperTokens session cookie is set.
  */
 export const verifyMutation = (
   options?: Partial<Options<VerifyData>>,
@@ -275,45 +294,18 @@ export const verifyMutation = (
 };
 
 /**
- * Logout (invalidate session)
+ * Logout (revoke the current session)
  */
 export const logoutMutation = (
   options?: Partial<Options<LogoutData>>,
-): UseMutationOptions<LogoutResponse, LogoutError, Options<LogoutData>> => {
+): UseMutationOptions<unknown, DefaultError, Options<LogoutData>> => {
   const mutationOptions: UseMutationOptions<
-    LogoutResponse,
-    LogoutError,
+    unknown,
+    DefaultError,
     Options<LogoutData>
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await logout({
-        ...options,
-        ...fnOptions,
-        throwOnError: true,
-      });
-      return data;
-    },
-  };
-  return mutationOptions;
-};
-
-/**
- * Refresh access token using refresh token
- */
-export const refreshTokenMutation = (
-  options?: Partial<Options<RefreshTokenData>>,
-): UseMutationOptions<
-  RefreshTokenResponse,
-  RefreshTokenError,
-  Options<RefreshTokenData>
-> => {
-  const mutationOptions: UseMutationOptions<
-    RefreshTokenResponse,
-    RefreshTokenError,
-    Options<RefreshTokenData>
-  > = {
-    mutationFn: async (fnOptions) => {
-      const { data } = await refreshToken({
         ...options,
         ...fnOptions,
         throwOnError: true,
@@ -347,6 +339,59 @@ export const getMeOptions = (options?: Options<GetMeData>) =>
       return data;
     },
     queryKey: getMeQueryKey(options),
+  });
+
+/**
+ * Begin claiming an admin-seeded shell — sends a verification code
+ *
+ * Validates the claim token and emails an OTP to the given address. /auth/verify completes the claim and reassigns ownership of the shell. Works for brand-new emails and existing accounts alike.
+ */
+export const startClaimMutation = (
+  options?: Partial<Options<StartClaimData>>,
+): UseMutationOptions<unknown, StartClaimError, Options<StartClaimData>> => {
+  const mutationOptions: UseMutationOptions<
+    unknown,
+    StartClaimError,
+    Options<StartClaimData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await startClaim({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getClaimStartupQueryKey = (
+  options: Options<GetClaimStartupData>,
+) => createQueryKey("getClaimStartup", options);
+
+/**
+ * Fetch an unclaimed shell by its claim token (public)
+ *
+ * Used by the claim page to preview the profile. The token itself is the capability, so no session is required.
+ */
+export const getClaimStartupOptions = (options: Options<GetClaimStartupData>) =>
+  queryOptions<
+    GetClaimStartupResponse,
+    GetClaimStartupError,
+    GetClaimStartupResponse,
+    ReturnType<typeof getClaimStartupQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getClaimStartup({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getClaimStartupQueryKey(options),
   });
 
 export const listStartupsQueryKey = (options?: Options<ListStartupsData>) =>
@@ -676,12 +721,12 @@ export const boostStartupMutation = (
 export const startDomainVerificationMutation = (
   options?: Partial<Options<StartDomainVerificationData>>,
 ): UseMutationOptions<
-  unknown,
+  StartDomainVerificationResponse,
   StartDomainVerificationError,
   Options<StartDomainVerificationData>
 > => {
   const mutationOptions: UseMutationOptions<
-    unknown,
+    StartDomainVerificationResponse,
     StartDomainVerificationError,
     Options<StartDomainVerificationData>
   > = {
@@ -769,6 +814,120 @@ export const startInstagramVerificationMutation = (
   > = {
     mutationFn: async (fnOptions) => {
       const { data } = await startInstagramVerification({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+export const getClaimLinkQueryKey = (options: Options<GetClaimLinkData>) =>
+  createQueryKey("getClaimLink", options);
+
+/**
+ * Get the claim token for a startup shell (owner only)
+ *
+ * Lets the admin (re)copy the claim link from the edit page. The token is empty once the profile has been claimed.
+ */
+export const getClaimLinkOptions = (options: Options<GetClaimLinkData>) =>
+  queryOptions<
+    GetClaimLinkResponse,
+    GetClaimLinkError,
+    GetClaimLinkResponse,
+    ReturnType<typeof getClaimLinkQueryKey>
+  >({
+    queryFn: async ({ queryKey, signal }) => {
+      const { data } = await getClaimLink({
+        ...options,
+        ...queryKey[0],
+        signal,
+        throwOnError: true,
+      });
+      return data;
+    },
+    queryKey: getClaimLinkQueryKey(options),
+  });
+
+/**
+ * Upload a founder photo and get back its public URL
+ *
+ * The caller stores the URL inside the startup's founders JSON; this endpoint does not modify the startup itself.
+ */
+export const uploadFounderPhotoMutation = (
+  options?: Partial<Options<UploadFounderPhotoData>>,
+): UseMutationOptions<
+  UploadFounderPhotoResponse,
+  UploadFounderPhotoError,
+  Options<UploadFounderPhotoData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UploadFounderPhotoResponse,
+    UploadFounderPhotoError,
+    Options<UploadFounderPhotoData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await uploadFounderPhoto({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Upload a product screenshot and get back its public URL
+ *
+ * The caller stores the URL inside the startup's gallery JSON array; this endpoint does not modify the startup itself.
+ */
+export const uploadStartupScreenshotMutation = (
+  options?: Partial<Options<UploadStartupScreenshotData>>,
+): UseMutationOptions<
+  UploadStartupScreenshotResponse,
+  UploadStartupScreenshotError,
+  Options<UploadStartupScreenshotData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    UploadStartupScreenshotResponse,
+    UploadStartupScreenshotError,
+    Options<UploadStartupScreenshotData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await uploadStartupScreenshot({
+        ...options,
+        ...fnOptions,
+        throwOnError: true,
+      });
+      return data;
+    },
+  };
+  return mutationOptions;
+};
+
+/**
+ * Create an unclaimed startup shell (admin only)
+ *
+ * Seeds a shell profile owned by the admin. The admin fills it in via the normal edit page and hands the claim link to the startup. Skips the public one-per-owner / account-type / website rules — those only apply to real self-service registrations.
+ */
+export const createAdminStartupMutation = (
+  options?: Partial<Options<CreateAdminStartupData>>,
+): UseMutationOptions<
+  CreateAdminStartupResponse2,
+  CreateAdminStartupError,
+  Options<CreateAdminStartupData>
+> => {
+  const mutationOptions: UseMutationOptions<
+    CreateAdminStartupResponse2,
+    CreateAdminStartupError,
+    Options<CreateAdminStartupData>
+  > = {
+    mutationFn: async (fnOptions) => {
+      const { data } = await createAdminStartup({
         ...options,
         ...fnOptions,
         throwOnError: true,

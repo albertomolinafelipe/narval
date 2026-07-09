@@ -1,6 +1,9 @@
 post:
   operationId: verify
-  summary: Verify email code and complete account creation
+  summary: Verify the emailed code and create the account and session
+  description: >-
+    Consumes the OTP for registration, login, and claim flows alike. On success
+    a SuperTokens session cookie is set.
   requestBody:
     required: true
     content:
@@ -8,20 +11,26 @@ post:
         schema:
           $ref: ../components/schemas/VerifyRequest.yaml
   responses:
-    '201':
-      description: Account created
+    '200':
+      description: Verified and logged in
       content:
         application/json:
           schema:
             $ref: ../components/schemas/UserProfile.yaml
     '400':
-      description: Invalid or expired code
+      description: Validation error, or the stashed claim link is invalid
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Invalid or expired verification code
       content:
         application/json:
           schema:
             $ref: ../components/schemas/Error.yaml
     '409':
-      description: Email already registered
+      description: Account already has a startup profile
       content:
         application/json:
           schema:

@@ -8,7 +8,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { AlertCircle, BadgeCheck, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { createAdminStartup } from "@/lib/api/client";
+import { createAdminStartup } from "@/lib/api/gen";
+import { unwrap } from "@/lib/api/unwrap";
 import { useAuthModal } from "../auth/auth-modal-context";
 
 export default function UserMenu() {
@@ -26,7 +27,7 @@ export default function UserMenu() {
     if (!name) return;
     setCreating(true);
     try {
-      const { id } = await createAdminStartup(name);
+      const { id } = await unwrap(createAdminStartup({ body: { name } }));
       setOpen(false);
       router.push(`/startups/in/${id}/edit`);
     } catch (err) {

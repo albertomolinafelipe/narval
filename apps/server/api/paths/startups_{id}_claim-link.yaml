@@ -1,19 +1,25 @@
-post:
-  operationId: resetInstagramVerification
-  summary: Reset a verification, unlocking the handle (admin only)
+get:
+  operationId: getClaimLink
+  summary: Get the claim token for a startup shell (owner only)
+  description: >-
+    Lets the admin (re)copy the claim link from the edit page. The token is
+    empty once the profile has been claimed.
   security:
-    - adminAuth: []
+    - bearerAuth: []
   parameters:
     - name: id
       in: path
-      description: The verification id.
       required: true
       schema:
         type: string
         format: uuid
   responses:
-    '204':
-      description: Verification cleared; the startup can lock a new handle
+    '200':
+      description: Claim link state
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ClaimLinkResponse.yaml
     '401':
       description: Unauthorized
       content:
@@ -21,13 +27,13 @@ post:
           schema:
             $ref: ../components/schemas/Error.yaml
     '403':
-      description: Admin access required
+      description: Forbidden – not the owner
       content:
         application/json:
           schema:
             $ref: ../components/schemas/Error.yaml
     '404':
-      description: Verification not found
+      description: Startup not found
       content:
         application/json:
           schema:

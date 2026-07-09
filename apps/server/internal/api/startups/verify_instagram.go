@@ -12,7 +12,6 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"gorm.io/gorm"
 
-	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
 )
 
@@ -103,15 +102,6 @@ func adminInstagramVerificationResponse(v models.InstagramVerification, startupN
 	}
 }
 
-// requireAdmin writes a 403 and returns false when the caller is not an admin.
-func (h *Handler) requireAdmin(c *gin.Context) bool {
-	if !h.isAdmin(middleware.GetUserEmail(c)) {
-		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "admin access required"})
-		return false
-	}
-	return true
-}
-
 // StartInstagramVerification locks an Instagram handle to the startup and issues
 // the code the owner must DM to the company account from that handle.
 func (h *Handler) StartInstagramVerification(c *gin.Context, id openapi_types.UUID) {
@@ -191,13 +181,10 @@ type instagramVerificationRow struct {
 	StartupName string
 }
 
-// ListInstagramVerifications returns verifications for the admin console,
-// optionally filtered by status ("pending" or "verified"; "" for all).
+// ListInstagramVerifications returns verifications for the admin console
+// (adminAuth routes are whitelist-gated in the router), optionally filtered by
+// status ("pending" or "verified"; "" for all).
 func (h *Handler) ListInstagramVerifications(c *gin.Context, status string) {
-	if !h.requireAdmin(c) {
-		return
-	}
-
 	q := h.DB.Model(&models.InstagramVerification{}).
 		Select("instagram_verifications.*, startups.name AS startup_name").
 		Joins("JOIN startups ON startups.id = instagram_verifications.startup_id").
@@ -226,10 +213,6 @@ func (h *Handler) ListInstagramVerifications(c *gin.Context, status string) {
 // ConfirmInstagramVerification marks a challenge verified and flips the
 // startup's Instagram flags. Admin only.
 func (h *Handler) ConfirmInstagramVerification(c *gin.Context, id openapi_types.UUID) {
-	if !h.requireAdmin(c) {
-		return
-	}
-
 	var v models.InstagramVerification
 	if err := h.DB.First(&v, "id = ?", id.String()).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -265,10 +248,6 @@ func (h *Handler) ConfirmInstagramVerification(c *gin.Context, id openapi_types.
 // ResetInstagramVerification deletes a challenge and clears the startup's
 // verified flag. Admin only.
 func (h *Handler) ResetInstagramVerification(c *gin.Context, id openapi_types.UUID) {
-	if !h.requireAdmin(c) {
-		return
-	}
-
 	var v models.InstagramVerification
 	if err := h.DB.First(&v, "id = ?", id.String()).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

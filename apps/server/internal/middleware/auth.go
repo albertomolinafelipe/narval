@@ -93,6 +93,25 @@ func GetDBUserID(c *gin.Context) string {
 	return s
 }
 
+// RequireAdmin rejects requests whose authenticated email is not on the admin
+// whitelist. It must run after Auth has populated the user context.
+func RequireAdmin(adminEmails []string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		email := GetUserEmail(c)
+		if email != "" {
+			for _, a := range adminEmails {
+				if a == email {
+					return
+				}
+			}
+		}
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+			"code":    "FORBIDDEN",
+			"message": "admin access required",
+		})
+	}
+}
+
 // OptionalAuth extracts user identity from the SuperTokens session if present,
 // but does NOT reject requests without valid auth. This is used for public endpoints
 // that want to personalize responses (e.g., is_bookmarked) when a user is logged in.

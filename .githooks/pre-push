@@ -14,7 +14,7 @@ fi
 echo "pre-push: generated code check..."
 make generate >/dev/null 2>&1
 GENERATED_PATHS="apps/server/api/openapi.bundled.yaml \
-    apps/server/internal/api/generated.go \
+    apps/server/internal/api/gen \
     apps/web/src/lib/api/gen \
     apps/web/src/lib/api/generated.ts"
 if ! git diff --exit-code -- $GENERATED_PATHS; then

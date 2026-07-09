@@ -24,18 +24,7 @@ export type Stats = {
 };
 
 export type LoginRequest = {
-  username: string;
-  password: string;
-};
-
-export type TokenResponse = {
-  access_token: string;
-  token_type: string;
-  /**
-   * Seconds until expiry
-   */
-  expires_in: number;
-  refresh_token?: string;
+  email: string;
 };
 
 export type Error = {
@@ -47,11 +36,7 @@ export type AccountType = "user" | "startup";
 
 export type RegisterRequest = {
   account_type: AccountType;
-  password: string;
-  /**
-   * Required when account_type is "user"
-   */
-  email?: string;
+  email: string;
   /**
    * Required when account_type is "user"
    */
@@ -63,8 +48,8 @@ export type RegisterRequest = {
 };
 
 export type VerifyRequest = {
-  email?: string;
-  code?: string;
+  email: string;
+  code: string;
 };
 
 export type UserProfile = {
@@ -76,14 +61,31 @@ export type UserProfile = {
   email: string;
   nickname: string;
   account_type: AccountType;
+  /**
+   * Whether the email is on the ADMIN_EMAILS whitelist
+   */
+  is_admin: boolean;
   created_at: string;
+  updated_at?: string;
+  /**
+   * For startup accounts: the id of the claimed startup profile, once one exists
+   */
+  profile_id?: string;
+  /**
+   * For startup accounts: the profile's logo URL
+   */
+  logo_url?: string;
 };
 
-export type RefreshRequest = {
+export type StartClaimRequest = {
   /**
-   * The refresh token obtained from login
+   * Address the verification code is sent to; becomes the account email.
    */
-  refresh_token: string;
+  email: string;
+  /**
+   * Claim token from the claim link.
+   */
+  token: string;
 };
 
 export type Stage =
@@ -199,6 +201,10 @@ export type Startup = {
    * Whether the startup profile has been fully set up (defaults to false)
    */
   profile_setup?: boolean;
+  /**
+   * False for admin-seeded shells that have not been claimed by the startup yet
+   */
+  claimed?: boolean;
   created_at: string;
   updated_at?: string;
   /**
@@ -249,6 +255,10 @@ export type CreateStartupRequest = {
 
 export type WebsiteCheckResponse = {
   available: boolean;
+  /**
+   * Why the website was rejected (only present when unavailable).
+   */
+  reason?: "subdomain";
 };
 
 export type UpdateStartupRequest = {
@@ -360,6 +370,34 @@ export type StartInstagramVerificationRequest = {
   handle: string;
 };
 
+export type ClaimLinkResponse = {
+  claimed: boolean;
+  /**
+   * Empty once the profile has been claimed.
+   */
+  claim_token: string;
+};
+
+export type UploadUrlResponse = {
+  /**
+   * Public URL of the uploaded image.
+   */
+  url: string;
+};
+
+export type CreateAdminStartupRequest = {
+  name: string;
+};
+
+export type CreateAdminStartupResponse = {
+  id: string;
+  name: string;
+  /**
+   * Bearer capability for the claim link; hand it to the startup.
+   */
+  claim_token: string;
+};
+
 /**
  * A pending or verified Instagram challenge as shown in the admin console.
  */
@@ -425,21 +463,23 @@ export type LoginData = {
 
 export type LoginErrors = {
   /**
-   * Invalid credentials
+   * Validation error
    */
-  401: Error;
+  400: Error;
+  /**
+   * No account with this email
+   */
+  404: Error;
 };
 
 export type LoginError = LoginErrors[keyof LoginErrors];
 
 export type LoginResponses = {
   /**
-   * Tokens issued
+   * Verification code sent; proceed to /auth/verify
    */
-  200: TokenResponse;
+  202: unknown;
 };
-
-export type LoginResponse = LoginResponses[keyof LoginResponses];
 
 export type RegisterData = {
   body: RegisterRequest;
@@ -477,11 +517,15 @@ export type VerifyData = {
 
 export type VerifyErrors = {
   /**
-   * Invalid or expired code
+   * Validation error, or the stashed claim link is invalid
    */
   400: Error;
   /**
-   * Email already registered
+   * Invalid or expired verification code
+   */
+  401: Error;
+  /**
+   * Account already has a startup profile
    */
   409: Error;
 };
@@ -490,9 +534,9 @@ export type VerifyError = VerifyErrors[keyof VerifyErrors];
 
 export type VerifyResponses = {
   /**
-   * Account created
+   * Verified and logged in
    */
-  201: UserProfile;
+  200: UserProfile;
 };
 
 export type VerifyResponse = VerifyResponses[keyof VerifyResponses];
@@ -504,53 +548,12 @@ export type LogoutData = {
   url: "/auth/logout";
 };
 
-export type LogoutErrors = {
-  /**
-   * Unauthorized
-   */
-  401: Error;
-};
-
-export type LogoutError = LogoutErrors[keyof LogoutErrors];
-
 export type LogoutResponses = {
   /**
-   * Logged out
+   * Session revoked (also returned when no session was active)
    */
-  204: void;
+  200: unknown;
 };
-
-export type LogoutResponse = LogoutResponses[keyof LogoutResponses];
-
-export type RefreshTokenData = {
-  body: RefreshRequest;
-  path?: never;
-  query?: never;
-  url: "/auth/refresh";
-};
-
-export type RefreshTokenErrors = {
-  /**
-   * Missing or invalid request body
-   */
-  400: Error;
-  /**
-   * Invalid or expired refresh token
-   */
-  401: Error;
-};
-
-export type RefreshTokenError = RefreshTokenErrors[keyof RefreshTokenErrors];
-
-export type RefreshTokenResponses = {
-  /**
-   * New tokens issued
-   */
-  200: TokenResponse;
-};
-
-export type RefreshTokenResponse =
-  RefreshTokenResponses[keyof RefreshTokenResponses];
 
 export type GetMeData = {
   body?: never;
@@ -564,6 +567,10 @@ export type GetMeErrors = {
    * Unauthorized
    */
   401: Error;
+  /**
+   * No local profile for this session
+   */
+  404: Error;
 };
 
 export type GetMeError = GetMeErrors[keyof GetMeErrors];
@@ -576,6 +583,66 @@ export type GetMeResponses = {
 };
 
 export type GetMeResponse = GetMeResponses[keyof GetMeResponses];
+
+export type StartClaimData = {
+  body: StartClaimRequest;
+  path?: never;
+  query?: never;
+  url: "/auth/claim";
+};
+
+export type StartClaimErrors = {
+  /**
+   * Validation error
+   */
+  400: Error;
+  /**
+   * Claim link invalid or already used
+   */
+  404: Error;
+  /**
+   * Email already owns a startup profile
+   */
+  409: Error;
+};
+
+export type StartClaimError = StartClaimErrors[keyof StartClaimErrors];
+
+export type StartClaimResponses = {
+  /**
+   * Verification code sent; proceed to /auth/verify
+   */
+  202: unknown;
+};
+
+export type GetClaimStartupData = {
+  body?: never;
+  path: {
+    token: string;
+  };
+  query?: never;
+  url: "/claim/{token}";
+};
+
+export type GetClaimStartupErrors = {
+  /**
+   * No unclaimed startup for this link
+   */
+  404: Error;
+};
+
+export type GetClaimStartupError =
+  GetClaimStartupErrors[keyof GetClaimStartupErrors];
+
+export type GetClaimStartupResponses = {
+  /**
+   * The unclaimed startup
+   */
+  200: Startup;
+};
+
+export type GetClaimStartupResponse =
+  GetClaimStartupResponses[keyof GetClaimStartupResponses];
 
 export type ListStartupsData = {
   body?: never;
@@ -1025,8 +1092,17 @@ export type StartDomainVerificationResponses = {
   /**
    * Verification code sent to the work email
    */
-  202: unknown;
+  202: {
+    /**
+     * The full address the code was sent to.
+     */
+    email: string;
+    message?: string;
+  };
 };
+
+export type StartDomainVerificationResponse =
+  StartDomainVerificationResponses[keyof StartDomainVerificationResponses];
 
 export type ConfirmDomainVerificationData = {
   body: ConfirmDomainVerificationRequest;
@@ -1150,6 +1226,167 @@ export type StartInstagramVerificationResponses = {
 
 export type StartInstagramVerificationResponse =
   StartInstagramVerificationResponses[keyof StartInstagramVerificationResponses];
+
+export type GetClaimLinkData = {
+  body?: never;
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/startups/{id}/claim-link";
+};
+
+export type GetClaimLinkErrors = {
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Forbidden – not the owner
+   */
+  403: Error;
+  /**
+   * Startup not found
+   */
+  404: Error;
+};
+
+export type GetClaimLinkError = GetClaimLinkErrors[keyof GetClaimLinkErrors];
+
+export type GetClaimLinkResponses = {
+  /**
+   * Claim link state
+   */
+  200: ClaimLinkResponse;
+};
+
+export type GetClaimLinkResponse =
+  GetClaimLinkResponses[keyof GetClaimLinkResponses];
+
+export type UploadFounderPhotoData = {
+  body: {
+    photo: Blob | File;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/startups/{id}/founder-photo";
+};
+
+export type UploadFounderPhotoErrors = {
+  /**
+   * Invalid file
+   */
+  400: Error;
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Forbidden – not the owner
+   */
+  403: Error;
+  /**
+   * Startup not found
+   */
+  404: Error;
+};
+
+export type UploadFounderPhotoError =
+  UploadFounderPhotoErrors[keyof UploadFounderPhotoErrors];
+
+export type UploadFounderPhotoResponses = {
+  /**
+   * Photo uploaded
+   */
+  200: UploadUrlResponse;
+};
+
+export type UploadFounderPhotoResponse =
+  UploadFounderPhotoResponses[keyof UploadFounderPhotoResponses];
+
+export type UploadStartupScreenshotData = {
+  body: {
+    screenshot: Blob | File;
+  };
+  path: {
+    id: string;
+  };
+  query?: never;
+  url: "/startups/{id}/screenshot";
+};
+
+export type UploadStartupScreenshotErrors = {
+  /**
+   * Invalid file
+   */
+  400: Error;
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Forbidden – not the owner
+   */
+  403: Error;
+  /**
+   * Startup not found
+   */
+  404: Error;
+};
+
+export type UploadStartupScreenshotError =
+  UploadStartupScreenshotErrors[keyof UploadStartupScreenshotErrors];
+
+export type UploadStartupScreenshotResponses = {
+  /**
+   * Screenshot uploaded
+   */
+  200: UploadUrlResponse;
+};
+
+export type UploadStartupScreenshotResponse =
+  UploadStartupScreenshotResponses[keyof UploadStartupScreenshotResponses];
+
+export type CreateAdminStartupData = {
+  body: CreateAdminStartupRequest;
+  path?: never;
+  query?: never;
+  url: "/admin/startups";
+};
+
+export type CreateAdminStartupErrors = {
+  /**
+   * Validation error
+   */
+  400: Error;
+  /**
+   * Unauthorized
+   */
+  401: Error;
+  /**
+   * Admin access required
+   */
+  403: Error;
+  /**
+   * Startup name already taken
+   */
+  409: Error;
+};
+
+export type CreateAdminStartupError =
+  CreateAdminStartupErrors[keyof CreateAdminStartupErrors];
+
+export type CreateAdminStartupResponses = {
+  /**
+   * Shell created
+   */
+  201: CreateAdminStartupResponse;
+};
+
+export type CreateAdminStartupResponse2 =
+  CreateAdminStartupResponses[keyof CreateAdminStartupResponses];
 
 export type ListInstagramVerificationsData = {
   body?: never;
