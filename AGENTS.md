@@ -29,9 +29,14 @@ slice, stop for manual testing, then continue. Decisions already taken:
 2. **CI hardening** *(done)* — lint + generate-check + unit + integration jobs run on PRs
    and pushes and gate the deploy; the integration suite was repaired (it had bit-rotted
    against the Keycloak-era API) and runs via `make test-integration`.
-3. **Spec-first consolidation (backend)** — add the six unspecced routes to the OpenAPI spec
-   (admin routes get a proper security scheme), regenerate, delete `lib/api/client.ts`;
-   align Go handlers with generated types/enums.
+3. **Spec-first consolidation (backend)** *(done)* — all routes are in the spec (admin
+   routes use the `adminAuth` scheme, whitelist enforced by `middleware.RequireAdmin` in
+   the router, not per-handler); the stale Keycloak-era auth schemas were rewritten to
+   match reality and dead `/auth/refresh` was deleted; every request is validated against
+   the embedded spec (`oapi-codegen/gin-middleware`), so enums/lengths/required live only
+   in the spec; handlers bind generated request types and return generated response
+   structs (`gen.Startup` replaced the 45-key response map); generated Go code moved to
+   `internal/api/gen` so handlers can import it; `lib/api/client.ts` deleted.
 4. **Frontend dedup** — remove the legacy `openapi-typescript` layer (`generated.ts`), wire
    `zod.gen.ts` into `startup-schema.ts`, migrate the last hand-rolled fetches, unify the
    links registry.
@@ -58,16 +63,16 @@ slice, stop for manual testing, then continue. Decisions already taken:
   compares `user.id === startup.owner_id`.)* Every startup response included the founder's
   login email.
 - **A4 — Docs contradict the shell-visibility behavior (reframed).** `ListStartups` filters
-  only `profile_setup = true` (startups/handler.go:179), while the `Claimed` model comment
+  only `profile_setup = true`, while the `Claimed` model comment
   claims shells are "excluded from public reads". The behavior is the **intended** one
   (public listing of completed shells, decision above); the model comment and the original
   claim-flow design notes are what need fixing.
 - **A5 — One-claimed-profile-per-owner is check-then-create.** The design called for a partial
   unique index `owner_id WHERE claimed = true`; what exists is racy application-side counts
-  (startups/handler.go:288, accounts/accounts.go:115). `ClaimToken` also has no unique index
+  (startups `CreateStartup`, accounts `bindClaim`). `ClaimToken` also has no unique index
   (claim lookups scan the table), no expiry, no email pinning.
 - **A6 — SuperTokens domains hardcoded.** `APIDomain: "http://localhost:8080"` and
-  `WebsiteDomain: "http://localhost:3000"` in supertokens/init.go:87-88 — works in prod only
+  `WebsiteDomain: "http://localhost:3000"` in supertokens/init.go — works in prod only
   because all traffic rides the cookie proxy. Should come from config.
 - **A7 — No rate limiting on OTP endpoints.** `Register`/`Login`/`StartClaim` each send an
   email per request, unthrottled; also email enumeration (409 `EMAIL_EXISTS` on register,
@@ -82,16 +87,16 @@ slice, stop for manual testing, then continue. Decisions already taken:
 - **A11 — Smaller items.** No graceful shutdown (`router.Run`, unmanaged cleanup goroutines);
   `CheckStartupWebsite` and `GetStats` ignore DB errors; uploads trust the client
   Content-Type and fall back to `image/jpeg` instead of rejecting non-images; raw
-  `header.Filename` goes into object keys; `Verify`'s `pre_auth_session_id` request field is
-  accepted and ignored; `Login` treats a failed draft insert as non-fatal but the subsequent
-  verify then cannot succeed.
+  `header.Filename` goes into object keys; `Login` treats a failed draft insert as
+  non-fatal but the subsequent verify then cannot succeed. *(Fixed in slice 3: the ignored
+  `pre_auth_session_id` field on Verify and the dead `/auth/refresh` stub were removed.)*
 
 #### B. The half-finished "one spec, zero hand-copies" goal
 
-- **B1 — Six routes live outside the OpenAPI spec** (internal/api/router.go):
-  `POST /admin/startups`, `GET /startups/:id/claim-link`, `POST /auth/claim`,
-  `GET /claim/:token`, `POST /startups/:id/founder-photo`, `POST /startups/:id/screenshot`.
-  This is the root cause keeping `lib/api/client.ts` alive.
+- **B1 — Six routes live outside the OpenAPI spec.** *(Fixed in slice 3: all routes are
+  spec-defined and registered through the generated wrapper; the manual `v1.POST(...)`
+  registrations are gone. The auth path specs, which still described the Keycloak
+  password/token flow, were rewritten against the real OTP handlers at the same time.)*
 - **B2 — Two parallel generated frontend layers.** `npm run generate` runs both
   `openapi-typescript` (→ `src/lib/api/generated.ts`) and hey-api (→ `src/lib/api/gen/`);
   ~25 files still import the legacy `generated.ts` types.
@@ -99,14 +104,17 @@ slice, stop for manual testing, then continue. Decisions already taken:
   `lib/schemas/startup-schema.ts` hand-codes `VALID_STAGES`/`VALID_INDUSTRIES`/`VALID_ROUNDS`
   as raw, untyped string arrays — a live drift bug (`lib/enums.ts` is typed against the
   generated unions and is safe; the schema copies are not).
-- **B4 — The Go side is not spec-driven either.** Handlers restate enums by hand
-  (startups/handler.go:32-51), duplicate `UpdateStartupRequest` as a hand-written
-  `startupRequest` struct, and `startupResponse` hand-builds a ~45-field
-  `map[string]interface{}` instead of using generated types. Adding a field means touching
-  five places.
-- **B5 — Five files still hand-fetch endpoints that are in the spec**: `auth-button.tsx`,
-  `lib/user/context.tsx`, `profile-setup-checker.tsx`, `user-menu.tsx` (login/verify/me,
-  startups list/detail). Migratable with no backend work.
+- **B4 — The Go side is not spec-driven either.** *(Fixed in slice 3: handlers bind
+  `gen.UpdateStartupRequest`/`gen.CreateAdminStartupRequest`/etc., `startupResponse`
+  builds a typed `gen.Startup`, and the hand-coded enum maps and length checks are gone —
+  the router validates every request against the embedded spec via
+  `oapi-codegen/gin-middleware`, so adding a field means editing the spec and
+  regenerating.)*
+- **B5 — Files still hand-fetch endpoints that are in the spec**: `auth-button.tsx`,
+  `lib/user/context.tsx`, `profile-setup-checker.tsx`, `user-menu.tsx`, `claim-client.tsx`
+  (login/verify/me, startups list/detail). Migratable with no backend work — slice 4.
+  *(The domain-verification, check-website, stats, claim, and upload calls were migrated
+  to the generated SDK in slice 3.)*
 - **B6 — The links registry is split**: `lib/startup/links.ts` (read-only selector) vs the
   `LINKS` array in `app/startups/_profile/socials.tsx` (editable) duplicate the
   platform/icon/prefix registry that the rendering pattern says must exist once.
@@ -227,7 +235,7 @@ on top** (`ADMIN_EMAILS` — auditable in git, changed by redeploy). What change
   instagram-verifications console moves in, plus a shells/claims overview and, later,
   the analytics summary and basic user/startup lookup.
 - Admin endpoints live **in the OpenAPI spec** with a proper security scheme, like
-  everything else (slice 3).
+  everything else *(done in slice 3: `adminAuth` scheme + `middleware.RequireAdmin`)*.
 - `is_admin` rides the session payload instead of being recomputed per request.
 - A DB `is_admin` column happens only when someone who can't redeploy needs admin
   rights — not before.
@@ -384,14 +392,18 @@ make generate   # Bundle spec → Go server stubs (oapi-codegen) → TS client (
 ```
 
 Generated files (committed, never hand-edited):
-- `apps/server/internal/api/generated.go` — Go server interface + types
+- `apps/server/internal/api/gen/generated.go` — Go server interface + types + embedded spec
 - `apps/web/src/lib/api/gen/` — hey-api output: typed SDK, TanStack Query options, Zod schemas
 - `apps/web/src/lib/api/generated.ts` — **legacy** openapi-typescript types, being removed (finding B2)
 
 **Any time you add, remove, or change an API endpoint or schema, run `make generate`.**
 
-**Spec-first rule:** every endpoint belongs in the OpenAPI spec. Six routes currently
-bypass it (finding B1) — do not add more; slice 3 moves them into the spec.
+**Spec-first rule:** every endpoint belongs in the OpenAPI spec and is registered through
+the generated wrapper — never via manual `v1.POST(...)` routes. The router validates all
+requests against the embedded spec (`requestValidator` in `internal/api/router.go`), so
+request shape/enums/lengths are defined once, in the spec. Admin-only routes declare the
+`adminAuth` security scheme; the router enforces the `ADMIN_EMAILS` whitelist for them
+(`middleware.RequireAdmin`) — handlers contain no auth checks.
 
 ### Auth flow
 1. `POST /auth/register` — creates SuperTokens OTP, stores draft (rejects existing emails)
@@ -448,7 +460,6 @@ The target is unchanged: **one spec → generated types, SDK, React Query hooks,
 nothing written twice.** hey-api (`gen/`) is wired up and most calls go through it
 (`use-startups-query.ts` wraps the generated SDK). What remains (findings B1–B5):
 
-- `lib/api/client.ts` — hand fetches for the six unspecced endpoints; delete after slice 3.
 - `lib/api/generated.ts` — legacy type layer still imported by ~25 files; migrate imports
   to `gen/types.gen.ts` and drop `openapi-typescript` from `npm run generate`.
 - `lib/schemas/startup-schema.ts` — must compose on `gen/zod.gen.ts` instead of hand-copying
