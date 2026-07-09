@@ -47,7 +47,7 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Login with username and password */
+    /** Begin passwordless login — sends a verification code */
     post: operations["login"];
     delete?: never;
     options?: never;
@@ -84,7 +84,10 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Verify email code and complete account creation */
+    /**
+     * Verify the emailed code and create the account and session
+     * @description Consumes the OTP for registration, login, and claim flows alike. On success a SuperTokens session cookie is set.
+     */
     post: operations["verify"];
     delete?: never;
     options?: never;
@@ -101,25 +104,8 @@ export interface paths {
     };
     get?: never;
     put?: never;
-    /** Logout (invalidate session) */
+    /** Logout (revoke the current session) */
     post: operations["logout"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/auth/refresh": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Refresh access token using refresh token */
-    post: operations["refreshToken"];
     delete?: never;
     options?: never;
     head?: never;
@@ -135,6 +121,46 @@ export interface paths {
     };
     /** Get current authenticated user's profile */
     get: operations["getMe"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/auth/claim": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Begin claiming an admin-seeded shell — sends a verification code
+     * @description Validates the claim token and emails an OTP to the given address. /auth/verify completes the claim and reassigns ownership of the shell. Works for brand-new emails and existing accounts alike.
+     */
+    post: operations["startClaim"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/claim/{token}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Fetch an unclaimed shell by its claim token (public)
+     * @description Used by the claim page to preview the profile. The token itself is the capability, so no session is required.
+     */
+    get: operations["getClaimStartup"];
     put?: never;
     post?: never;
     delete?: never;
@@ -319,6 +345,86 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/startups/{id}/claim-link": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get the claim token for a startup shell (owner only)
+     * @description Lets the admin (re)copy the claim link from the edit page. The token is empty once the profile has been claimed.
+     */
+    get: operations["getClaimLink"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/founder-photo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Upload a founder photo and get back its public URL
+     * @description The caller stores the URL inside the startup's founders JSON; this endpoint does not modify the startup itself.
+     */
+    post: operations["uploadFounderPhoto"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/startups/{id}/screenshot": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Upload a product screenshot and get back its public URL
+     * @description The caller stores the URL inside the startup's gallery JSON array; this endpoint does not modify the startup itself.
+     */
+    post: operations["uploadStartupScreenshot"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/admin/startups": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Create an unclaimed startup shell (admin only)
+     * @description Seeds a shell profile owned by the admin. The admin fills it in via the normal edit page and hands the claim link to the startup. Skips the public one-per-owner / account-type / website rules — those only apply to real self-service registrations.
+     */
+    post: operations["createAdminStartup"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/admin/instagram-verifications": {
     parameters: {
       query?: never;
@@ -385,16 +491,8 @@ export interface components {
       total_users: number;
     };
     LoginRequest: {
-      username: string;
-      password: string;
-    };
-    TokenResponse: {
-      access_token: string;
-      /** @example Bearer */
-      token_type: string;
-      /** @description Seconds until expiry */
-      expires_in: number;
-      refresh_token?: string;
+      /** Format: email */
+      email: string;
     };
     Error: {
       code: string;
@@ -404,12 +502,8 @@ export interface components {
     AccountType: "user" | "startup";
     RegisterRequest: {
       account_type: components["schemas"]["AccountType"];
-      password: string;
-      /**
-       * Format: email
-       * @description Required when account_type is "user"
-       */
-      email?: string;
+      /** Format: email */
+      email: string;
       /** @description Required when account_type is "user" */
       nickname?: string;
       /** @description Required when account_type is "startup". Startups register with a plain email and verify their domain later from the profile. */
@@ -417,8 +511,8 @@ export interface components {
     };
     VerifyRequest: {
       /** Format: email */
-      email?: string;
-      code?: string;
+      email: string;
+      code: string;
     };
     UserProfile: {
       /** Format: uuid */
@@ -428,12 +522,28 @@ export interface components {
       email: string;
       nickname: string;
       account_type: components["schemas"]["AccountType"];
+      /** @description Whether the email is on the ADMIN_EMAILS whitelist */
+      is_admin: boolean;
       /** Format: date-time */
       created_at: string;
+      /** Format: date-time */
+      updated_at?: string;
+      /**
+       * Format: uuid
+       * @description For startup accounts: the id of the claimed startup profile, once one exists
+       */
+      profile_id?: string;
+      /** @description For startup accounts: the profile's logo URL */
+      logo_url?: string;
     };
-    RefreshRequest: {
-      /** @description The refresh token obtained from login */
-      refresh_token: string;
+    StartClaimRequest: {
+      /**
+       * Format: email
+       * @description Address the verification code is sent to; becomes the account email.
+       */
+      email: string;
+      /** @description Claim token from the claim link. */
+      token: string;
     };
     /** @enum {string} */
     Stage:
@@ -521,6 +631,8 @@ export interface components {
       owner_id: string;
       /** @description Whether the startup profile has been fully set up (defaults to false) */
       profile_setup?: boolean;
+      /** @description False for admin-seeded shells that have not been claimed by the startup yet */
+      claimed?: boolean;
       /** Format: date-time */
       created_at: string;
       /** Format: date-time */
@@ -563,6 +675,11 @@ export interface components {
     };
     WebsiteCheckResponse: {
       available: boolean;
+      /**
+       * @description Why the website was rejected (only present when unavailable).
+       * @enum {string}
+       */
+      reason?: "subdomain";
     };
     UpdateStartupRequest: {
       name?: string;
@@ -639,6 +756,25 @@ export interface components {
     StartInstagramVerificationRequest: {
       /** @description Instagram handle to verify, with or without a leading @ (e.g. "gonarval"). Locked to the startup once submitted; only an admin can reset it. */
       handle: string;
+    };
+    ClaimLinkResponse: {
+      claimed: boolean;
+      /** @description Empty once the profile has been claimed. */
+      claim_token: string;
+    };
+    UploadUrlResponse: {
+      /** @description Public URL of the uploaded image. */
+      url: string;
+    };
+    CreateAdminStartupRequest: {
+      name: string;
+    };
+    CreateAdminStartupResponse: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** @description Bearer capability for the claim link; hand it to the startup. */
+      claim_token: string;
     };
     /** @description A pending or verified Instagram challenge as shown in the admin console. */
     AdminInstagramVerification: {
@@ -722,17 +858,24 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Tokens issued */
-      200: {
+      /** @description Verification code sent; proceed to /auth/verify */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation error */
+      400: {
         headers: {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["TokenResponse"];
+          "application/json": components["schemas"]["Error"];
         };
       };
-      /** @description Invalid credentials */
-      401: {
+      /** @description No account with this email */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -795,8 +938,8 @@ export interface operations {
       };
     };
     responses: {
-      /** @description Account created */
-      201: {
+      /** @description Verified and logged in */
+      200: {
         headers: {
           [name: string]: unknown;
         };
@@ -804,7 +947,7 @@ export interface operations {
           "application/json": components["schemas"]["UserProfile"];
         };
       };
-      /** @description Invalid or expired code */
+      /** @description Validation error, or the stashed claim link is invalid */
       400: {
         headers: {
           [name: string]: unknown;
@@ -813,7 +956,16 @@ export interface operations {
           "application/json": components["schemas"]["Error"];
         };
       };
-      /** @description Email already registered */
+      /** @description Invalid or expired verification code */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Account already has a startup profile */
       409: {
         headers: {
           [name: string]: unknown;
@@ -833,63 +985,12 @@ export interface operations {
     };
     requestBody?: never;
     responses: {
-      /** @description Logged out */
-      204: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Error"];
-        };
-      };
-    };
-  };
-  refreshToken: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RefreshRequest"];
-      };
-    };
-    responses: {
-      /** @description New tokens issued */
+      /** @description Session revoked (also returned when no session was active) */
       200: {
         headers: {
           [name: string]: unknown;
         };
-        content: {
-          "application/json": components["schemas"]["TokenResponse"];
-        };
-      };
-      /** @description Missing or invalid request body */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Error"];
-        };
-      };
-      /** @description Invalid or expired refresh token */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["Error"];
-        };
+        content?: never;
       };
     };
   };
@@ -913,6 +1014,95 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description No local profile for this session */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  startClaim: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["StartClaimRequest"];
+      };
+    };
+    responses: {
+      /** @description Verification code sent; proceed to /auth/verify */
+      202: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Claim link invalid or already used */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Email already owns a startup profile */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getClaimStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        token: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description The unclaimed startup */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Startup"];
+        };
+      };
+      /** @description No unclaimed startup for this link */
+      404: {
         headers: {
           [name: string]: unknown;
         };
@@ -1494,7 +1684,13 @@ export interface operations {
         headers: {
           [name: string]: unknown;
         };
-        content?: never;
+        content: {
+          "application/json": {
+            /** @description The full address the code was sent to. */
+            email: string;
+            message?: string;
+          };
+        };
       };
       /** @description Validation error (invalid domain, subdomain, or public email domain) */
       400: {
@@ -1715,6 +1911,245 @@ export interface operations {
         };
       };
       /** @description A verification is already locked for this startup, or the handle is already verified by another startup. An admin must reset it to change. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  getClaimLink: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Claim link state */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ClaimLinkResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  uploadFounderPhoto: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          /** Format: binary */
+          photo: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Photo uploaded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UploadUrlResponse"];
+        };
+      };
+      /** @description Invalid file */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  uploadStartupScreenshot: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": {
+          /** Format: binary */
+          screenshot: string;
+        };
+      };
+    };
+    responses: {
+      /** @description Screenshot uploaded */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UploadUrlResponse"];
+        };
+      };
+      /** @description Invalid file */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Forbidden – not the owner */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup not found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+    };
+  };
+  createAdminStartup: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CreateAdminStartupRequest"];
+      };
+    };
+    responses: {
+      /** @description Shell created */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CreateAdminStartupResponse"];
+        };
+      };
+      /** @description Validation error */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Admin access required */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Error"];
+        };
+      };
+      /** @description Startup name already taken */
       409: {
         headers: {
           [name: string]: unknown;

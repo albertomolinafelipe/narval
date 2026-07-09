@@ -10,15 +10,7 @@ export const zStats = z.object({
 });
 
 export const zLoginRequest = z.object({
-  username: z.string(),
-  password: z.string(),
-});
-
-export const zTokenResponse = z.object({
-  access_token: z.string(),
-  token_type: z.string(),
-  expires_in: z.int(),
-  refresh_token: z.string().optional(),
+  email: z.email(),
 });
 
 export const zError = z.object({
@@ -30,15 +22,14 @@ export const zAccountType = z.enum(["user", "startup"]);
 
 export const zRegisterRequest = z.object({
   account_type: zAccountType,
-  password: z.string().min(8),
-  email: z.email().optional(),
+  email: z.email(),
   nickname: z.string().min(2).max(50).optional(),
   name: z.string().min(2).max(100).optional(),
 });
 
 export const zVerifyRequest = z.object({
-  email: z.email().optional(),
-  code: z.string().length(6).optional(),
+  email: z.email(),
+  code: z.string().length(6),
 });
 
 export const zUserProfile = z.object({
@@ -47,11 +38,16 @@ export const zUserProfile = z.object({
   email: z.string(),
   nickname: z.string(),
   account_type: zAccountType,
+  is_admin: z.boolean(),
   created_at: z.iso.datetime(),
+  updated_at: z.iso.datetime().optional(),
+  profile_id: z.uuid().optional(),
+  logo_url: z.string().optional(),
 });
 
-export const zRefreshRequest = z.object({
-  refresh_token: z.string(),
+export const zStartClaimRequest = z.object({
+  email: z.email(),
+  token: z.string(),
 });
 
 export const zStage = z.enum([
@@ -135,6 +131,7 @@ export const zStartup = z.object({
   contact_talent: z.string().optional(),
   owner_id: z.string(),
   profile_setup: z.boolean().optional(),
+  claimed: z.boolean().optional(),
   created_at: z.iso.datetime(),
   updated_at: z.iso.datetime().optional(),
   is_favorited: z.boolean().optional(),
@@ -173,6 +170,7 @@ export const zCreateStartupRequest = z.object({
 
 export const zWebsiteCheckResponse = z.object({
   available: z.boolean(),
+  reason: z.enum(["subdomain"]).optional(),
 });
 
 export const zUpdateStartupRequest = z.object({
@@ -236,6 +234,25 @@ export const zStartInstagramVerificationRequest = z.object({
   handle: z.string(),
 });
 
+export const zClaimLinkResponse = z.object({
+  claimed: z.boolean(),
+  claim_token: z.string(),
+});
+
+export const zUploadUrlResponse = z.object({
+  url: z.string(),
+});
+
+export const zCreateAdminStartupRequest = z.object({
+  name: z.string().min(2).max(100),
+});
+
+export const zCreateAdminStartupResponse = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  claim_token: z.string(),
+});
+
 /**
  * A pending or verified Instagram challenge as shown in the admin console.
  */
@@ -263,36 +280,30 @@ export const zGetStatsResponse = zStats;
 
 export const zLoginBody = zLoginRequest;
 
-/**
- * Tokens issued
- */
-export const zLoginResponse = zTokenResponse;
-
 export const zRegisterBody = zRegisterRequest;
 
 export const zVerifyBody = zVerifyRequest;
 
 /**
- * Account created
+ * Verified and logged in
  */
 export const zVerifyResponse = zUserProfile;
-
-/**
- * Logged out
- */
-export const zLogoutResponse = z.void();
-
-export const zRefreshTokenBody = zRefreshRequest;
-
-/**
- * New tokens issued
- */
-export const zRefreshTokenResponse = zTokenResponse;
 
 /**
  * Current user profile
  */
 export const zGetMeResponse = zUserProfile;
+
+export const zStartClaimBody = zStartClaimRequest;
+
+export const zGetClaimStartupPath = z.object({
+  token: z.string(),
+});
+
+/**
+ * The unclaimed startup
+ */
+export const zGetClaimStartupResponse = zStartup;
 
 export const zListStartupsQuery = z.object({
   favorited: z.boolean().optional(),
@@ -407,6 +418,14 @@ export const zStartDomainVerificationPath = z.object({
   id: z.uuid(),
 });
 
+/**
+ * Verification code sent to the work email
+ */
+export const zStartDomainVerificationResponse = z.object({
+  email: z.string(),
+  message: z.string().optional(),
+});
+
 export const zConfirmDomainVerificationBody = zConfirmDomainVerificationRequest;
 
 export const zConfirmDomainVerificationPath = z.object({
@@ -438,6 +457,48 @@ export const zStartInstagramVerificationPath = z.object({
  * Handle locked; returns the code and DM link
  */
 export const zStartInstagramVerificationResponse = zInstagramVerification;
+
+export const zGetClaimLinkPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Claim link state
+ */
+export const zGetClaimLinkResponse = zClaimLinkResponse;
+
+export const zUploadFounderPhotoBody = z.object({
+  photo: z.string(),
+});
+
+export const zUploadFounderPhotoPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Photo uploaded
+ */
+export const zUploadFounderPhotoResponse = zUploadUrlResponse;
+
+export const zUploadStartupScreenshotBody = z.object({
+  screenshot: z.string(),
+});
+
+export const zUploadStartupScreenshotPath = z.object({
+  id: z.uuid(),
+});
+
+/**
+ * Screenshot uploaded
+ */
+export const zUploadStartupScreenshotResponse = zUploadUrlResponse;
+
+export const zCreateAdminStartupBody = zCreateAdminStartupRequest;
+
+/**
+ * Shell created
+ */
+export const zCreateAdminStartupResponse2 = zCreateAdminStartupResponse;
 
 export const zListInstagramVerificationsQuery = z.object({
   status: z.enum(["pending", "verified"]).optional(),

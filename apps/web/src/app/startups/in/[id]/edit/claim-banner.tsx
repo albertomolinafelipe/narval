@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Copy, Link2 } from "lucide-react";
-import { getClaimLink } from "@/lib/api/client";
+import { getClaimLink } from "@/lib/api/gen";
 
 // Shown on the edit page while a shell is unclaimed and viewed by its owner (the
 // admin who seeded it). Surfaces the two links the admin saves in their own doc:
@@ -14,9 +14,10 @@ export default function ClaimBanner({ id }: { id: string }) {
 
   useEffect(() => {
     let active = true;
-    getClaimLink(id)
-      .then((r) => {
-        if (active && !r.claimed && r.claim_token) setToken(r.claim_token);
+    getClaimLink({ path: { id } })
+      .then(({ data }) => {
+        if (active && data && !data.claimed && data.claim_token)
+          setToken(data.claim_token);
       })
       .catch(() => {});
     return () => {

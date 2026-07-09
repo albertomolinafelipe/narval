@@ -21,6 +21,9 @@ import type {
   ConfirmInstagramVerificationData,
   ConfirmInstagramVerificationErrors,
   ConfirmInstagramVerificationResponses,
+  CreateAdminStartupData,
+  CreateAdminStartupErrors,
+  CreateAdminStartupResponses,
   CreateStartupData,
   CreateStartupErrors,
   CreateStartupResponses,
@@ -33,6 +36,12 @@ import type {
   FavoriteStartupData,
   FavoriteStartupErrors,
   FavoriteStartupResponses,
+  GetClaimLinkData,
+  GetClaimLinkErrors,
+  GetClaimLinkResponses,
+  GetClaimStartupData,
+  GetClaimStartupErrors,
+  GetClaimStartupResponses,
   GetHealthData,
   GetHealthResponses,
   GetInstagramVerificationData,
@@ -55,17 +64,16 @@ import type {
   LoginErrors,
   LoginResponses,
   LogoutData,
-  LogoutErrors,
   LogoutResponses,
-  RefreshTokenData,
-  RefreshTokenErrors,
-  RefreshTokenResponses,
   RegisterData,
   RegisterErrors,
   RegisterResponses,
   ResetInstagramVerificationData,
   ResetInstagramVerificationErrors,
   ResetInstagramVerificationResponses,
+  StartClaimData,
+  StartClaimErrors,
+  StartClaimResponses,
   StartDomainVerificationData,
   StartDomainVerificationErrors,
   StartDomainVerificationResponses,
@@ -78,12 +86,18 @@ import type {
   UpdateStartupData,
   UpdateStartupErrors,
   UpdateStartupResponses,
+  UploadFounderPhotoData,
+  UploadFounderPhotoErrors,
+  UploadFounderPhotoResponses,
   UploadStartupBannerData,
   UploadStartupBannerErrors,
   UploadStartupBannerResponses,
   UploadStartupLogoData,
   UploadStartupLogoErrors,
   UploadStartupLogoResponses,
+  UploadStartupScreenshotData,
+  UploadStartupScreenshotErrors,
+  UploadStartupScreenshotResponses,
   VerifyData,
   VerifyErrors,
   VerifyResponses,
@@ -130,7 +144,7 @@ export const getStats = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Login with username and password
+ * Begin passwordless login — sends a verification code
  */
 export const login = <ThrowOnError extends boolean = false>(
   options: Options<LoginData, ThrowOnError>,
@@ -166,7 +180,9 @@ export const register = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Verify email code and complete account creation
+ * Verify the emailed code and create the account and session
+ *
+ * Consumes the OTP for registration, login, and claim flows alike. On success a SuperTokens session cookie is set.
  */
 export const verify = <ThrowOnError extends boolean = false>(
   options: Options<VerifyData, ThrowOnError>,
@@ -181,36 +197,21 @@ export const verify = <ThrowOnError extends boolean = false>(
   });
 
 /**
- * Logout (invalidate session)
+ * Logout (revoke the current session)
  */
 export const logout = <ThrowOnError extends boolean = false>(
   options?: Options<LogoutData, ThrowOnError>,
-): RequestResult<LogoutResponses, LogoutErrors, ThrowOnError> =>
-  (options?.client ?? client).post<LogoutResponses, LogoutErrors, ThrowOnError>(
-    {
-      security: [{ scheme: "bearer", type: "http" }],
-      url: "/auth/logout",
-      ...options,
-    },
-  );
-
-/**
- * Refresh access token using refresh token
- */
-export const refreshToken = <ThrowOnError extends boolean = false>(
-  options: Options<RefreshTokenData, ThrowOnError>,
-): RequestResult<RefreshTokenResponses, RefreshTokenErrors, ThrowOnError> =>
-  (options.client ?? client).post<
-    RefreshTokenResponses,
-    RefreshTokenErrors,
-    ThrowOnError
-  >({
-    url: "/auth/refresh",
+): RequestResult<LogoutResponses, unknown, ThrowOnError> =>
+  (options?.client ?? client).post<LogoutResponses, unknown, ThrowOnError>({
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/auth/logout",
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
   });
 
 /**
@@ -220,10 +221,55 @@ export const getMe = <ThrowOnError extends boolean = false>(
   options?: Options<GetMeData, ThrowOnError>,
 ): RequestResult<GetMeResponses, GetMeErrors, ThrowOnError> =>
   (options?.client ?? client).get<GetMeResponses, GetMeErrors, ThrowOnError>({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/auth/me",
     ...options,
   });
+
+/**
+ * Begin claiming an admin-seeded shell — sends a verification code
+ *
+ * Validates the claim token and emails an OTP to the given address. /auth/verify completes the claim and reassigns ownership of the shell. Works for brand-new emails and existing accounts alike.
+ */
+export const startClaim = <ThrowOnError extends boolean = false>(
+  options: Options<StartClaimData, ThrowOnError>,
+): RequestResult<StartClaimResponses, StartClaimErrors, ThrowOnError> =>
+  (options.client ?? client).post<
+    StartClaimResponses,
+    StartClaimErrors,
+    ThrowOnError
+  >({
+    url: "/auth/claim",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Fetch an unclaimed shell by its claim token (public)
+ *
+ * Used by the claim page to preview the profile. The token itself is the capability, so no session is required.
+ */
+export const getClaimStartup = <ThrowOnError extends boolean = false>(
+  options: Options<GetClaimStartupData, ThrowOnError>,
+): RequestResult<
+  GetClaimStartupResponses,
+  GetClaimStartupErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).get<
+    GetClaimStartupResponses,
+    GetClaimStartupErrors,
+    ThrowOnError
+  >({ url: "/claim/{token}", ...options });
 
 /**
  * List all startup accounts (public)
@@ -246,7 +292,13 @@ export const createStartup = <ThrowOnError extends boolean = false>(
     CreateStartupErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups",
     ...options,
     headers: {
@@ -290,7 +342,13 @@ export const updateStartup = <ThrowOnError extends boolean = false>(
     UpdateStartupErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}",
     ...options,
     headers: {
@@ -314,7 +372,13 @@ export const deleteStartupLogo = <ThrowOnError extends boolean = false>(
     DeleteStartupLogoErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/logo",
     ...options,
   });
@@ -335,7 +399,13 @@ export const uploadStartupLogo = <ThrowOnError extends boolean = false>(
     ThrowOnError
   >({
     ...formDataBodySerializer,
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/logo",
     ...options,
     headers: {
@@ -359,7 +429,13 @@ export const deleteStartupBanner = <ThrowOnError extends boolean = false>(
     DeleteStartupBannerErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/banner",
     ...options,
   });
@@ -380,7 +456,13 @@ export const uploadStartupBanner = <ThrowOnError extends boolean = false>(
     ThrowOnError
   >({
     ...formDataBodySerializer,
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/banner",
     ...options,
     headers: {
@@ -404,7 +486,13 @@ export const unfavoriteStartup = <ThrowOnError extends boolean = false>(
     UnfavoriteStartupErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/bookmark",
     ...options,
   });
@@ -424,7 +512,13 @@ export const favoriteStartup = <ThrowOnError extends boolean = false>(
     FavoriteStartupErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/bookmark",
     ...options,
   });
@@ -440,7 +534,13 @@ export const boostStartup = <ThrowOnError extends boolean = false>(
     BoostStartupErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/boost",
     ...options,
   });
@@ -460,7 +560,13 @@ export const startDomainVerification = <ThrowOnError extends boolean = false>(
     StartDomainVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/verify-domain",
     ...options,
     headers: {
@@ -484,7 +590,13 @@ export const confirmDomainVerification = <ThrowOnError extends boolean = false>(
     ConfirmDomainVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/verify-domain/confirm",
     ...options,
     headers: {
@@ -508,7 +620,13 @@ export const getInstagramVerification = <ThrowOnError extends boolean = false>(
     GetInstagramVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/verify-instagram",
     ...options,
   });
@@ -530,8 +648,136 @@ export const startInstagramVerification = <
     StartInstagramVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/startups/{id}/verify-instagram",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get the claim token for a startup shell (owner only)
+ *
+ * Lets the admin (re)copy the claim link from the edit page. The token is empty once the profile has been claimed.
+ */
+export const getClaimLink = <ThrowOnError extends boolean = false>(
+  options: Options<GetClaimLinkData, ThrowOnError>,
+): RequestResult<GetClaimLinkResponses, GetClaimLinkErrors, ThrowOnError> =>
+  (options.client ?? client).get<
+    GetClaimLinkResponses,
+    GetClaimLinkErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/startups/{id}/claim-link",
+    ...options,
+  });
+
+/**
+ * Upload a founder photo and get back its public URL
+ *
+ * The caller stores the URL inside the startup's founders JSON; this endpoint does not modify the startup itself.
+ */
+export const uploadFounderPhoto = <ThrowOnError extends boolean = false>(
+  options: Options<UploadFounderPhotoData, ThrowOnError>,
+): RequestResult<
+  UploadFounderPhotoResponses,
+  UploadFounderPhotoErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    UploadFounderPhotoResponses,
+    UploadFounderPhotoErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/startups/{id}/founder-photo",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Upload a product screenshot and get back its public URL
+ *
+ * The caller stores the URL inside the startup's gallery JSON array; this endpoint does not modify the startup itself.
+ */
+export const uploadStartupScreenshot = <ThrowOnError extends boolean = false>(
+  options: Options<UploadStartupScreenshotData, ThrowOnError>,
+): RequestResult<
+  UploadStartupScreenshotResponses,
+  UploadStartupScreenshotErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    UploadStartupScreenshotResponses,
+    UploadStartupScreenshotErrors,
+    ThrowOnError
+  >({
+    ...formDataBodySerializer,
+    security: [
+      {
+        key: "bearerAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/startups/{id}/screenshot",
+    ...options,
+    headers: {
+      "Content-Type": null,
+      ...options.headers,
+    },
+  });
+
+/**
+ * Create an unclaimed startup shell (admin only)
+ *
+ * Seeds a shell profile owned by the admin. The admin fills it in via the normal edit page and hands the claim link to the startup. Skips the public one-per-owner / account-type / website rules — those only apply to real self-service registrations.
+ */
+export const createAdminStartup = <ThrowOnError extends boolean = false>(
+  options: Options<CreateAdminStartupData, ThrowOnError>,
+): RequestResult<
+  CreateAdminStartupResponses,
+  CreateAdminStartupErrors,
+  ThrowOnError
+> =>
+  (options.client ?? client).post<
+    CreateAdminStartupResponses,
+    CreateAdminStartupErrors,
+    ThrowOnError
+  >({
+    security: [
+      {
+        key: "adminAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
+    url: "/admin/startups",
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -556,7 +802,13 @@ export const listInstagramVerifications = <
     ListInstagramVerificationsErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "adminAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/admin/instagram-verifications",
     ...options,
   });
@@ -578,7 +830,13 @@ export const confirmInstagramVerification = <
     ConfirmInstagramVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "adminAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/admin/instagram-verifications/{id}/confirm",
     ...options,
   });
@@ -600,7 +858,13 @@ export const resetInstagramVerification = <
     ResetInstagramVerificationErrors,
     ThrowOnError
   >({
-    security: [{ scheme: "bearer", type: "http" }],
+    security: [
+      {
+        key: "adminAuth",
+        scheme: "bearer",
+        type: "http",
+      },
+    ],
     url: "/admin/instagram-verifications/{id}/reset",
     ...options,
   });

@@ -19,6 +19,18 @@ post:
   responses:
     '202':
       description: Verification code sent to the work email
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email:
+                type: string
+                description: The full address the code was sent to.
+              message:
+                type: string
     '400':
       description: Validation error (invalid domain, subdomain, or public email domain)
       content:

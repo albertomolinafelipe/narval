@@ -14,11 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { extractDomain, isValidDomain } from "@/lib/domain";
 import {
-  startDomainVerification,
+  checkStartupWebsite,
   confirmDomainVerification,
-} from "@/lib/api/client";
-
-const apiBase = "/api/proxy";
+  startDomainVerification,
+} from "@/lib/api/gen";
+import { unwrap } from "@/lib/api/unwrap";
 
 // The wizard is a small discriminated state machine; each step carries exactly
 // the data the next one needs. Add steps by extending this union.
@@ -51,17 +51,7 @@ function DomainStep({
     setError("");
     setStatus("checking");
     try {
-      const res = await fetch(
-        `${apiBase}/startups/check-website?url=${encodeURIComponent(url)}`,
-      );
-      if (!res.ok) {
-        setStatus("idle");
-        return false;
-      }
-      const body = (await res.json()) as {
-        available: boolean;
-        reason?: string;
-      };
+      const body = await unwrap(checkStartupWebsite({ query: { url } }));
       if (!body.available && body.reason === "subdomain") {
         setError(
           "Use your root domain (e.g. example.com, not app.example.com).",
@@ -162,12 +152,27 @@ function EmailStep({
     setSubmitting(true);
     setError("");
     try {
-      const { email } = await startDomainVerification(
-        startupId,
-        website,
-        clean,
-      );
-      onSent(email);
+      const { data, error, response } = await startDomainVerification({
+        path: { id: startupId },
+        body: { website, email_prefix: clean },
+      });
+      if (error || !data) {
+        if (error?.code === "SUBDOMAIN_NOT_ALLOWED")
+          throw new Error(
+            "Use your root domain (e.g. example.com, not app.example.com).",
+          );
+        if (error?.code === "PUBLIC_DOMAIN")
+          throw new Error(
+            "That's a personal email provider. Use your company domain.",
+          );
+        if (response?.status === 409)
+          throw new Error(
+            error?.message ??
+              "This domain is already verified by another startup.",
+          );
+        throw new Error(error?.message ?? "Failed to send code.");
+      }
+      onSent(data.email);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send code.");
     } finally {
@@ -240,7 +245,12 @@ function CodeStep({
     setError("");
     setLoading(true);
     try {
-      await confirmDomainVerification(startupId, c);
+      await unwrap(
+        confirmDomainVerification({
+          path: { id: startupId },
+          body: { code: c },
+        }),
+      );
       onVerified();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed.");
