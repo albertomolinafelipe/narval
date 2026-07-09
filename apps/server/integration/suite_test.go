@@ -30,6 +30,10 @@ var (
 	testRDB    *redis.Client
 )
 
+// adminEmail is whitelisted via cfg.AdminEmails so tests can exercise
+// adminAuth routes.
+const adminEmail = "admin@narval.test"
+
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 	ctx := context.Background()
@@ -94,6 +98,7 @@ func TestMain(m *testing.M) {
 	cfg := &config.Config{
 		Env:         "test",
 		CORSOrigins: []string{"*"},
+		AdminEmails: []string{adminEmail},
 	}
 
 	router := api.NewRouter(cfg, testDB, &testutil.FakeStorage{}, testRDB)

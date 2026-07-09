@@ -11,6 +11,13 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    adminAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: >-
+        Same session auth as bearerAuth, plus the account email must be on the
+        ADMIN_EMAILS whitelist.
 paths:
   /health:
     $ref: paths/health.yaml
@@ -25,10 +32,13 @@ paths:
     $ref: paths/auth_verify.yaml
   /auth/logout:
     $ref: paths/auth_logout.yaml
-  /auth/refresh:
-    $ref: paths/auth_refresh.yaml
   /auth/me:
     $ref: paths/auth_me.yaml
+  /auth/claim:
+    $ref: paths/auth_claim.yaml
+
+  /claim/{token}:
+    $ref: paths/claim_{token}.yaml
 
   /startups:
     $ref: paths/startups.yaml
@@ -50,7 +60,15 @@ paths:
     $ref: paths/startups_{id}_verify-domain_confirm.yaml
   /startups/{id}/verify-instagram:
     $ref: paths/startups_{id}_verify-instagram.yaml
+  /startups/{id}/claim-link:
+    $ref: paths/startups_{id}_claim-link.yaml
+  /startups/{id}/founder-photo:
+    $ref: paths/startups_{id}_founder-photo.yaml
+  /startups/{id}/screenshot:
+    $ref: paths/startups_{id}_screenshot.yaml
 
+  /admin/startups:
+    $ref: paths/admin_startups.yaml
   /admin/instagram-verifications:
     $ref: paths/admin_instagram-verifications.yaml
   /admin/instagram-verifications/{id}/confirm:

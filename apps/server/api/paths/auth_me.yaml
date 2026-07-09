@@ -16,3 +16,9 @@ get:
         application/json:
           schema:
             $ref: ../components/schemas/Error.yaml
+    '404':
+      description: No local profile for this session
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

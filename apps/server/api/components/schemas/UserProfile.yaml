@@ -5,6 +5,7 @@ required:
   - email
   - nickname
   - account_type
+  - is_admin
   - created_at
 properties:
   id:
@@ -19,6 +20,21 @@ properties:
     type: string
   account_type:
     $ref: ./AccountType.yaml
+  is_admin:
+    type: boolean
+    description: Whether the email is on the ADMIN_EMAILS whitelist
   created_at:
     type: string
     format: date-time
+  updated_at:
+    type: string
+    format: date-time
+  profile_id:
+    type: string
+    format: uuid
+    description: >-
+      For startup accounts: the id of the claimed startup profile, once one
+      exists
+  logo_url:
+    type: string
+    description: "For startup accounts: the profile's logo URL"

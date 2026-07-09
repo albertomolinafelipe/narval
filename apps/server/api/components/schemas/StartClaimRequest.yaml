@@ -1,0 +1,12 @@
+type: object
+required:
+  - email
+  - token
+properties:
+  email:
+    type: string
+    format: email
+    description: Address the verification code is sent to; becomes the account email.
+  token:
+    type: string
+    description: Claim token from the claim link.

@@ -1,14 +1,8 @@
 post:
   operationId: logout
-  summary: Logout (invalidate session)
+  summary: Logout (revoke the current session)
   security:
     - bearerAuth: []
   responses:
-    '204':
-      description: Logged out
-    '401':
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/Error.yaml
+    '200':
+      description: Session revoked (also returned when no session was active)

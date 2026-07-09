@@ -7,22 +7,15 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"gorm.io/gorm"
 
 	"github.com/narval/server/internal/api/common"
+	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
 )
-
-// isAdmin reports whether email is on the admin whitelist.
-func (h *Handler) isAdmin(email string) bool {
-	for _, a := range h.AdminEmails {
-		if a == email {
-			return true
-		}
-	}
-	return false
-}
 
 // newClaimToken returns an unguessable, URL-safe bearer token for a claim link.
 func newClaimToken() (string, error) {
@@ -34,18 +27,12 @@ func newClaimToken() (string, error) {
 }
 
 // CreateAdminStartup lets a whitelisted admin seed an unclaimed shell owned by
-// the admin. The admin then fills it in via the normal edit page and hands the
-// claim link to the startup. Skips the public one-per-owner / account-type /
-// website rules — those only apply to real self-service registrations.
+// the admin (the adminAuth middleware has already checked the whitelist). The
+// admin then fills it in via the normal edit page and hands the claim link to
+// the startup. Skips the public one-per-owner / account-type / website rules —
+// those only apply to real self-service registrations.
 func (h *Handler) CreateAdminStartup(c *gin.Context) {
-	if !h.isAdmin(middleware.GetUserEmail(c)) {
-		c.JSON(http.StatusForbidden, gin.H{"code": "FORBIDDEN", "message": "admin access required"})
-		return
-	}
-
-	var req struct {
-		Name string `json:"name" binding:"required,min=2,max=100"`
-	}
+	var req gen.CreateAdminStartupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": err.Error()})
 		return
@@ -77,21 +64,20 @@ func (h *Handler) CreateAdminStartup(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"id":          s.ID,
-		"name":        s.Name,
-		"claim_token": s.ClaimToken,
+	id, _ := uuid.Parse(s.ID)
+	c.JSON(http.StatusCreated, gen.CreateAdminStartupResponse{
+		Id:         id,
+		Name:       s.Name,
+		ClaimToken: s.ClaimToken,
 	})
 }
 
 // GetClaimLink returns the claim token for an unclaimed shell, to its owner only.
 // The admin uses it to (re)copy the claim link from the edit page. A claimed
 // profile returns an empty token.
-func (h *Handler) GetClaimLink(c *gin.Context) {
-	id := c.Param("id")
-
+func (h *Handler) GetClaimLink(c *gin.Context, id openapi_types.UUID) {
 	var st models.Startup
-	if err := h.DB.Where("id = ?", id).First(&st).Error; err != nil {
+	if err := h.DB.Where("id = ?", id.String()).First(&st).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
 			return
@@ -104,18 +90,16 @@ func (h *Handler) GetClaimLink(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"claimed":     st.Claimed,
-		"claim_token": st.ClaimToken,
+	c.JSON(http.StatusOK, gen.ClaimLinkResponse{
+		Claimed:    st.Claimed,
+		ClaimToken: st.ClaimToken,
 	})
 }
 
 // GetClaimStartup returns an unclaimed shell by its claim token so the public
 // claim page can preview the profile. The token itself is the capability, so no
 // session is required.
-func (h *Handler) GetClaimStartup(c *gin.Context) {
-	token := c.Param("token")
-
+func (h *Handler) GetClaimStartup(c *gin.Context, token string) {
 	var st models.Startup
 	if err := h.DB.Where("claim_token = ? AND claimed = ?", token, false).First(&st).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

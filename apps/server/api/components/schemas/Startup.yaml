@@ -97,6 +97,12 @@ properties:
   profile_setup:
     type: boolean
     description: Whether the startup profile has been fully set up (defaults to false)
+  claimed:
+    type: boolean
+    description: >-
+      False for admin-seeded shells that have not been claimed by the startup
+      yet
+
   created_at:
     type: string
     format: date-time

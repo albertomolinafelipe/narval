@@ -4,3 +4,8 @@ required:
 properties:
   available:
     type: boolean
+  reason:
+    type: string
+    enum:
+      - subdomain
+    description: Why the website was rejected (only present when unavailable).

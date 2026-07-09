@@ -1,6 +1,6 @@
 post:
   operationId: login
-  summary: Login with username and password
+  summary: Begin passwordless login — sends a verification code
   requestBody:
     required: true
     content:
@@ -8,14 +8,16 @@ post:
         schema:
           $ref: ../components/schemas/LoginRequest.yaml
   responses:
-    '200':
-      description: Tokens issued
+    '202':
+      description: Verification code sent; proceed to /auth/verify
+    '400':
+      description: Validation error
       content:
         application/json:
           schema:
-            $ref: ../components/schemas/TokenResponse.yaml
-    '401':
-      description: Invalid credentials
+            $ref: ../components/schemas/Error.yaml
+    '404':
+      description: No account with this email
       content:
         application/json:
           schema:

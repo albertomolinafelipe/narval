@@ -1,0 +1,47 @@
+post:
+  operationId: createAdminStartup
+  summary: Create an unclaimed startup shell (admin only)
+  description: >-
+    Seeds a shell profile owned by the admin. The admin fills it in via the
+    normal edit page and hands the claim link to the startup. Skips the public
+    one-per-owner / account-type / website rules — those only apply to real
+    self-service registrations.
+  security:
+    - adminAuth: []
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateAdminStartupRequest.yaml
+  responses:
+    '201':
+      description: Shell created
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/CreateAdminStartupResponse.yaml
+    '400':
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '401':
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '403':
+      description: Admin access required
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
+    '409':
+      description: Startup name already taken
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml

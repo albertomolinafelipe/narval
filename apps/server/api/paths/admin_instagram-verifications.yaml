@@ -2,7 +2,7 @@ get:
   operationId: listInstagramVerifications
   summary: List Instagram verifications for the admin console
   security:
-    - bearerAuth: []
+    - adminAuth: []
   parameters:
     - name: status
       in: query
