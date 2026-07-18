@@ -470,6 +470,10 @@ export type LoginErrors = {
    * No account with this email
    */
   404: Error;
+  /**
+   * Too many verification-code requests; retry later
+   */
+  429: Error;
 };
 
 export type LoginError = LoginErrors[keyof LoginErrors];
@@ -497,6 +501,10 @@ export type RegisterErrors = {
    * Email or website already registered
    */
   409: Error;
+  /**
+   * Too many verification-code requests; retry later
+   */
+  429: Error;
 };
 
 export type RegisterError = RegisterErrors[keyof RegisterErrors];
@@ -604,6 +612,10 @@ export type StartClaimErrors = {
    * Email already owns a startup profile
    */
   409: Error;
+  /**
+   * Too many verification-code requests; retry later
+   */
+  429: Error;
 };
 
 export type StartClaimError = StartClaimErrors[keyof StartClaimErrors];

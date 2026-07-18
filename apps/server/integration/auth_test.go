@@ -100,6 +100,37 @@ func TestStartClaim_InvalidToken(t *testing.T) {
 	assert.Equal(t, "INVALID_CLAIM", body["code"])
 }
 
+func TestLogin_RateLimited(t *testing.T) {
+	truncateTables(t)
+
+	// otpPerEmail allows 3 requests per window; the 4th with the same email is
+	// throttled before the user lookup, so an unknown email yields 404 three
+	// times and then 429.
+	const payload = `{"email":"spammer@example.com"}`
+	send := func() *http.Response {
+		req, _ := http.NewRequest(http.MethodPost, testServer.URL+"/api/v1/auth/login", strings.NewReader(payload))
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		return resp
+	}
+
+	for i := 0; i < 3; i++ {
+		resp := send()
+		assert.Equal(t, http.StatusNotFound, resp.StatusCode, "request %d should pass rate limiting", i+1)
+		resp.Body.Close()
+	}
+
+	resp := send()
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode)
+	assert.NotEmpty(t, resp.Header.Get("Retry-After"))
+
+	var body map[string]any
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&body))
+	assert.Equal(t, "RATE_LIMITED", body["code"])
+}
+
 func TestGetMe_Unauthenticated(t *testing.T) {
 	truncateTables(t)
 
