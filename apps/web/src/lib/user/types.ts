@@ -3,19 +3,13 @@
  * Provides a consistent interface for user data regardless of auth provider
  */
 
-export type AccountType = "user" | "startup";
+import type { AccountType, UserProfile } from "@/lib/api/gen";
 
-export interface User {
-  id: string;
-  email: string;
-  nickname: string;
-  account_type: AccountType;
-  profile_id?: string | null;
-  logo_url?: string | null;
-  /** True when the email is on the admin whitelist (may seed startup shells). */
-  is_admin?: boolean;
-  created_at: string;
-}
+export type { AccountType };
+
+/** The /auth/me profile — the generated spec type, re-exported under the
+ * context's historical name. */
+export type User = UserProfile;
 
 export interface UserContextValue {
   /** Current authenticated user, or null if not authenticated */

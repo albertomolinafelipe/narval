@@ -4,10 +4,8 @@ import { useEffect, useRef } from "react";
 import Map, { Marker, NavigationControl } from "react-map-gl/mapbox";
 import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import type { CoordsMap } from "@/lib/use-geocode";
-
-type Startup = components["schemas"]["Startup"];
 
 export interface LocationGroup {
   location: string;

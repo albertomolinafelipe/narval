@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Loader2, Plus, X } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Button } from "@/components/ui/button";
 import { Section } from "./ui";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 interface Feature {
   title: string;

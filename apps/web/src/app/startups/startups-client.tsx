@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { Loader2 } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
 import { useGeocode } from "@/lib/use-geocode";
@@ -29,8 +29,6 @@ import {
   teamSizeRangeConstraint,
   TEAM_SCALE,
 } from "@/lib/startup/constraints";
-
-type Startup = components["schemas"]["Startup"];
 
 const StartupsMap = dynamic(() => import("./startups-map"), { ssr: false });
 

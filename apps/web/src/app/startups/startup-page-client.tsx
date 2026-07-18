@@ -16,7 +16,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { MdLocationOn, MdGroups } from "react-icons/md";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { useAuthGuard } from "@/lib/use-auth-guard";
 import {
   useStartupQuery,
@@ -42,8 +42,6 @@ import { VerifyInstagramButton } from "./_profile/verify-instagram-modal";
 import { normalizeToHandle } from "@/lib/startup/social-input";
 import { Section, SocialLink } from "./_profile/ui";
 import { StartupLinks } from "./_profile/startup-links";
-
-type Startup = components["schemas"]["Startup"];
 
 interface Props {
   startup: Startup;

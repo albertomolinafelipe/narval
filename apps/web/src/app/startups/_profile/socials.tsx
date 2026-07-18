@@ -3,23 +3,15 @@
 import { useState, type ComponentType } from "react";
 import { Plus, Check, X, Pencil, Globe } from "lucide-react";
 import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
-import {
-  SiLinkedin,
-  SiX,
-  SiInstagram,
-  SiAppstore,
-  SiGoogleplay,
-} from "react-icons/si";
-import { components } from "@/lib/api/generated";
+import { SiAppstore, SiGoogleplay } from "react-icons/si";
+import type { Startup, UpdateStartupRequest } from "@/lib/api/gen";
 import { parseProductLinks } from "@/lib/startup/product-links";
+import { SOCIAL_PLATFORMS } from "@/lib/startup/links";
 import { normalizeToHandle } from "@/lib/startup/social-input";
 import PrefixInput from "@/app/_components/shared/prefix-input";
 import { Button } from "@/components/ui/button";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
-
-type Startup = components["schemas"]["Startup"];
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 interface LinkDef {
   id: string;
@@ -33,40 +25,19 @@ interface LinkDef {
   saveValue: (suffix: string, startup: Startup) => UpdateStartupRequest;
 }
 
+const SOCIAL_LINKS: LinkDef[] = SOCIAL_PLATFORMS.map((p) => ({
+  id: p.id,
+  label: p.label,
+  prefix: p.prefix,
+  Icon: p.Icon,
+  placeholder: p.placeholder,
+  getValue: p.get,
+  saveValue: (suffix) =>
+    ({ [p.id]: suffix ? `${p.prefix}${suffix}` : "" }) as UpdateStartupRequest,
+}));
+
 const LINKS: LinkDef[] = [
-  {
-    id: "linkedin",
-    label: "LinkedIn",
-    prefix: "https://linkedin.com/company/",
-    Icon: SiLinkedin,
-    placeholder: "yourcompany",
-    getValue: (s) => s.linkedin ?? "",
-    saveValue: (suffix) => ({
-      linkedin: suffix ? `https://linkedin.com/company/${suffix}` : "",
-    }),
-  },
-  {
-    id: "twitter",
-    label: "X",
-    prefix: "https://x.com/",
-    Icon: SiX,
-    placeholder: "yourhandle",
-    getValue: (s) => s.twitter ?? "",
-    saveValue: (suffix) => ({
-      twitter: suffix ? `https://x.com/${suffix}` : "",
-    }),
-  },
-  {
-    id: "instagram",
-    label: "Instagram",
-    prefix: "https://instagram.com/",
-    Icon: SiInstagram,
-    placeholder: "yourhandle",
-    getValue: (s) => s.instagram ?? "",
-    saveValue: (suffix) => ({
-      instagram: suffix ? `https://instagram.com/${suffix}` : "",
-    }),
-  },
+  ...SOCIAL_LINKS,
   {
     id: "ios",
     label: "App Store",

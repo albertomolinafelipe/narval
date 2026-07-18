@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signOut } from "supertokens-web-js/recipe/session";
 import { useUser } from "@/lib/user";
+import { login, verify } from "@/lib/api/gen";
 import RegisterForm from "../forms/register-form";
 import { Button } from "@/components/ui/button";
 import { GoogleButton, OrDivider } from "./google-button";
@@ -101,15 +102,9 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/proxy/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || "Failed to send code");
+      const { error, response } = await login({ body: { email } });
+      if (error || !response?.ok) {
+        throw new Error(error?.message || "Failed to send code");
       }
 
       setCodeSent(true);
@@ -128,15 +123,9 @@ function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/proxy/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code }),
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.message || "Invalid code");
+      const { error, response } = await verify({ body: { email, code } });
+      if (error || !response?.ok) {
+        throw new Error(error?.message || "Invalid code");
       }
 
       trackAuth("login", { success: true });

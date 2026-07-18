@@ -8,11 +8,9 @@ import { Rocket } from "lucide-react";
 import AppHeader from "@/app/_components/layout/app-header";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { useStartupsQuery } from "@/lib/api/use-startups-query";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { INDUSTRIES } from "@/lib/enums";
 import { startupPath } from "@/lib/startup-url";
-
-type Startup = components["schemas"]["Startup"];
 
 const ALL_SECTORS = ["All", ...INDUSTRIES];
 

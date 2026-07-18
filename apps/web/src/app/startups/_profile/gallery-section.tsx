@@ -7,12 +7,10 @@ import { Plus, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import ImageCropperModal from "@/app/_components/shared/image-cropper-modal";
 import { uploadStartupScreenshot } from "@/lib/api/gen";
 import { unwrap } from "@/lib/api/unwrap";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Section } from "./ui";
 import { EditableImage } from "./editable-image";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 const MAX_SCREENSHOTS = 4;
 /** Vertical, app-store style. Matches the 9:16 crop the cropper enforces. */

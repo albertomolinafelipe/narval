@@ -6,8 +6,8 @@ import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GoogleButton, OrDivider } from "../auth/google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
-
-const apiBase = "/api/proxy";
+import { register, verify as verifyOtp } from "@/lib/api/gen";
+import type { AccountType } from "@/lib/api/gen";
 
 // ─── Step 1 — name + email ──────────────────────────────────────────────────
 
@@ -166,17 +166,10 @@ function OtpStep({
     setError("");
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/auth/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: c }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
+      const { error, response } = await verifyOtp({ body: { email, code: c } });
+      if (error || !response?.ok) {
         throw new Error(
-          body.message ?? "Verification failed. Please try again.",
+          error?.message ?? "Verification failed. Please try again.",
         );
       }
       trackAuth("register", { accountType, success: true });
@@ -256,21 +249,19 @@ export default function RegisterCompanyForm({
     setSubmitting(true);
     setSubmitError("");
     try {
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          account_type: accountType,
+      const { error, response } = await register({
+        body: {
+          account_type: accountType as AccountType,
           name: startupName,
           email,
-        }),
+        },
       });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
-        if (res.status === 409) throw new Error("Email already registered.");
-        throw new Error(body.message ?? "Failed to submit. Please try again.");
+      if (error || !response?.ok) {
+        if (response?.status === 409)
+          throw new Error("Email already registered.");
+        throw new Error(
+          error?.message ?? "Failed to submit. Please try again.",
+        );
       }
       setPending({ email });
     } catch (err: unknown) {

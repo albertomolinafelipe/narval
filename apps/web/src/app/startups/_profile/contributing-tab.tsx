@@ -1,12 +1,10 @@
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { parseTechStack, TechIcon } from "@/lib/tech-icons";
 import { Section } from "./ui";
 import { EditableMarkdown, MarkdownHelp } from "./markdown";
 import { EditableSource } from "./source-link";
 import { EditableText } from "./editable";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 /** A tab with no content is hidden from visitors (only the owner sees it). */
 export function isContributingEmpty(startup: Startup): boolean {

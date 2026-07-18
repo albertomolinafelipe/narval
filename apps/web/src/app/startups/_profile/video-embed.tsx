@@ -2,11 +2,9 @@
 
 import { Check, Pencil, Trash2, X } from "lucide-react";
 import { SiYoutube } from "react-icons/si";
-import { components } from "@/lib/api/generated";
+import type { UpdateStartupRequest } from "@/lib/api/gen";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
-
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 /** Pull the 11-char video id out of any common YouTube URL shape. */
 export function youtubeId(url: string): string | null {

@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import AppHeader from "@/app/_components/layout/app-header";
 import StartupPageClient from "@/app/startups/startup-page-client";
 import { Button } from "@/components/ui/button";
-import { getClaimStartup, startClaim } from "@/lib/api/gen";
+import {
+  getClaimStartup,
+  startClaim,
+  verify as verifyOtp,
+} from "@/lib/api/gen";
 import type { Startup } from "@/lib/api/gen";
 import { unwrap } from "@/lib/api/unwrap";
-
-const apiBase = "/api/proxy";
 
 export default function ClaimClient({ token }: { token: string }) {
   const [shell, setShell] = useState<Startup | null>(null);
@@ -90,20 +92,7 @@ function ClaimPanel({ token, shell }: { token: string; shell: Startup }) {
     setError("");
     setSubmitting(true);
     try {
-      const res = await fetch(`${apiBase}/auth/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email: email.trim(), code: c }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
-        throw new Error(
-          body.message ?? "Verification failed. Please try again.",
-        );
-      }
+      await unwrap(verifyOtp({ body: { email: email.trim(), code: c } }));
       // Full reload so the new session + user context load, then land on the
       // editable profile the claimant now owns.
       window.location.href = `/startups/in/${shell.id}/edit`;

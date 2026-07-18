@@ -8,13 +8,10 @@ import PrefixInput from "@/app/_components/shared/prefix-input";
 import { normalizeToHandle } from "@/lib/startup/social-input";
 import { uploadFounderPhoto } from "@/lib/api/gen";
 import { unwrap } from "@/lib/api/unwrap";
-import { components } from "@/lib/api/generated";
+import type { Founder, Startup } from "@/lib/api/gen";
 import { Button } from "@/components/ui/button";
 import { Section } from "./ui";
 import { useProfileEdit } from "./edit-context";
-
-type Founder = components["schemas"]["Founder"];
-type Startup = components["schemas"]["Startup"];
 
 const MAX_FOUNDERS = 5;
 

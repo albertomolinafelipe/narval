@@ -1,10 +1,8 @@
 import { MdLocationOn, MdGroups, MdCalendarMonth } from "react-icons/md";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Pill } from "@/app/_components/shared/list-panel";
 import { STAGES, INDUSTRIES } from "@/lib/enums";
 import { EditableSelect, EditableNumber, EditableLocation } from "./editable";
-
-type Startup = components["schemas"]["Startup"];
 
 /** The five core meta pills: stage, industry, location, founded year, team size. */
 export function MetaPills({ startup }: { startup: Startup }) {

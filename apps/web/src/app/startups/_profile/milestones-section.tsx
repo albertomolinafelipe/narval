@@ -14,7 +14,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -25,8 +25,6 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Section } from "./ui";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 type MilestoneCategory =
   "launch" | "funding" | "product" | "team" | "growth" | "award";

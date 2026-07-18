@@ -3,11 +3,9 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Pencil, Check, X } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { UpdateStartupRequest } from "@/lib/api/gen";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit, type StringField } from "./editable";
-
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 /** Owner-only nudge linking to a markdown cheatsheet. Renders nothing for visitors. */
 export function MarkdownHelp() {

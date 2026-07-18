@@ -3,11 +3,9 @@
 import { type ComponentType, createElement } from "react";
 import { GitBranch, Pencil, Check, X } from "lucide-react";
 import { SiGithub, SiGitlab, SiBitbucket, SiHuggingface } from "react-icons/si";
-import { components } from "@/lib/api/generated";
+import type { UpdateStartupRequest } from "@/lib/api/gen";
 import { useProfileEdit } from "./edit-context";
 import { useInlineEdit } from "./editable";
-
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 type Icon = ComponentType<{ size?: number; className?: string }>;
 

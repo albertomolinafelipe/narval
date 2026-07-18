@@ -4,9 +4,7 @@ import { Rocket } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useBoostAction } from "./use-boost-action";
 import { Button } from "@/components/ui/button";
-import { components } from "@/lib/api/generated";
-
-type Startup = components["schemas"]["Startup"];
+import type { Startup } from "@/lib/api/gen";
 
 interface BoostButtonProps {
   startup: Pick<Startup, "id" | "has_boosted" | "boost_count">;
