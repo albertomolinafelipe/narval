@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "supertokens-web-js/recipe/session";
-import { useUser } from "@/lib/user";
+import { useMyStartup, useUser } from "@/lib/user";
 import Link from "next/link";
 import Image from "next/image";
 import { AlertCircle, BadgeCheck, Plus, User } from "lucide-react";
@@ -14,13 +14,14 @@ import { useAuthModal } from "../auth/auth-modal-context";
 
 export default function UserMenu() {
   const { user, authenticated, loading } = useUser();
+  const { data: myStartup } = useMyStartup();
   const { openModal } = useAuthModal();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [profileSetup, setProfileSetup] = useState<boolean | null>(null);
-  const [profileId, setProfileId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const profileSetup = myStartup ? (myStartup.profile_setup ?? false) : null;
+  const profileId = myStartup?.id ?? null;
 
   async function handleNewProfile() {
     const name = window.prompt("Startup name for the new profile")?.trim();
@@ -48,26 +49,6 @@ export default function UserMenu() {
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, []);
-
-  useEffect(() => {
-    async function checkProfileSetup() {
-      if (!user || user.account_type !== "startup") return;
-      const pid = user.profile_id;
-      if (!pid) return;
-      try {
-        const res = await fetch(`/api/proxy/startups/${pid}`, {
-          credentials: "include",
-        });
-        if (!res.ok) return;
-        const profile = await res.json();
-        setProfileSetup(profile.profile_setup);
-        setProfileId(profile.id);
-      } catch {
-        // ignore
-      }
-    }
-    checkProfileSetup();
-  }, [user]);
 
   if (loading) {
     return <div className="h-9 w-9 animate-pulse rounded-full bg-bg-subtle" />;

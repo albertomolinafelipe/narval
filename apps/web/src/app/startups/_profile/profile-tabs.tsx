@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { useProfileEdit } from "./edit-context";
 import { OverviewTab } from "./overview-tab";
 import { ProductTab } from "./product-tab";
@@ -17,8 +17,6 @@ function isProductEmpty(startup: Startup): boolean {
     return true;
   }
 }
-
-type Startup = components["schemas"]["Startup"];
 
 type TabId = "overview" | "product" | "metrics" | "contributing" | "updates";
 

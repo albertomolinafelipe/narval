@@ -1,12 +1,10 @@
 import { Globe, BadgeCheck } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Avatar } from "@/app/_components/shared/list-panel";
 import { InstagramGradientIcon } from "@/app/_components/shared/instagram-icon";
 import { BoostCounter } from "@/app/_components/shared/boost-counter";
 import { parseProductLinks } from "@/lib/startup/product-links";
-
-type Startup = components["schemas"]["Startup"];
 
 interface Props {
   startup: Startup;

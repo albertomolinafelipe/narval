@@ -2,7 +2,7 @@
 
 import { Globe } from "lucide-react";
 import { SiAppstore, SiGoogleplay } from "react-icons/si";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import {
   Select,
   SelectContent,
@@ -13,8 +13,6 @@ import { Section } from "./ui";
 import { GallerySection } from "./gallery-section";
 import { FeaturesSection } from "./features-section";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 const STATUSES: { value: string; label: string; className: string }[] = [
   {

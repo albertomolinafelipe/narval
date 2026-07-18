@@ -7,10 +7,9 @@ import RegisterCompanyForm from "./register-company-form";
 import { Button } from "@/components/ui/button";
 import { GoogleButton, OrDivider } from "../auth/google-button";
 import { trackAuth, identifySession } from "@/lib/analytics";
+import { register, verify as verifyOtp } from "@/lib/api/gen";
 
 type AccountType = "user" | "startup";
-
-const apiBase = "/api/proxy";
 
 // Step 1 — pick account type
 function TypeStep({ onSelect }: { onSelect: (type: AccountType) => void }) {
@@ -83,24 +82,15 @@ function UserDetailsStep({
     setLoading(true);
 
     try {
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          nickname,
-          account_type: "user",
-        }),
+      const { error, response } = await register({
+        body: { email, nickname, account_type: "user" },
       });
 
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
-        if (res.status === 409)
+      if (error || !response?.ok) {
+        if (response?.status === 409)
           throw new Error("This email is already registered.");
         throw new Error(
-          body.message ?? "Registration failed. Please try again.",
+          error?.message ?? "Registration failed. Please try again.",
         );
       }
 
@@ -217,22 +207,15 @@ function UserVerifyStep({
     setLoading(true);
 
     try {
-      const res = await fetch(`${apiBase}/auth/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code: c }),
-      });
+      const { error, response } = await verifyOtp({ body: { email, code: c } });
 
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as {
-          message?: string;
-        };
-        if (res.status === 400)
-          throw new Error(body.message ?? "Invalid or expired code.");
-        if (res.status === 409)
+      if (error || !response?.ok) {
+        if (response?.status === 400)
+          throw new Error(error?.message ?? "Invalid or expired code.");
+        if (response?.status === 409)
           throw new Error("This email is already registered.");
         throw new Error(
-          body.message ?? "Verification failed. Please try again.",
+          error?.message ?? "Verification failed. Please try again.",
         );
       }
 

@@ -14,10 +14,8 @@ import {
   SiAppstore,
   SiGoogleplay,
 } from "react-icons/si";
-import type { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { parseProductLinks } from "./product-links";
-
-type Startup = components["schemas"]["Startup"];
 
 export interface StartupLink {
   id: string;
@@ -25,6 +23,54 @@ export interface StartupLink {
   href: string;
   Icon: ComponentType<{ size?: number; className?: string }>;
 }
+
+/** A prefix-based social platform (handle appended to `prefix` forms the URL).
+ * The single registry of platform id/label/icon/prefix — every social view
+ * (read-only selector below, inline editor in `_profile/socials.tsx`) derives
+ * from this so the set can't drift. */
+export interface SocialPlatform {
+  id: "linkedin" | "twitter" | "instagram" | "github";
+  label: string;
+  prefix: string;
+  placeholder: string;
+  Icon: ComponentType<{ size?: number; className?: string }>;
+  get: (s: Startup) => string;
+}
+
+export const SOCIAL_PLATFORMS: SocialPlatform[] = [
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    prefix: "https://linkedin.com/company/",
+    placeholder: "yourcompany",
+    Icon: SiLinkedin,
+    get: (s) => s.linkedin ?? "",
+  },
+  {
+    id: "twitter",
+    label: "X",
+    prefix: "https://x.com/",
+    placeholder: "yourhandle",
+    Icon: SiX,
+    get: (s) => s.twitter ?? "",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    prefix: "https://instagram.com/",
+    placeholder: "yourhandle",
+    Icon: SiInstagram,
+    get: (s) => s.instagram ?? "",
+  },
+  {
+    id: "github",
+    label: "GitHub",
+    prefix: "https://github.com/",
+    placeholder: "yourorg",
+    Icon: SiGithub,
+    get: (s) => s.github ?? "",
+  },
+];
 
 /** Website, contact email, and social profiles, in display order. */
 export function getStartupSocials(s: Startup): StartupLink[] {
@@ -43,34 +89,11 @@ export function getStartupSocials(s: Startup): StartupLink[] {
       href: `mailto:${s.contact_general}`,
       Icon: Mail,
     });
-  if (s.linkedin)
-    links.push({
-      id: "linkedin",
-      label: "LinkedIn",
-      href: s.linkedin,
-      Icon: SiLinkedin,
-    });
-  if (s.twitter)
-    links.push({
-      id: "twitter",
-      label: "X / Twitter",
-      href: s.twitter,
-      Icon: SiX,
-    });
-  if (s.instagram)
-    links.push({
-      id: "instagram",
-      label: "Instagram",
-      href: s.instagram,
-      Icon: SiInstagram,
-    });
-  if (s.github)
-    links.push({
-      id: "github",
-      label: "GitHub",
-      href: s.github,
-      Icon: SiGithub,
-    });
+  for (const p of SOCIAL_PLATFORMS) {
+    const value = p.get(s);
+    if (value)
+      links.push({ id: p.id, label: p.label, href: value, Icon: p.Icon });
+  }
   return links;
 }
 

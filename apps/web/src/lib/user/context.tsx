@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMe } from "@/lib/api/gen";
 import type { UserContextValue, User } from "./types";
 
 const UserContext = createContext<UserContextValue | undefined>(undefined);
@@ -42,18 +43,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   } = useQuery<User | null>({
     queryKey: ["user-profile"],
     queryFn: async () => {
-      const res = await fetch("/api/proxy/auth/me", {
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          return null;
-        }
+      const { data, response } = await getMe();
+      if (response?.status === 401) return null;
+      if (!response?.ok || !data) {
         throw new Error("Failed to fetch user profile");
       }
-
-      return res.json();
+      return data;
     },
     enabled: !sessionLoading && sessionExists,
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes

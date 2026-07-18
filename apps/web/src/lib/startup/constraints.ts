@@ -8,9 +8,7 @@
  * visible list is every startup passing *all* active constraints (AND). Adding a
  * new filter type means writing one more factory here — nothing else changes.
  */
-import type { components } from "@/lib/api/generated";
-
-type Startup = components["schemas"]["Startup"];
+import type { Startup } from "@/lib/api/gen";
 
 export interface Constraint {
   /** Stable identity — dedupes and drives add/remove toggling. */

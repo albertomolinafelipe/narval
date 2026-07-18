@@ -1,12 +1,8 @@
-import { components } from "@/lib/api/generated";
+import type { FundingRound, Industry, Stage } from "@/lib/api/gen";
 
 // Enum option lists for select inputs. Each array is typed against the
 // generated OpenAPI union, so adding/removing a server enum value without
 // updating these (or vice versa) is a compile error — no runtime drift.
-
-type Stage = components["schemas"]["Stage"];
-type Industry = components["schemas"]["Industry"];
-type FundingRound = components["schemas"]["FundingRound"];
 
 export const STAGES: readonly Stage[] = [
   "idea",

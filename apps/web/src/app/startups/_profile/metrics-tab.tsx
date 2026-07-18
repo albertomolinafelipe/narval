@@ -1,9 +1,7 @@
 import { Mail } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Pill } from "@/app/_components/shared/list-panel";
 import { Section, SocialLink, EmptyState } from "./ui";
-
-type Startup = components["schemas"]["Startup"];
 
 export function MetricsTab({ startup }: { startup: Startup }) {
   if (!startup.is_raising) {

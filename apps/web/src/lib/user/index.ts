@@ -21,4 +21,5 @@
 
 export { UserProvider } from "./context";
 export { useUser, useRequireUser, useIsAccountType } from "./use-user";
+export { useMyStartup } from "./use-my-startup";
 export type { User, AccountType, UserContextValue } from "./types";

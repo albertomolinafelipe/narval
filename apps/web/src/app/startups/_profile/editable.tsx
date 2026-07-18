@@ -3,11 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { Check, X, Pencil } from "lucide-react";
 import * as Select from "@radix-ui/react-select";
-import { components } from "@/lib/api/generated";
+import type { UpdateStartupRequest } from "@/lib/api/gen";
 import LocationInput from "@/app/_components/forms/location-input";
 import { useProfileEdit } from "./edit-context";
-
-type UpdateStartupRequest = components["schemas"]["UpdateStartupRequest"];
 
 // Keys of the update request whose value matches V — lets each editor accept
 // only the fields it can actually drive.

@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "generate": "openapi-typescript ../server/api/openapi.bundled.yaml -o src/lib/api/generated.ts && openapi-ts && prettier --write src/lib/api/gen src/lib/api/generated.ts",
+    "generate": "openapi-ts && prettier --write src/lib/api/gen",
     "fmt": "prettier --write .",
     "postinstall": "patch-package"
   },
@@ -65,7 +65,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^28.1.0",
-    "openapi-typescript": "^7.13.0",
     "patch-package": "^8.0.1",
     "prettier": "^3.9.4",
     "tailwindcss": "^4",

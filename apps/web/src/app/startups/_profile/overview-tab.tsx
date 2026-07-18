@@ -1,15 +1,13 @@
 "use client";
 
 import { Mail } from "lucide-react";
-import { components } from "@/lib/api/generated";
+import type { Startup } from "@/lib/api/gen";
 import { Section, SocialLink } from "./ui";
 import { EditableMarkdown, MarkdownHelp } from "./markdown";
 import { FoundersSection } from "./founders-section";
 import { MilestonesSection } from "./milestones-section";
 import { EditableVideo } from "./video-embed";
 import { useProfileEdit } from "./edit-context";
-
-type Startup = components["schemas"]["Startup"];
 
 export function OverviewTab({ startup }: { startup: Startup }) {
   const { isOwner } = useProfileEdit();

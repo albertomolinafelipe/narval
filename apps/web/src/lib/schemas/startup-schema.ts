@@ -1,41 +1,5 @@
 import { z } from "zod";
-
-// Valid enum values matching backend validation
-const VALID_STAGES = [
-  "idea",
-  "pre-seed",
-  "seed",
-  "series-a",
-  "series-b",
-  "growth",
-  "profitable",
-] as const;
-
-const VALID_INDUSTRIES = [
-  "AI/ML",
-  "FinTech",
-  "HealthTech",
-  "Climate Tech",
-  "EdTech",
-  "SaaS",
-  "Marketplace",
-  "Developer Tools",
-  "Hardware",
-  "Consumer",
-  "Deep Tech",
-  "Logistics",
-  "Legal Tech",
-  "HR Tech",
-  "Other",
-] as const;
-
-const VALID_ROUNDS = [
-  "pre-seed",
-  "seed",
-  "series-a",
-  "series-b",
-  "bridge",
-] as const;
+import { zStage, zIndustry, zFundingRound } from "@/lib/api/gen/zod.gen";
 
 // Helper for optional URL validation
 const optionalUrl = z
@@ -83,8 +47,8 @@ export const startupProfileSchema = z.object({
     .max(1000, "Description must be less than 1000 characters")
     .optional()
     .or(z.literal("")),
-  stage: z.enum(VALID_STAGES).optional().or(z.literal("")),
-  industry: z.enum(VALID_INDUSTRIES).optional().or(z.literal("")),
+  stage: zStage.optional().or(z.literal("")),
+  industry: zIndustry.optional().or(z.literal("")),
   team_size: z
     .number()
     .int()
@@ -112,7 +76,7 @@ export const startupProfileSchema = z.object({
 
   // Funding
   is_raising: z.boolean().optional(),
-  current_round: z.enum(VALID_ROUNDS).optional().or(z.literal("")),
+  current_round: zFundingRound.optional().or(z.literal("")),
   funding_ask: z.string().optional().or(z.literal("")),
   funding_use: z.string().optional().or(z.literal("")),
 
@@ -140,6 +104,3 @@ export const startupProfileSchema = z.object({
 
 // Type inference
 export type StartupProfileFormData = z.infer<typeof startupProfileSchema>;
-
-// Export enums for use in form dropdowns
-export { VALID_STAGES, VALID_INDUSTRIES, VALID_ROUNDS };
