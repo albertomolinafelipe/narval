@@ -12,6 +12,13 @@ slice, stop for manual testing, then continue. Decisions already taken:
 
 - **Redis stays and gets used**: rate-limit the OTP-sending endpoints with it (finding A7/A8).
 - **Slice order**: security + CI first, then spec-first consolidation, then structure/docs.
+- **No goose yet** (decision, July 2026): migrations stay on `AutoMigrate` for this
+  revision. Schema shapes AutoMigrate can't express (the A5 partial unique / claim-token
+  indexes) are added as idempotent `CREATE ... IF NOT EXISTS` `Exec`s in `db.Migrate`; any
+  live rows that would violate a new constraint get hand-fixed at deploy time. goose stays
+  on the north-star list, not in these slices.
+- **One PR per sub-slice**: slice 5 (Robustness) is split into 5a–5e and lands one PR each
+  (small, testable), grouping only when two are trivially related.
 - **Structured logging** (`log/slog` + request IDs) and the **consolidated `/admin` console**
   are in scope for this revision; the rest of the long-term direction (see
   [Direction](#direction--engineering-north-star)) is documented but not part of these slices.
@@ -37,12 +44,22 @@ slice, stop for manual testing, then continue. Decisions already taken:
    in the spec; handlers bind generated request types and return generated response
    structs (`gen.Startup` replaced the 45-key response map); generated Go code moved to
    `internal/api/gen` so handlers can import it; `lib/api/client.ts` deleted.
-4. **Frontend dedup** — remove the legacy `openapi-typescript` layer (`generated.ts`), wire
-   `zod.gen.ts` into `startup-schema.ts`, migrate the last hand-rolled fetches, unify the
-   links registry.
-5. **Robustness** — Redis rate limiting on OTP endpoints, graceful shutdown, partial unique
-   index for one-claimed-profile-per-owner, claim-token index/expiry, fix the list N+1;
-   **structured logging**: replace `log.Printf` with `log/slog` + request-ID middleware.
+4. **Frontend dedup** *(done)* — the legacy `openapi-typescript` layer (`generated.ts`) is
+   deleted and dropped from `npm run generate`; `startup-schema.ts` composes on
+   `gen/zod.gen.ts` enums; the last hand-rolled `fetch`es (login/verify/register/claim/me,
+   own-profile lookup) go through the generated SDK; and the social links registry is
+   unified under one `SOCIAL_PLATFORMS` source in `lib/startup/links.ts` (GitHub is now
+   inline-editable and the Twitter label reads "X" everywhere as a side effect).
+5. **Robustness** — split into one PR per sub-slice:
+   - **5a** *(done)* — Redis rate limiting on the OTP endpoints (`Register`/`Login`/
+     `StartClaim`) via `go-redis/redis_rate`, finally using `auth.Handler.rdb` (A7/A8).
+   - **5b** — graceful shutdown: wrap the gin engine in an `http.Server` and add signal
+     handling + managed cleanup goroutines (A11).
+   - **5c** — DB constraints via idempotent `Exec` in `db.Migrate` (no goose): partial
+     unique index `owner_id WHERE claimed`, unique index on `claim_token`, plus claim-token
+     expiry + email pinning; then drop the racy app-side count checks (A5).
+   - **5d** — fix the `ListStartups` N+1 (batch the per-row count queries) (A9).
+   - **5e** — structured logging: `log/slog` + request-ID middleware.
 6. **Admin console** — consolidate the scattered admin UI (instagram verifications page,
    shell-creation button) under one `/admin` area with a single guard layout; add a
    shells/claims overview. See the admin direction below.
@@ -74,11 +91,13 @@ slice, stop for manual testing, then continue. Decisions already taken:
 - **A6 — SuperTokens domains hardcoded.** `APIDomain: "http://localhost:8080"` and
   `WebsiteDomain: "http://localhost:3000"` in supertokens/init.go — works in prod only
   because all traffic rides the cookie proxy. Should come from config.
-- **A7 — No rate limiting on OTP endpoints.** `Register`/`Login`/`StartClaim` each send an
-  email per request, unthrottled; also email enumeration (409 `EMAIL_EXISTS` on register,
-  404 `USER_NOT_FOUND` on login).
-- **A8 — Redis is entirely unused.** Connected in main.go, injected into `auth.Handler.rdb`,
-  referenced zero times. Decision: use it for A7's rate limiting.
+- **A7 — No rate limiting on OTP endpoints.** *(Fixed in slice 5a: `Register`/`Login`/
+  `StartClaim` are throttled via `go-redis/redis_rate` in `internal/api/auth/ratelimit.go`
+  — per-email (3 / 15 min) and per-IP (15 / hr), checked right after email validation so it
+  also throttles enumeration; over-limit returns 429 `RATE_LIMITED` with `Retry-After` and
+  fails open if Redis is down. The email-enumeration status codes themselves are unchanged.)*
+- **A8 — Redis is entirely unused.** *(Fixed in slice 5a: `auth.Handler` now builds a
+  `redis_rate.Limiter` from `rdb` and uses it for A7's throttling.)*
 - **A9 — N+1 queries in `ListStartups`.** `startupResponse` runs three count queries per
   startup (boosts, is_favorited, has_boosted) → 3N+1 per list. The `trending` sort computes
   `active_boosts` in SQL and then discards it and re-queries per row.
@@ -97,27 +116,25 @@ slice, stop for manual testing, then continue. Decisions already taken:
   spec-defined and registered through the generated wrapper; the manual `v1.POST(...)`
   registrations are gone. The auth path specs, which still described the Keycloak
   password/token flow, were rewritten against the real OTP handlers at the same time.)*
-- **B2 — Two parallel generated frontend layers.** `npm run generate` runs both
-  `openapi-typescript` (→ `src/lib/api/generated.ts`) and hey-api (→ `src/lib/api/gen/`);
-  ~25 files still import the legacy `generated.ts` types.
-- **B3 — `zod.gen.ts` is generated and never imported**, while
-  `lib/schemas/startup-schema.ts` hand-codes `VALID_STAGES`/`VALID_INDUSTRIES`/`VALID_ROUNDS`
-  as raw, untyped string arrays — a live drift bug (`lib/enums.ts` is typed against the
-  generated unions and is safe; the schema copies are not).
+- **B2 — Two parallel generated frontend layers.** *(Fixed in slice 4: `generated.ts` is
+  deleted, `openapi-typescript` is dropped from `npm run generate` and package deps, and
+  every consumer imports `gen/` types.)*
+- **B3 — `zod.gen.ts` is generated and never imported.** *(Fixed in slice 4:
+  `startup-schema.ts` composes on `zStage`/`zIndustry`/`zFundingRound` from `gen/zod.gen.ts`;
+  the hand-copied `VALID_*` arrays are gone.)*
 - **B4 — The Go side is not spec-driven either.** *(Fixed in slice 3: handlers bind
   `gen.UpdateStartupRequest`/`gen.CreateAdminStartupRequest`/etc., `startupResponse`
   builds a typed `gen.Startup`, and the hand-coded enum maps and length checks are gone —
   the router validates every request against the embedded spec via
   `oapi-codegen/gin-middleware`, so adding a field means editing the spec and
   regenerating.)*
-- **B5 — Files still hand-fetch endpoints that are in the spec**: `auth-button.tsx`,
-  `lib/user/context.tsx`, `profile-setup-checker.tsx`, `user-menu.tsx`, `claim-client.tsx`
-  (login/verify/me, startups list/detail). Migratable with no backend work — slice 4.
-  *(The domain-verification, check-website, stats, claim, and upload calls were migrated
-  to the generated SDK in slice 3.)*
-- **B6 — The links registry is split**: `lib/startup/links.ts` (read-only selector) vs the
-  `LINKS` array in `app/startups/_profile/socials.tsx` (editable) duplicate the
-  platform/icon/prefix registry that the rendering pattern says must exist once.
+- **B5 — Files still hand-fetch endpoints that are in the spec.** *(Fixed in slice 4:
+  `auth-button`, `register-form`, `register-company-form`, `claim-client`, and
+  `lib/user/context` now call the generated SDK; `profile-setup-checker` uses the new
+  `useMyStartup()` hook instead of fetching the whole list.)*
+- **B6 — The links registry is split.** *(Fixed in slice 4: a single `SOCIAL_PLATFORMS`
+  registry in `lib/startup/links.ts` feeds both the read-only selector and the inline
+  editor in `_profile/socials.tsx`.)*
 
 #### C. Structure & idiom
 
@@ -275,12 +292,12 @@ narval/
 ## Tech Stack
 
 | Layer | Technology |
-|---|---|
+| --- | --- |
 | API | Go 1.25, Gin, GORM, oapi-codegen |
 | Auth | SuperTokens (passwordless OTP + optional Google OAuth) |
 | Transactional email | Resend (`RESEND_API_KEY`) — both OTP delivery and domain-verification codes |
 | Database | PostgreSQL 16 |
-| Cache | Redis 7 (currently unused — earmarked for OTP rate limiting, see finding A8) |
+| Cache | Redis 7 (OTP-endpoint rate limiting via `go-redis/redis_rate`, see finding A8) |
 | Object storage | MinIO (S3-compatible) |
 | Frontend | Next.js 15 (App Router), TypeScript, Tailwind CSS v4, React Query |
 | Frontend codegen | @hey-api/openapi-ts (SDK + TanStack Query + Zod) — migration from openapi-typescript in progress (finding B2) |
@@ -314,7 +331,9 @@ make clean         # Stop all services and delete all data volumes
 ## Data Models
 
 ### `Startup` (`apps/server/models/startup.go`)
+
 The core entity. Owned by a `User` with `account_type = "startup"`. Key fields:
+
 - Identity: `name`, `tagline`, `description`, `about`, `website`, `logo_url`, `banner_image`
 - Metadata: `stage`, `industry`, `team_size`, `location`, `founded_year`, `tech_stack`
 - Product: `product_links`, `product_status`, `gallery` (max 4), `features` (max 8), `video_url`
@@ -331,23 +350,28 @@ Several fields are JSON-in-a-string columns (`founders`, `gallery`, `features`,
 (`capGalleryJSON`, `capFeaturesJSON`) on the backend.
 
 ### `User` (`apps/server/models/user.go`)
+
 Stores app-level user data. Identity (sessions, OTPs) is handled by SuperTokens.
+
 - `account_type`: `"user"` | `"startup"` — investors are coming soon (page exists as placeholder)
 - There is no `admin` flag: admin rights come from the `ADMIN_EMAILS` env whitelist,
   surfaced as `is_admin` in `GET /auth/me`.
 - Startup accounts get a `Startup` row at registration (or by claiming a shell)
 
 ### `StartupFavorite` / `StartupBoost`
+
 Social actions. `user_id` is the local `users.id`. Boosts expire after 7 days
 (`models.BoostLifetime`); an hourly cleanup goroutine in `main.go` purges expired rows.
 
 ### `DomainVerification` / `InstagramVerification`
+
 One live challenge per startup (unique `startup_id`). Domain: hashed 6-digit code emailed
 to an address at the claimed root domain, 15 min TTL, 5 attempts. Instagram: plaintext
 correlation code the owner DMs from the claimed handle; an admin confirms in the console
 at `/admin/instagram-verifications`. Editing the Instagram handle clears the verification.
 
 ### `RegistrationDraft`
+
 Temporary row created during the OTP flow (register, login, and claim); carries
 `account_type`, `name`, and optionally `claim_token` into `Verify`. Deleted after verify;
 rows older than 7 days are purged hourly.
@@ -385,6 +409,7 @@ designed partial unique index.
 ## API
 
 ### OpenAPI spec
+
 Split source files live in `apps/server/api/`. The bundled spec `openapi.bundled.yaml` is generated by `make generate` — do not edit it manually.
 
 ```bash
@@ -392,6 +417,7 @@ make generate   # Bundle spec → Go server stubs (oapi-codegen) → TS client (
 ```
 
 Generated files (committed, never hand-edited):
+
 - `apps/server/internal/api/gen/generated.go` — Go server interface + types + embedded spec
 - `apps/web/src/lib/api/gen/` — hey-api output: typed SDK, TanStack Query options, Zod schemas
 - `apps/web/src/lib/api/generated.ts` — **legacy** openapi-typescript types, being removed (finding B2)
@@ -406,6 +432,7 @@ request shape/enums/lengths are defined once, in the spec. Admin-only routes dec
 (`middleware.RequireAdmin`) — handlers contain no auth checks.
 
 ### Auth flow
+
 1. `POST /auth/register` — creates SuperTokens OTP, stores draft (rejects existing emails)
 2. `POST /auth/verify` — consumes OTP, reconciles the local user via `accounts.LinkOrCreate`, creates session
 3. `POST /auth/login` — same OTP flow for existing users
@@ -418,6 +445,7 @@ same `accounts.LinkOrCreate` reconciliation; registration intent travels in a sh
 cookie (`narval_reg_intent`).
 
 ### Frontend API proxy
+
 All browser traffic goes through `/api/proxy/[...path]`
 (`apps/web/src/app/api/proxy/[...path]/route.ts`), which forwards cookies and SuperTokens
 headers. The generated client's `baseUrl` points at the proxy in the browser and at
@@ -505,6 +533,7 @@ Copy `.env.example` to `.env`. `RESEND_API_KEY` is optional locally (emails just
 Production runs on a single Digital Ocean droplet at `gonarval.com`.
 
 **Architecture:**
+
 ```
 Internet (443/80)
   └── Caddy (auto-HTTPS via Let's Encrypt)
@@ -523,6 +552,7 @@ Docker-internal only (no public ports):
 The Go server is **never publicly exposed** — all browser traffic goes through the Next.js proxy at `/api/proxy/[...path]`. SuperTokens browser SDK is also routed through this proxy (`apiDomain = NEXT_PUBLIC_SITE_URL`, `apiBasePath = /api/proxy/auth`).
 
 **CI/CD pipeline** (`.github/workflows/ci.yml`):
+
 - On PRs and pushes to `main`: `lint` (golangci-lint + ESLint + prettier check),
   `generate-check` (`make generate` must produce no diff), `test` (Go unit + Vitest),
   `integration` (testcontainers suite via `make test-integration`).
@@ -536,6 +566,7 @@ The Go server is **never publicly exposed** — all browser traffic goes through
 **Required DNS records:** `A` records for `gonarval.com`, `analytics.gonarval.com`, `storage.gonarval.com` → droplet IP.
 
 **One-time droplet setup (fresh Ubuntu 24.04):**
+
 ```bash
 apt-get update -qq && apt-get install -y curl
 curl -fsSL https://get.docker.com | sh
@@ -553,11 +584,13 @@ cd /opt/narval && docker compose -f docker-compose.prod.yml up -d
 ```
 
 **Important `.env` notes:**
+
 - `MINIO_ACCESS_KEY` must NOT be `narval` — the server rejects it as insecure in production. It must match `MINIO_ROOT_USER`.
 - `RESEND_API_KEY` is the only third-party secret that must be set manually (Resend, with the gonarval.com domain verified).
 - Umami is auto-provisioned by the `umami-setup` service with a fixed website id (see `.env.production.example`); no manual UI setup needed.
 
 **Server config** (`apps/server/internal/config/config.go`) env vars:
+
 - `DATABASE_URL`, `REDIS_ADDR`
 - `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_USE_SSL`, `MINIO_PUBLIC_URL`
 - `SUPERTOKENS_CONNECTION_URI`, `SUPERTOKENS_API_KEY`

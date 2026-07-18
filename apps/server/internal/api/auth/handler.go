@@ -7,6 +7,7 @@ import (
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis_rate/v10"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/supertokens/supertokens-golang/ingredients/emaildelivery"
@@ -30,18 +31,24 @@ func isValidEmail(email string) bool {
 }
 
 type Handler struct {
-	cfg    *config.Config
-	db     *gorm.DB
-	rdb    *redis.Client
-	logger *log.Logger
+	cfg     *config.Config
+	db      *gorm.DB
+	rdb     *redis.Client
+	limiter *redis_rate.Limiter
+	logger  *log.Logger
 }
 
 func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
+	var limiter *redis_rate.Limiter
+	if rdb != nil {
+		limiter = redis_rate.NewLimiter(rdb)
+	}
 	return &Handler{
-		cfg:    cfg,
-		db:     db,
-		rdb:    rdb,
-		logger: log.New(log.Writer(), "auth: ", log.LstdFlags),
+		cfg:     cfg,
+		db:      db,
+		rdb:     rdb,
+		limiter: limiter,
+		logger:  log.New(log.Writer(), "auth: ", log.LstdFlags),
 	}
 }
 
@@ -96,6 +103,10 @@ func (h *Handler) Register(c *gin.Context) {
 	// Validate email format
 	if !isValidEmail(email) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "invalid email format"})
+		return
+	}
+
+	if !h.allowOTP(c, "register", email) {
 		return
 	}
 
@@ -284,6 +295,10 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	if !h.allowOTP(c, "login", email) {
+		return
+	}
+
 	// Check if user exists with this email
 	var existingUser models.User
 	if err := h.db.Where("email = ?", email).First(&existingUser).Error; err != nil {
@@ -352,6 +367,10 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	email := string(req.Email)
 	if !isValidEmail(email) || req.Token == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"code": "BAD_REQUEST", "message": "valid email and token are required"})
+		return
+	}
+
+	if !h.allowOTP(c, "claim", email) {
 		return
 	}
 

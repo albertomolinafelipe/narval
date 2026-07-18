@@ -26,3 +26,9 @@ post:
         application/json:
           schema:
             $ref: ../components/schemas/Error.yaml
+    '429':
+      description: Too many verification-code requests; retry later
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Error.yaml
