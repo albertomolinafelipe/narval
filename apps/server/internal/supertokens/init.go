@@ -3,7 +3,7 @@ package supertokens
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 
@@ -34,7 +34,7 @@ func Init(cfg *config.Config, db *gorm.DB) error {
 		}
 		to := input.PasswordlessLogin.Email
 
-		log.Printf("Resend: sending OTP email to %s", to)
+		slog.Info("resend: sending OTP email", "to", to)
 
 		client := resend.NewClient(cfg.ResendAPIKey)
 		params := &resend.SendEmailRequest{
@@ -46,11 +46,11 @@ func Init(cfg *config.Config, db *gorm.DB) error {
 
 		_, err := client.Emails.Send(params)
 		if err != nil {
-			log.Printf("Resend ERROR: failed to send to %s: %v", to, err)
+			slog.Error("resend: failed to send OTP email", "to", to, "err", err)
 			return err
 		}
 
-		log.Printf("Resend: email sent to %s", to)
+		slog.Info("resend: OTP email sent", "to", to)
 		return nil
 	}
 
@@ -141,13 +141,13 @@ func googleRecipe(cfg *config.Config, db *gorm.DB) supertokens.Recipe {
 								GeneralError: &supertokens.GeneralErrorResponse{Message: "NO_ACCOUNT"},
 							}, nil
 						}
-						log.Printf("google sign-in: reconcile failed: %v", lerr)
+						slog.Error("google sign-in: reconcile failed", "err", lerr)
 						return tpmodels.SignInUpPOSTResponse{}, lerr
 					}
 
 					clearIntentCookie(options.Res)
 					if err := resp.OK.Session.MergeIntoAccessTokenPayload(accounts.SessionPayload(user)); err != nil {
-						log.Printf("google sign-in: failed to set session payload: %v", err)
+						slog.Error("google sign-in: failed to set session payload", "err", err)
 					}
 					return resp, nil
 				}
