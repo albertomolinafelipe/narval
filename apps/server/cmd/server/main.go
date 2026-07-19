@@ -1,7 +1,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
+	"net/http"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -53,24 +59,46 @@ func main() {
 		log.Fatalf("failed to connect to redis: %v", err)
 	}
 
-	// Background goroutine: purge expired registration drafts every hour.
-	go runDraftCleanup(database)
+	// Root context is cancelled on the first SIGINT/SIGTERM, which unblocks the
+	// shutdown sequence below and stops the background cleanup goroutines.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
-	// Background goroutine: purge expired boosts every hour.
-	go runBoostCleanup(database)
+	// Background goroutines: purge expired registration drafts and boosts hourly.
+	// Tracked so shutdown waits for an in-progress purge to finish.
+	var cleanupWG sync.WaitGroup
+	cleanupWG.Add(2)
+	go func() { defer cleanupWG.Done(); runDraftCleanup(ctx, database) }()
+	go func() { defer cleanupWG.Done(); runBoostCleanup(ctx, database) }()
 
 	router := api.NewRouter(cfg, database, store, rdb)
+	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 
-	log.Printf("server starting on :%s", cfg.Port)
-	if err := router.Run(":" + cfg.Port); err != nil {
-		log.Fatalf("server error: %v", err)
+	go func() {
+		log.Printf("server starting on :%s", cfg.Port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	stop() // restore default signal handling so a second Ctrl-C force-quits
+	log.Println("shutdown signal received, draining connections...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("graceful shutdown failed: %v", err)
 	}
+
+	cleanupWG.Wait() // let the cleanup goroutines observe ctx.Done and return
+	log.Println("shutdown complete")
 }
 
 // runDraftCleanup deletes RegistrationDraft rows older than 7 days.
 // SuperTokens handles OTP expiry (10 minutes), so we only need to clean up abandoned drafts.
 // It runs once immediately on startup, then every hour thereafter.
-func runDraftCleanup(database *gorm.DB) {
+func runDraftCleanup(ctx context.Context, database *gorm.DB) {
 	logger := log.New(log.Writer(), "draft-cleanup: ", log.LstdFlags)
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
@@ -86,14 +114,19 @@ func runDraftCleanup(database *gorm.DB) {
 	}
 
 	cleanup() // run once at startup
-	for range ticker.C {
-		cleanup()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cleanup()
+		}
 	}
 }
 
 // runBoostCleanup deletes StartupBoost rows whose expires_at is in the past.
 // It runs once immediately on startup, then every hour thereafter.
-func runBoostCleanup(database *gorm.DB) {
+func runBoostCleanup(ctx context.Context, database *gorm.DB) {
 	logger := log.New(log.Writer(), "boost-cleanup: ", log.LstdFlags)
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
@@ -108,7 +141,12 @@ func runBoostCleanup(database *gorm.DB) {
 	}
 
 	cleanup() // run once at startup
-	for range ticker.C {
-		cleanup()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			cleanup()
+		}
 	}
 }
