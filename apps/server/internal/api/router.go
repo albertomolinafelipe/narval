@@ -22,6 +22,7 @@ import (
 	"github.com/narval/server/internal/api/stats"
 	"github.com/narval/server/internal/config"
 	"github.com/narval/server/internal/email"
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
 )
@@ -153,7 +154,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, store StorageClient, rdb *redis.
 	}
 
 	r := gin.New()
-	r.Use(gin.Logger(), gin.Recovery())
+	r.Use(gin.Recovery(), logging.Middleware())
 
 	// CORS — must be registered before routes so OPTIONS preflight is handled.
 	r.Use(cors.New(cors.Config{
