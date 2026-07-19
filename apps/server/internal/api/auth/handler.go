@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"regexp"
 
@@ -18,6 +17,7 @@ import (
 	"github.com/narval/server/internal/accounts"
 	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/config"
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
 )
@@ -35,7 +35,6 @@ type Handler struct {
 	db      *gorm.DB
 	rdb     *redis.Client
 	limiter *redis_rate.Limiter
-	logger  *log.Logger
 }
 
 func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
@@ -48,7 +47,6 @@ func NewHandler(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *Handler {
 		db:      db,
 		rdb:     rdb,
 		limiter: limiter,
-		logger:  log.New(log.Writer(), "auth: ", log.LstdFlags),
 	}
 }
 
@@ -121,7 +119,7 @@ func (h *Handler) Register(c *gin.Context) {
 	tenantID := "public"
 	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, email, nil)
 	if err != nil {
-		h.logger.Printf("SuperTokens CreateCode failed: %v", err)
+		logging.From(c).Error("register: create code failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
 		return
 	}
@@ -141,7 +139,7 @@ func (h *Handler) Register(c *gin.Context) {
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
 
 	if err := h.db.Create(&draft).Error; err != nil {
-		h.logger.Printf("failed to create registration draft: %v", err)
+		logging.From(c).Error("failed to create registration draft", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "registration failed"})
 		return
 	}
@@ -159,12 +157,12 @@ func (h *Handler) Register(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		h.logger.Printf("Failed to send email: %v", err)
+		logging.From(c).Error("failed to send verification email", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to send verification email"})
 		return
 	}
 
-	h.logger.Printf("Registration code sent to %s", req.Email)
+	logging.From(c).Info("registration code sent", "email", email)
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "verification code sent to email",
 	})
@@ -243,7 +241,7 @@ func (h *Handler) Verify(c *gin.Context) {
 		case errors.Is(err, accounts.ErrInvalidClaim):
 			c.JSON(http.StatusBadRequest, gin.H{"code": "INVALID_CLAIM", "message": "this claim link is invalid or already used"})
 		default:
-			h.logger.Printf("failed to reconcile user: %v", err)
+			logging.From(c).Error("failed to reconcile user", "err", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "user creation failed"})
 		}
 		return
@@ -256,12 +254,12 @@ func (h *Handler) Verify(c *gin.Context) {
 	tenantIDForSession := "public"
 	_, err = session.CreateNewSession(c.Request, c.Writer, tenantIDForSession, authUserID, accounts.SessionPayload(user), nil)
 	if err != nil {
-		h.logger.Printf("failed to create session: %v", err)
+		logging.From(c).Error("failed to create session", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "session creation failed"})
 		return
 	}
 
-	h.logger.Printf("User verified and logged in: %s", user.Email)
+	logging.From(c).Info("user verified and logged in", "email", user.Email)
 
 	c.JSON(http.StatusOK, h.userProfileResponse(&user))
 }
@@ -310,7 +308,7 @@ func (h *Handler) Login(c *gin.Context) {
 	tenantID := "public"
 	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, email, nil)
 	if err != nil {
-		h.logger.Printf("SuperTokens CreateCode failed: %v", err)
+		logging.From(c).Error("login: create code failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
 		return
 	}
@@ -326,7 +324,7 @@ func (h *Handler) Login(c *gin.Context) {
 	}
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
 	if err := h.db.Create(&draft).Error; err != nil {
-		h.logger.Printf("failed to create login draft: %v", err)
+		logging.From(c).Error("failed to create login draft", "err", err)
 		// Non-fatal, continue with email sending
 	}
 
@@ -343,12 +341,12 @@ func (h *Handler) Login(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		h.logger.Printf("Failed to send email: %v", err)
+		logging.From(c).Error("failed to send verification email", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to send verification email"})
 		return
 	}
 
-	h.logger.Printf("Login code sent to %s", email)
+	logging.From(c).Info("login code sent", "email", email)
 	c.JSON(http.StatusAccepted, gin.H{
 		"message": "verification code sent to email",
 	})
@@ -399,7 +397,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	tenantID := "public"
 	codeResp, err := passwordless.CreateCodeWithEmail(tenantID, email, nil)
 	if err != nil {
-		h.logger.Printf("StartClaim CreateCode failed: %v", err)
+		logging.From(c).Error("claim: create code failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create verification code"})
 		return
 	}
@@ -415,7 +413,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 	}
 	h.db.Where("email = ?", email).Delete(&models.RegistrationDraft{})
 	if err := h.db.Create(&draft).Error; err != nil {
-		h.logger.Printf("failed to create claim draft: %v", err)
+		logging.From(c).Error("failed to create claim draft", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "claim failed"})
 		return
 	}
@@ -432,7 +430,7 @@ func (h *Handler) StartClaim(c *gin.Context) {
 		},
 	})
 	if err != nil {
-		h.logger.Printf("Failed to send claim email: %v", err)
+		logging.From(c).Error("failed to send claim email", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to send verification email"})
 		return
 	}
@@ -450,7 +448,7 @@ func (h *Handler) Logout(c *gin.Context) {
 
 	err = sessionContainer.RevokeSession()
 	if err != nil {
-		h.logger.Printf("failed to revoke session: %v", err)
+		logging.From(c).Error("failed to revoke session", "err", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "logged out successfully"})

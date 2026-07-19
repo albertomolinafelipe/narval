@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis_rate/v10"
+
+	"github.com/narval/server/internal/logging"
 )
 
 // OTP-sending endpoints each dispatch an email per call, so they are throttled
@@ -40,7 +42,7 @@ func (h *Handler) allowOTP(c *gin.Context, endpoint, email string) bool {
 		res, err := h.limiter.Allow(ctx, ch.key, ch.limit)
 		if err != nil {
 			// Redis unavailable — fail open rather than lock users out.
-			h.logger.Printf("rate limiter error for %s: %v", ch.key, err)
+			logging.From(c).Error("rate limiter error", "key", ch.key, "err", err)
 			return true
 		}
 		if res.Allowed == 0 {
