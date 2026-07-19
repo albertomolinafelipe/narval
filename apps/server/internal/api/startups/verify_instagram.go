@@ -12,6 +12,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 	"gorm.io/gorm"
 
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/models"
 )
 
@@ -142,14 +143,14 @@ func (h *Handler) StartInstagramVerification(c *gin.Context, id openapi_types.UU
 
 	code, err := generateInstagramCode()
 	if err != nil {
-		h.Logger.Printf("StartInstagramVerification: code generation failed: %v", err)
+		logging.From(c).Error("StartInstagramVerification: code generation failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to start verification"})
 		return
 	}
 
 	v := models.InstagramVerification{StartupID: st.ID, Handle: handle, Code: code}
 	if err := h.DB.Create(&v).Error; err != nil {
-		h.Logger.Printf("StartInstagramVerification: db create failed: %v", err)
+		logging.From(c).Error("StartInstagramVerification: db create failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to start verification"})
 		return
 	}
@@ -198,7 +199,7 @@ func (h *Handler) ListInstagramVerifications(c *gin.Context, status string) {
 
 	var rows []instagramVerificationRow
 	if err := q.Scan(&rows).Error; err != nil {
-		h.Logger.Printf("ListInstagramVerifications: db query failed: %v", err)
+		logging.From(c).Error("ListInstagramVerifications: db query failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query verifications"})
 		return
 	}
@@ -234,7 +235,7 @@ func (h *Handler) ConfirmInstagramVerification(c *gin.Context, id openapi_types.
 			"instagram":          "https://instagram.com/" + v.Handle,
 		}).Error
 	}); err != nil {
-		h.Logger.Printf("ConfirmInstagramVerification: db update failed: %v", err)
+		logging.From(c).Error("ConfirmInstagramVerification: db update failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to confirm verification"})
 		return
 	}
@@ -268,7 +269,7 @@ func (h *Handler) ResetInstagramVerification(c *gin.Context, id openapi_types.UU
 		}
 		return tx.Delete(&v).Error
 	}); err != nil {
-		h.Logger.Printf("ResetInstagramVerification: db delete failed: %v", err)
+		logging.From(c).Error("ResetInstagramVerification: db delete failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to reset verification"})
 		return
 	}

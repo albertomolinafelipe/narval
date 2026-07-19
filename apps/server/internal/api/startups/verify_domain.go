@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/narval/server/internal/api/common"
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
 )
@@ -102,7 +103,7 @@ func (h *Handler) StartDomainVerification(c *gin.Context, id openapi_types.UUID)
 
 	code, err := generateCode()
 	if err != nil {
-		h.Logger.Printf("StartDomainVerification: code generation failed: %v", err)
+		logging.From(c).Error("StartDomainVerification: code generation failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to start verification"})
 		return
 	}
@@ -118,13 +119,13 @@ func (h *Handler) StartDomainVerification(c *gin.Context, id openapi_types.UUID)
 		ExpiresAt: time.Now().Add(domainCodeTTL),
 	}
 	if err := h.DB.Create(&challenge).Error; err != nil {
-		h.Logger.Printf("StartDomainVerification: db create failed: %v", err)
+		logging.From(c).Error("StartDomainVerification: db create failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to start verification"})
 		return
 	}
 
 	if h.Mailer == nil {
-		h.Logger.Printf("StartDomainVerification: no mailer configured, cannot send code")
+		logging.From(c).Error("StartDomainVerification: no mailer configured, cannot send code")
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "email delivery not configured"})
 		return
 	}
@@ -182,7 +183,7 @@ func (h *Handler) ConfirmDomainVerification(c *gin.Context, id openapi_types.UUI
 		"verified":        true,
 		"verified_domain": challenge.Domain,
 	}).Error; err != nil {
-		h.Logger.Printf("ConfirmDomainVerification: db update failed: %v", err)
+		logging.From(c).Error("ConfirmDomainVerification: db update failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to verify domain"})
 		return
 	}

@@ -2,11 +2,11 @@ package common
 
 import (
 	"context"
-	"log"
 	"strings"
 
 	"gorm.io/gorm"
 
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/storage"
 )
 
@@ -14,15 +14,13 @@ import (
 type BaseHandler struct {
 	DB      *gorm.DB
 	Storage storage.Interface
-	Logger  *log.Logger
 }
 
 // NewBaseHandler creates a new base handler with common dependencies.
-func NewBaseHandler(db *gorm.DB, storage storage.Interface, logger *log.Logger) *BaseHandler {
+func NewBaseHandler(db *gorm.DB, storage storage.Interface) *BaseHandler {
 	return &BaseHandler{
 		DB:      db,
 		Storage: storage,
-		Logger:  logger,
 	}
 }
 
@@ -45,6 +43,6 @@ func (h *BaseHandler) DeleteOwnedImage(ctx context.Context, startupID, imageURL 
 		return
 	}
 	if err := h.Storage.Delete(ctx, name); err != nil {
-		h.Logger.Printf("orphan cleanup: failed to delete %s: %v", name, err)
+		logging.FromContext(ctx).Error("orphan cleanup: failed to delete object", "object", name, "err", err)
 	}
 }

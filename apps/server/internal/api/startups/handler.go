@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -18,6 +17,7 @@ import (
 	"github.com/narval/server/internal/api/common"
 	"github.com/narval/server/internal/api/gen"
 	"github.com/narval/server/internal/email"
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/internal/storage"
 	"github.com/narval/server/models"
@@ -37,7 +37,7 @@ type Handler struct {
 // NewHandler creates a new startups handler.
 func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender) *Handler {
 	return &Handler{
-		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),
+		BaseHandler: common.NewBaseHandler(db, s),
 		Mailer:      mailer,
 	}
 }
@@ -46,7 +46,7 @@ func NewHandler(db *gorm.DB, s storage.Interface, mailer email.Sender) *Handler 
 // Mailer is nil; email-sending endpoints are not exercised by these tests.
 func NewHandlerWithStorage(db *gorm.DB, s storage.Interface) *Handler {
 	return &Handler{
-		BaseHandler: common.NewBaseHandler(db, s, log.New(log.Writer(), "startups: ", log.LstdFlags)),
+		BaseHandler: common.NewBaseHandler(db, s),
 	}
 }
 
@@ -151,7 +151,7 @@ func (h *Handler) ListStartups(c *gin.Context, params gen.ListStartupsParams) {
 	query = query.Where("profile_setup = ?", true)
 
 	if err := query.Find(&startupList).Error; err != nil {
-		h.Logger.Printf("ListStartups: db query failed: %v", err)
+		logging.From(c).Error("ListStartups: db query failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startups"})
 		return
 	}
@@ -225,7 +225,7 @@ func (h *Handler) CreateStartup(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"code": "CONFLICT", "message": "startup name already taken"})
 			return
 		}
-		h.Logger.Printf("CreateStartup: db create failed for owner %s: %v", ownerID, err)
+		logging.From(c).Error("CreateStartup: db create failed", "owner", ownerID, "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to create startup"})
 		return
 	}
@@ -284,7 +284,7 @@ func (h *Handler) UpdateStartup(c *gin.Context, id openapi_types.UUID) {
 	if instagramChanged {
 		if err := h.DB.Where("startup_id = ?", startupID).
 			Delete(&models.InstagramVerification{}).Error; err != nil {
-			h.Logger.Printf("UpdateStartup: failed to clear instagram verification: %v", err)
+			logging.From(c).Error("UpdateStartup: failed to clear instagram verification", "err", err)
 		}
 	}
 
@@ -867,7 +867,7 @@ func (h *Handler) FavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
 			return
 		}
-		h.Logger.Printf("FavoriteStartup: db query failed: %v", err)
+		logging.From(c).Error("FavoriteStartup: db query failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
 		return
 	}
@@ -884,7 +884,7 @@ func (h *Handler) FavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 			c.JSON(http.StatusOK, gin.H{"message": "already favorited"})
 			return
 		}
-		h.Logger.Printf("FavoriteStartup: failed to create favorite: %v", err)
+		logging.From(c).Error("FavoriteStartup: failed to create favorite", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to create favorite"})
 		return
 	}
@@ -905,7 +905,7 @@ func (h *Handler) UnfavoriteStartup(c *gin.Context, id openapi_types.UUID) {
 		Delete(&models.StartupFavorite{})
 
 	if result.Error != nil {
-		h.Logger.Printf("UnfavoriteStartup: db delete failed: %v", result.Error)
+		logging.From(c).Error("UnfavoriteStartup: db delete failed", "err", result.Error)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to remove favorite"})
 		return
 	}
@@ -930,7 +930,7 @@ func (h *Handler) BoostStartup(c *gin.Context, id openapi_types.UUID) {
 			c.JSON(http.StatusNotFound, gin.H{"code": "NOT_FOUND", "message": "startup not found"})
 			return
 		}
-		h.Logger.Printf("BoostStartup: db query failed: %v", err)
+		logging.From(c).Error("BoostStartup: db query failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to query startup"})
 		return
 	}
@@ -948,7 +948,7 @@ func (h *Handler) BoostStartup(c *gin.Context, id openapi_types.UUID) {
 	}
 
 	if err := h.DB.Create(&boost).Error; err != nil {
-		h.Logger.Printf("BoostStartup: failed to create boost: %v", err)
+		logging.From(c).Error("BoostStartup: failed to create boost", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to create boost"})
 		return
 	}
