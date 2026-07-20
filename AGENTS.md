@@ -53,13 +53,18 @@ slice, stop for manual testing, then continue. Decisions already taken:
 5. **Robustness** — split into one PR per sub-slice:
    - **5a** *(done)* — Redis rate limiting on the OTP endpoints (`Register`/`Login`/
      `StartClaim`) via `go-redis/redis_rate`, finally using `auth.Handler.rdb` (A7/A8).
-   - **5b** — graceful shutdown: wrap the gin engine in an `http.Server` and add signal
-     handling + managed cleanup goroutines (A11).
+   - **5b** *(done)* — graceful shutdown: the gin engine is wrapped in an `http.Server`
+     drained on SIGINT/SIGTERM (15s timeout), and the boost/draft cleanup goroutines take
+     the signal context and are waited on via a `WaitGroup` before exit (A11).
    - **5c** — DB constraints via idempotent `Exec` in `db.Migrate` (no goose): partial
      unique index `owner_id WHERE claimed`, unique index on `claim_token`, plus claim-token
      expiry + email pinning; then drop the racy app-side count checks (A5).
    - **5d** — fix the `ListStartups` N+1 (batch the per-row count queries) (A9).
-   - **5e** — structured logging: `log/slog` + request-ID middleware.
+   - **5e** *(done)* — structured logging: an `internal/logging` package sets the `log/slog`
+     default (JSON in prod, text otherwise), a request-ID middleware assigns/propagates
+     `X-Request-ID` and exposes a request-scoped logger via `logging.From(c)` /
+     `logging.FromContext(ctx)`, emitting one access-log line per request; every `log.Printf`
+     across handlers/bootstrap/email/supertokens was converted.
 6. **Admin console** — consolidate the scattered admin UI (instagram verifications page,
    shell-creation button) under one `/admin` area with a single guard layout; add a
    shells/claims overview. See the admin direction below.
@@ -103,12 +108,14 @@ slice, stop for manual testing, then continue. Decisions already taken:
   `active_boosts` in SQL and then discards it and re-queries per row.
 - **A10 — Boost expiry is inconsistent.** *(Fixed: 7 days everywhere, `models.BoostLifetime`.)*
   Model `BeforeCreate` set 30 days while a handler comment said 7.
-- **A11 — Smaller items.** No graceful shutdown (`router.Run`, unmanaged cleanup goroutines);
-  `CheckStartupWebsite` and `GetStats` ignore DB errors; uploads trust the client
-  Content-Type and fall back to `image/jpeg` instead of rejecting non-images; raw
-  `header.Filename` goes into object keys; `Login` treats a failed draft insert as
-  non-fatal but the subsequent verify then cannot succeed. *(Fixed in slice 3: the ignored
-  `pre_auth_session_id` field on Verify and the dead `/auth/refresh` stub were removed.)*
+- **A11 — Smaller items.** ~~No graceful shutdown~~ *(fixed in slice 5b: gin runs under an
+  `http.Server` drained on SIGINT/SIGTERM, and the cleanup goroutines stop via the signal
+  context and are awaited before exit)*; `CheckStartupWebsite` and `GetStats` ignore DB
+  errors; uploads trust the client Content-Type and fall back to `image/jpeg` instead of
+  rejecting non-images; raw `header.Filename` goes into object keys; `Login` treats a failed
+  draft insert as non-fatal but the subsequent verify then cannot succeed. *(Fixed in slice
+  3: the ignored `pre_auth_session_id` field on Verify and the dead `/auth/refresh` stub
+  were removed.)*
 
 #### B. The half-finished "one spec, zero hand-copies" goal
 

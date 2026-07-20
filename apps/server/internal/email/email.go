@@ -4,7 +4,7 @@ package email
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 
 	"github.com/resend/resend-go/v2"
 
@@ -33,7 +33,7 @@ func New(cfg *config.Config) Sender {
 }
 
 func (s *resendSender) SendDomainVerificationCode(to, domain, code string) error {
-	log.Printf("Resend: sending domain verification code to %s", to)
+	slog.Info("resend: sending domain verification code", "to", to)
 	client := resend.NewClient(s.apiKey)
 	_, err := client.Emails.Send(&resend.SendEmailRequest{
 		From:    fmt.Sprintf("%s <%s>", s.fromName, s.from),
@@ -42,7 +42,7 @@ func (s *resendSender) SendDomainVerificationCode(to, domain, code string) error
 		Html:    domainVerificationHTML(domain, code),
 	})
 	if err != nil {
-		log.Printf("Resend ERROR: failed to send domain verification to %s: %v", to, err)
+		slog.Error("resend: failed to send domain verification", "to", to, "err", err)
 		return err
 	}
 	return nil

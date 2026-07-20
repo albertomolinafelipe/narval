@@ -13,6 +13,7 @@ import (
 
 	"github.com/narval/server/internal/api/common"
 	"github.com/narval/server/internal/api/gen"
+	"github.com/narval/server/internal/logging"
 	"github.com/narval/server/internal/middleware"
 	"github.com/narval/server/models"
 )
@@ -40,7 +41,7 @@ func (h *Handler) CreateAdminStartup(c *gin.Context) {
 
 	token, err := newClaimToken()
 	if err != nil {
-		h.Logger.Printf("CreateAdminStartup: token generation failed: %v", err)
+		logging.From(c).Error("CreateAdminStartup: token generation failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "SERVER_ERROR", "message": "failed to create shell"})
 		return
 	}
@@ -59,7 +60,7 @@ func (h *Handler) CreateAdminStartup(c *gin.Context) {
 			c.JSON(http.StatusConflict, gin.H{"code": "CONFLICT", "message": "startup name already taken"})
 			return
 		}
-		h.Logger.Printf("CreateAdminStartup: db create failed: %v", err)
+		logging.From(c).Error("CreateAdminStartup: db create failed", "err", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"code": "DB_ERROR", "message": "failed to create shell"})
 		return
 	}
